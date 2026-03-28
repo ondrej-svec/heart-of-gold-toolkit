@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- Label: unique identifier for this launchd job -->
+    <key>Label</key>
+    <string>com.heart-of-gold.pipeline</string>
+
+    <!-- ProgramArguments: the command to run -->
+    <!-- Uses headless Claude to run the pipeline skill -->
+    <key>ProgramArguments</key>
+    <array>
+        <string>/usr/local/bin/claude</string>
+        <string>-p</string>
+        <string>Run /guide:pipeline to generate today's daily brief and content drafts. Use the lock file at content/pipeline/.pipeline.lock to prevent concurrent runs — if the lock file exists, skip this run.</string>
+        <string>--allowedTools</string>
+        <string>Bash,Read,Write,Edit,Glob,Grep,WebFetch</string>
+        <string>--model</string>
+        <string>sonnet</string>
+    </array>
+
+    <!-- Schedule: run daily at 6:00 AM -->
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key>
+        <integer>6</integer>
+        <key>Minute</key>
+        <integer>0</integer>
+    </dict>
+
+    <!-- Working directory: the user's project root -->
+    <key>WorkingDirectory</key>
+    <string>/Users/USER/projects/PROJECT</string>
+
+    <!-- Log output to content/logs/YYYY-MM-DD.log -->
+    <key>StandardOutPath</key>
+    <string>content/logs/pipeline-stdout.log</string>
+    <key>StandardErrorPath</key>
+    <string>content/logs/pipeline-stderr.log</string>
+
+    <!-- Run on load (catch up if machine was asleep) -->
+    <key>RunAtLoad</key>
+    <false/>
+</dict>
+</plist>

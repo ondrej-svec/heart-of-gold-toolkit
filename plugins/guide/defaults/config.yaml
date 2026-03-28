@@ -1,0 +1,108 @@
+# Heart of Gold — Guide Plugin Configuration
+# Copy this file to content/config.yaml in your project and customize.
+# All fields below have sensible defaults; override only what you need.
+
+# Schema version — used for future migration support
+version: 1
+
+# Voice profile — controls how content is written in your authentic voice
+voice:
+  # Your name (used in personalized content)
+  name: user
+  # Path to your voice profile file (relative to project root)
+  # This file should describe your writing style, tone, and preferences
+  reference: thoughts/writing-voice.md
+  # Tone keywords that anchor your writing style
+  tone: [vulnerable, honest, reflective, plain, curious]
+  # Anti-patterns to avoid in generated content
+  anti_patterns: [corporate, buzzwords, preachy, over-polished]
+  # Jargon blocklist — terms flagged during the voice editing phase
+  # These 17 terms are commonly found in corporate or generic content
+  jargon_blocklist:
+    - synergy
+    - leverage
+    - paradigm shift
+    - disruptive
+    - game-changer
+    - thought leader
+    - best-in-class
+    - move the needle
+    - circle back
+    - low-hanging fruit
+    - deep dive
+    - pivot
+    - scalable
+    - actionable insights
+    - value proposition
+    - ecosystem
+    - stakeholder alignment
+
+# Themes — topics that matter to you, used for signal scoring
+themes:
+  # Personal themes (scored higher for personal connection)
+  personal:
+    - personal transformation
+    - coaching journey
+    - cycling & physical challenges
+    - life transitions
+    - vulnerability & authenticity
+  # Professional themes (scored for relevance to your work)
+  professional:
+    - engineering leadership
+    - AI product building
+    - software practices
+    - AI tools & workflows
+
+# Sources — where to fetch external signals
+sources:
+  # RSS/Atom feeds — parsed by fetch-rss.py using feedparser
+  rss:
+    - url: https://blog.pragmaticengineer.com/feed
+      freshness_hours: 72
+    - url: https://lethain.com/feeds/
+      freshness_hours: 168
+  # Gmail newsletters — fetched via gws CLI
+  gmail:
+    enabled: true
+    label: Content-Feed
+    max_items: 20
+  # Hacker News top stories — fetched via Firebase API
+  hackernews:
+    enabled: true
+    max_items: 30
+
+# Cadence — how often and how much content to produce
+cadence:
+  # LinkedIn posting cadence
+  linkedin:
+    per_week: 3
+    words: [150, 300]
+    style: hook-driven, ends with reflective question
+  # Blog posting cadence
+  blog:
+    period: biweekly
+    words: [1000, 2000]
+    style: story arc, personal narrative
+
+# Notifications — how to be notified when the pipeline completes
+notifications:
+  # iMessage via macOS Messages.app (uses osascript)
+  imessage:
+    enabled: false
+    recipient: ""
+  # Slack via webhook URL
+  slack:
+    enabled: false
+    webhook_url: ""
+
+# Output directories — where pipeline files are written
+# All paths are relative to the project root
+output:
+  # Daily briefs (e.g. content/daily/2026-03-28.md)
+  daily_dir: content/daily
+  # LinkedIn and blog drafts (e.g. content/drafts/2026-03-28-linkedin.md)
+  drafts_dir: content/drafts
+  # Pipeline intermediate state (e.g. content/pipeline/2026-03-28/signals.json)
+  pipeline_dir: content/pipeline
+  # Voice captures from /guide:capture
+  captures_dir: content/captures

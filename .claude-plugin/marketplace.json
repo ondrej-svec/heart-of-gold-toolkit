@@ -1,0 +1,27 @@
+{
+  "name": "heart-of-gold-toolkit",
+  "description": "A Claude Code plugin marketplace themed after The Hitchhiker's Guide to the Galaxy. Don't Panic.",
+  "version": "0.1.0",
+  "plugins": [
+    {
+      "name": "guide",
+      "path": "plugins/guide",
+      "description": "The Hitchhiker's Guide — content creation suite with automated pipeline, daily briefs, and blog writing"
+    },
+    {
+      "name": "deep-thought",
+      "path": "plugins/deep-thought",
+      "description": "The Answer Computer — reasoning tools for brainstorming, planning, and deep thinking"
+    },
+    {
+      "name": "marvin",
+      "path": "plugins/marvin",
+      "description": "The Paranoid Android — quality tools for code review, knowledge compounding, and work execution"
+    },
+    {
+      "name": "babel-fish",
+      "path": "plugins/babel-fish",
+      "description": "Universal Translator — media generation tools for audio, image, and video content"
+    }
+  ]
+}

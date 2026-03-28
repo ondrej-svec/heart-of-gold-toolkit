@@ -1,0 +1,6 @@
+# Heart of Gold Toolkit - Project Dippy Config
+# Allow test runner operations for this project
+allow pytest *
+allow python3 *
+allow chmod *
+allow rm *
