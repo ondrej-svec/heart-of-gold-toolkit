@@ -17,6 +17,12 @@
 
 set -euo pipefail
 
+# Check jq dependency (SEC-009)
+if ! command -v jq &>/dev/null; then
+  echo "Error: jq is required but not installed. Install with: brew install jq" >&2
+  exit 1
+fi
+
 LIMIT=30
 
 # Parse arguments
@@ -32,9 +38,9 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-# Create temp directory for item results
-TMPDIR=$(mktemp -d)
-trap "rm -rf $TMPDIR" EXIT
+# Create temp directory for item results (SEC-006: use private var, don't shadow $TMPDIR)
+HN_WORKDIR=$(mktemp -d)
+trap "rm -rf $HN_WORKDIR" EXIT
 
 # Fetch top story IDs
 TOP_STORIES=$(curl -sf "https://hacker-news.firebaseio.com/v0/topstories.json" 2>/dev/null) || {
@@ -48,7 +54,7 @@ STORY_IDS=$(echo "$TOP_STORIES" | jq -r ".[:$LIMIT][]")
 # Function to fetch a single story item
 fetch_item() {
   local id=$1
-  local outfile="$TMPDIR/$id.json"
+  local outfile="$HN_WORKDIR/$id.json"
   # Small delay to avoid rate limiting
   sleep 0.05
   local item
@@ -56,7 +62,7 @@ fetch_item() {
   echo "$item" > "$outfile"
 }
 export -f fetch_item
-export TMPDIR
+export HN_WORKDIR
 
 # Fetch items in parallel using xargs -P
 echo "$STORY_IDS" | xargs -P 10 -I {} bash -c 'fetch_item "$@"' _ {}
@@ -79,4 +85,4 @@ jq -n --arg now "$(date -u +%Y-%m-%dT%H:%M:%SZ)" '
       hn_id: .id
     }
   }
-]' "$TMPDIR"/*.json 2>/dev/null || echo "[]"
+]' "$HN_WORKDIR"/*.json 2>/dev/null || echo "[]"

@@ -51,6 +51,13 @@ def fetch_feed(feed_config, errors):
     freshness_hours = feed_config.get("freshness_hours", 72)
     signals = []
 
+    # Validate URL scheme — only allow http:// and https:// (SEC-008)
+    from urllib.parse import urlparse
+    parsed = urlparse(url)
+    if parsed.scheme not in ("http", "https"):
+        errors.append(f"Rejected URL with scheme '{parsed.scheme}': {url} — only http/https allowed")
+        return signals
+
     try:
         feed = feedparser.parse(url)
     except Exception as e:
@@ -72,7 +79,10 @@ def fetch_feed(feed_config, errors):
             continue
 
         # If no published date, use current time and flag it
+        # But skip undated entries when freshness_hours=0 (SEC-007)
         if not published:
+            if freshness_hours == 0:
+                continue
             published = now
             no_date = True
         else:

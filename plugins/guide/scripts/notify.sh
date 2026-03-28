@@ -42,7 +42,7 @@ done
 
 # Validate required arguments
 if [[ -z "$TYPE" ]]; then
-  echo "Error: --type argument is required (imessage or slack)" >&2
+  echo "Error: --type argument is required. Supported types: imessage, slack" >&2
   exit 1
 fi
 
@@ -64,13 +64,17 @@ case "$TYPE" in
       MESSAGE="${MESSAGE:0:277}..."
     fi
 
+    # Escape double quotes for AppleScript string safety (SEC-002, SEC-003)
+    SAFE_MSG="${MESSAGE//\"/\\\"}"
+    SAFE_RECIPIENT="${RECIPIENT//\"/\\\"}"
+
     # Send via osascript (Messages.app)
     osascript -e "
       tell application \"Messages\"
-        set targetBuddy to \"$RECIPIENT\"
+        set targetBuddy to \"$SAFE_RECIPIENT\"
         set targetService to id of 1st account whose service type = iMessage
         set theBuddy to participant targetBuddy of account id targetService
-        send \"$MESSAGE\" to theBuddy
+        send \"$SAFE_MSG\" to theBuddy
       end tell
     " 2>/dev/null || {
       echo "Error: Failed to send iMessage to $RECIPIENT" >&2
@@ -80,11 +84,14 @@ case "$TYPE" in
     ;;
 
   slack)
+    # Build JSON payload safely using jq (SEC-001, SEC-010)
+    PAYLOAD=$(jq -n --arg text "$MESSAGE" '{text: $text}')
+
     # Send via webhook URL using curl
     HTTP_CODE=$(curl -sf -o /dev/null -w "%{http_code}" \
       -X POST \
       -H "Content-Type: application/json" \
-      -d "{\"text\": \"$MESSAGE\"}" \
+      -d "$PAYLOAD" \
       "$RECIPIENT" 2>/dev/null) || {
       echo "Error: Slack webhook request failed" >&2
       exit 1

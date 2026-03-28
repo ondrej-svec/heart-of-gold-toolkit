@@ -34,15 +34,17 @@ if [[ -z "$CONFIG_PATH" ]]; then
   exit 1
 fi
 
-# Read config values using python3 + yaml (available in the pipeline environment)
-# Default to "true" on parse failure so the gws availability check still runs (fail-open)
-GMAIL_ENABLED=$(python3 -c "
-import yaml, sys
-with open('$CONFIG_PATH') as f:
-    c = yaml.safe_load(f)
-gmail = c.get('sources', {}).get('gmail', {})
-print(str(gmail.get('enabled', False)).lower())
-" 2>/dev/null || echo "true")
+# Check if Gmail is disabled in config (SEC-004: safe path handling, no inline interpolation)
+# Use sed+grep to parse just the gmail section's enabled field
+# Works without python3+yaml on restricted PATHs
+GMAIL_ENABLED="true"
+if [[ -f "$CONFIG_PATH" ]]; then
+  # Extract gmail section: from 'gmail:' to next section at same or lower indent level
+  GMAIL_SECTION=$(sed -n '/gmail:/,/^[^ ]/p' "$CONFIG_PATH" 2>/dev/null | head -5)
+  if echo "$GMAIL_SECTION" | grep -qiE 'enabled:\s*(false|no)'; then
+    GMAIL_ENABLED="false"
+  fi
+fi
 
 # If Gmail is disabled, output empty array and exit 0
 if [[ "$GMAIL_ENABLED" != "true" ]]; then
@@ -57,25 +59,27 @@ if ! command -v gws &>/dev/null; then
   exit 1
 fi
 
-# Read label and max_items from config
+# Read label and max_items from config (pass path as argument, SEC-004)
 GMAIL_LABEL=$(python3 -c "
-import yaml
-with open('$CONFIG_PATH') as f:
+import yaml, sys
+with open(sys.argv[1]) as f:
     c = yaml.safe_load(f)
 print(c.get('sources', {}).get('gmail', {}).get('label', 'Content-Feed'))
-" 2>/dev/null || echo "Content-Feed")
+" "$CONFIG_PATH" 2>/dev/null || echo "Content-Feed")
 
 MAX_ITEMS=$(python3 -c "
-import yaml
-with open('$CONFIG_PATH') as f:
+import yaml, sys
+with open(sys.argv[1]) as f:
     c = yaml.safe_load(f)
 print(c.get('sources', {}).get('gmail', {}).get('max_items', 20))
-" 2>/dev/null || echo "20")
+" "$CONFIG_PATH" 2>/dev/null || echo "20")
 
 # Fetch emails using gws
-# gws mail list fetches emails from a label
-EMAILS_JSON=$(gws mail list --label "$GMAIL_LABEL" --max "$MAX_ITEMS" --format json 2>/tmp/gws_error) || {
-  ERROR=$(cat /tmp/gws_error 2>/dev/null || echo "unknown error")
+# Use per-run temp file for error capture (SEC-005)
+GWS_ERR=$(mktemp)
+trap "rm -f $GWS_ERR" EXIT
+EMAILS_JSON=$(gws mail list --label "$GMAIL_LABEL" --max "$MAX_ITEMS" --format json 2>"$GWS_ERR") || {
+  ERROR=$(cat "$GWS_ERR" 2>/dev/null || echo "unknown error")
   if echo "$ERROR" | grep -qi "auth"; then
     echo "Error: Gmail auth expired. Run 'gws auth' to re-authenticate." >&2
     exit 1
