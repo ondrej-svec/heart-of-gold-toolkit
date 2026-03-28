@@ -1,5 +1,12 @@
 {
   "name": "marvin",
+  "version": "0.1.0",
   "description": "The Paranoid Android — quality tools for code review, knowledge compounding, and work execution",
-  "version": "0.1.0"
+  "author": {
+    "name": "ondrej-svec",
+    "url": "https://github.com/ondrej-svec"
+  },
+  "homepage": "https://github.com/ondrej-svec/heart-of-gold-toolkit/tree/main/plugins/marvin",
+  "repository": "https://github.com/ondrej-svec/heart-of-gold-toolkit",
+  "license": "MIT"
 }

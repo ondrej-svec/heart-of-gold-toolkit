@@ -1,5 +1,12 @@
 {
   "name": "guide",
+  "version": "0.1.0",
   "description": "The Hitchhiker's Guide — content creation suite with automated pipeline, daily briefs, and blog writing",
-  "version": "0.1.0"
+  "author": {
+    "name": "ondrej-svec",
+    "url": "https://github.com/ondrej-svec"
+  },
+  "homepage": "https://github.com/ondrej-svec/heart-of-gold-toolkit/tree/main/plugins/guide",
+  "repository": "https://github.com/ondrej-svec/heart-of-gold-toolkit",
+  "license": "MIT"
 }
