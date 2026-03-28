@@ -90,20 +90,31 @@ Not all sources are equal. When scoring, apply these multipliers:
 
 ## Phase 3: Create — Daily Brief
 
-Generate the daily reading digest.
+Generate the daily reading digest — a document worth reading with your morning coffee.
 
 ### Structure
 
-The daily brief has three sections:
+The daily brief has four sections:
 
-1. **What's on Your Mind** — synthesis of the user's recent captures (skip if no captures exist)
-2. **Reading Digest** — 8-12 items organized into tiers:
-   - **Must-Read** — highest relevance scores, direct alignment with user's themes
-   - **Worth-a-Look** — interesting but not urgent
-   - **Rabbit-Holes** — fascinating tangents for when there's time
-3. **Content Ideas** — 2-4 ranked content angles from the analysis phase
+1. **The Story** (opening narrative, ~300-500 words) — Weave the strongest signals into a coherent narrative about what's happening in the world RIGHT NOW. Don't list items — tell a story. Connect the dots between seemingly unrelated signals. What's the thread? What's the tension? What's shifting?
 
-Each digest item includes: title, URL, and a 1-2 sentence relevance hook explaining why it matters to the user specifically.
+   **How to write The Story:**
+   - Read across ALL the top signals — newsletters, HN, RSS, captures — and find the narrative thread that connects 3-5 of them
+   - Write it like a smart friend catching you up over coffee: "So here's what's happening..."
+   - Name the tension or contradiction if there is one (e.g., "Everyone's building AI agents while simultaneously proving they can't be trusted")
+   - Ground it in specifics — cite actual articles, actual numbers, actual quotes
+   - If the user has recent captures, weave their personal context into the story naturally ("...and you're living this — your capture from Tuesday about X maps directly onto...")
+   - End with a provocative observation or question that sets up the reading list below
+   - This is NOT a summary. It's a narrative. It should feel like the opening of a well-written newsletter.
+
+2. **Reading List** — 8-12 items minimum (up to 15 when signal is strong), organized into tiers:
+   - **Must-Read** (3-5) — highest relevance scores, direct alignment with user's themes. Each gets a title, URL, and a 1-2 sentence hook explaining why it matters to YOU specifically.
+   - **Worth-a-Look** (3-5) — interesting but not urgent. One line each with URL.
+   - **Rabbit-Holes** (2-3) — fascinating tangents for when there's time. One line each.
+
+3. **Content Ideas** — 4-6 ranked content angles from the analysis phase, tagged by format (LinkedIn / Blog / YouTube)
+
+4. **What's on Your Mind** — synthesis of the user's recent captures (skip if no captures in last 7 days). If present, place after The Story as a bridge to the reading list.
 
 ### Output
 
@@ -120,9 +131,10 @@ angles_count: <number of content angles>
 
 ### Edge Cases
 
-- **Fewer than 8 signals**: Produce a smaller digest — don't pad with low-quality items
+- **Fewer than 8 signals**: Produce a smaller digest — don't pad with low-quality items. The Story can still be written from even 3-4 strong signals.
 - **No captures**: Skip the "What's on Your Mind" section entirely
 - **Signal has no readable content**: Use title + URL only and note "couldn't fetch full content"
+- **No clear narrative thread**: Fall back to a "three things worth knowing today" structure rather than forcing a bad story
 
 ---
 
