@@ -74,17 +74,28 @@ with open(sys.argv[1]) as f:
 print(c.get('sources', {}).get('gmail', {}).get('max_items', 20))
 " "$CONFIG_PATH" 2>/dev/null || echo "20")
 
-# Fetch emails using gws
-# Use per-run temp file for error capture (SEC-005)
+# Read label_id from config (for filtering by label ID rather than display name)
+GMAIL_LABEL_ID=$(python3 -c "
+import yaml, sys
+with open(sys.argv[1]) as f:
+    c = yaml.safe_load(f)
+print(c.get('sources', {}).get('gmail', {}).get('label_id', ''))
+" "$CONFIG_PATH" 2>/dev/null || echo "")
+
+# Fetch emails using gws +triage helper (more reliable than raw API calls —
+# the helper handles auth scopes internally, avoiding insufficientPermissions errors)
+# Fetch recent emails with labels, then filter by label ID in Python
 GWS_ERR=$(mktemp)
 trap "rm -f $GWS_ERR" EXIT
-EMAILS_JSON=$(gws mail list --label "$GMAIL_LABEL" --max "$MAX_ITEMS" --format json 2>"$GWS_ERR") || {
+EMAILS_JSON=$(gws gmail +triage \
+  --query "newer_than:3d" \
+  --max 50 \
+  --format json \
+  --labels \
+  2>"$GWS_ERR") || {
   ERROR=$(cat "$GWS_ERR" 2>/dev/null || echo "unknown error")
   if echo "$ERROR" | grep -qi "auth"; then
-    echo "Error: Gmail auth expired. Run 'gws auth' to re-authenticate." >&2
-    exit 1
-  elif echo "$ERROR" | grep -qi "label"; then
-    echo "Error: Gmail label '$GMAIL_LABEL' not found. Create it in Gmail first." >&2
+    echo "Error: Gmail auth expired. Run 'gws auth login -s gmail' to re-authenticate." >&2
     exit 1
   else
     echo "Error: gws failed: $ERROR" >&2
@@ -92,46 +103,54 @@ EMAILS_JSON=$(gws mail list --label "$GMAIL_LABEL" --max "$MAX_ITEMS" --format j
   fi
 }
 
-# Transform gws output to signal format
-# Skip emails with no text content (image-only) by checking body/text is not null or empty
+# Transform +triage output to signal format
+# +triage returns {messages: [{id, subject, from, date, labels}]}
+# Filter by label_id if configured, then limit to max_items
 echo "$EMAILS_JSON" | python3 -c "
-import json, sys, re
+import json, sys, os
 from datetime import datetime
 
+label_id = '$GMAIL_LABEL_ID'
+max_items = int('$MAX_ITEMS')
+
 data = json.load(sys.stdin)
-if not isinstance(data, list):
-    data = [data] if data else []
+messages = data.get('messages', []) if isinstance(data, dict) else data
+
+# Filter by label ID if configured
+if label_id:
+    messages = [m for m in messages if label_id in m.get('labels', [])]
+
+# Limit to max_items
+messages = messages[:max_items]
 
 signals = []
-for email in data:
-    # Extract text content, strip HTML
-    body = email.get('body', '') or email.get('text', '') or email.get('snippet', '') or ''
-    # Strip HTML tags
-    content = re.sub(r'<[^>]+>', ' ', str(body))
-    content = re.sub(r'\s+', ' ', content).strip()
+for email in messages:
+    subject = email.get('subject', '') or ''
+    sender = email.get('from', '') or ''
+    date_str = email.get('date', '') or ''
+    msg_id = email.get('id', '') or ''
 
-    # Skip image-only emails with no text content
-    if not content or len(content) < 10:
+    # Skip emails with no subject (likely image-only or empty)
+    if not subject or len(subject.strip()) < 5:
         continue
 
-    subject = email.get('subject', '') or ''
-    sender = email.get('from', '') or email.get('sender', '') or ''
-    date_str = email.get('date', '') or email.get('internalDate', '') or ''
-
     # Parse date or use current time
-    try:
-        published = datetime.fromisoformat(date_str).isoformat()
-    except (ValueError, TypeError):
-        published = datetime.utcnow().isoformat()
-
-    url = email.get('link', '') or email.get('url', '') or ''
-    msg_id = email.get('id', '') or email.get('messageId', '') or ''
+    published = datetime.utcnow().isoformat()
+    if date_str:
+        # Try common date formats from Gmail headers
+        for fmt in ('%a, %d %b %Y %H:%M:%S %z', '%a, %d %b %Y %H:%M:%S %z (%Z)',
+                    '%a, %d %b %Y %H:%M:%S %Z'):
+            try:
+                published = datetime.strptime(date_str.strip(), fmt).isoformat()
+                break
+            except (ValueError, TypeError):
+                continue
 
     signals.append({
         'source': 'gmail',
         'title': subject,
-        'url': url if url else f'gmail://message/{msg_id}',
-        'content': content,
+        'url': f'gmail://message/{msg_id}',
+        'content': subject,  # +triage doesn't return body; subject used as signal
         'published_at': published,
         'metadata': {
             'sender': sender,
