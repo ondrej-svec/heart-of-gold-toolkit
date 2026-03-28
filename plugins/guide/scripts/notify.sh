@@ -69,18 +69,38 @@ case "$TYPE" in
     SAFE_RECIPIENT="${RECIPIENT//\"/\\\"}"
 
     # Send via osascript (Messages.app)
-    osascript -e "
-      tell application \"Messages\"
-        set targetBuddy to \"$SAFE_RECIPIENT\"
-        set targetService to id of 1st account whose service type = iMessage
-        set theBuddy to participant targetBuddy of account id targetService
-        send \"$SAFE_MSG\" to theBuddy
-      end tell
-    " 2>/dev/null || {
-      echo "Error: Failed to send iMessage to $RECIPIENT" >&2
+    # Use a background process + wait with timeout to avoid hanging in headless/launchd contexts
+    (
+      osascript -e "
+        tell application \"Messages\"
+          set targetBuddy to \"$SAFE_RECIPIENT\"
+          set targetService to id of 1st account whose service type = iMessage
+          set theBuddy to participant targetBuddy of account id targetService
+          send \"$SAFE_MSG\" to theBuddy
+        end tell
+      " 2>/dev/null
+    ) &
+    OSASCRIPT_PID=$!
+    # Wait up to 15 seconds for osascript to complete
+    for i in $(seq 1 15); do
+      if ! kill -0 "$OSASCRIPT_PID" 2>/dev/null; then
+        wait "$OSASCRIPT_PID"
+        if [[ $? -eq 0 ]]; then
+          echo "iMessage sent to $RECIPIENT"
+          break
+        else
+          echo "Error: Failed to send iMessage to $RECIPIENT" >&2
+          exit 1
+        fi
+      fi
+      sleep 1
+    done
+    # If still running after 15s, kill it and report
+    if kill -0 "$OSASCRIPT_PID" 2>/dev/null; then
+      kill "$OSASCRIPT_PID" 2>/dev/null
+      echo "Error: iMessage send timed out (no GUI session?). Message not delivered." >&2
       exit 1
-    }
-    echo "iMessage sent to $RECIPIENT"
+    fi
     ;;
 
   slack)
