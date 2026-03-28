@@ -17,14 +17,21 @@ Run the full content pipeline: fetch signals, analyze relevance, create daily br
 
 Run all three fetch scripts to gather external signals. Read the user's config from `content/config.yaml`.
 
+### Finding Scripts
+
+The fetch scripts live in this plugin's `scripts/` directory. Determine the scripts path:
+- If this plugin is at `heart-of-gold-toolkit/plugins/guide/`, use `heart-of-gold-toolkit/plugins/guide/scripts/`
+- If installed via marketplace, use the plugin installation path's `scripts/` directory
+- Locate by searching for `fetch-rss.py` in the project tree if unsure
+
 ### Steps
 
 1. **Read config** from `content/config.yaml` (fall back to defaults/config.yaml if missing)
 2. **Read voice reference** from the path in `voice.reference` config field
-3. **Run fetch scripts** via Bash tool:
-   - `python3 scripts/fetch-rss.py --config content/config.yaml` — RSS/Atom feeds
-   - `bash scripts/fetch-gmail.sh --config content/config.yaml` — Gmail newsletters
-   - `bash scripts/fetch-hn.sh --limit <config.sources.hackernews.max_items>` — Hacker News
+3. **Run fetch scripts** via Bash tool (adjust paths based on plugin location):
+   - `python3 <scripts>/fetch-rss.py --config content/config.yaml` — RSS/Atom feeds
+   - `bash <scripts>/fetch-gmail.sh --config content/config.yaml` — Gmail newsletters
+   - `bash <scripts>/fetch-hn.sh --limit <config.sources.hackernews.max_items>` — Hacker News
 4. **Read captures** from `content/captures/` (or configured `captures_dir`) — last 7 days of AM/PM captures
 5. **Read recent daily briefs** — last 3 briefs from `content/daily/` for deduplication context
 6. **Combine signals** into a single JSON array
@@ -234,7 +241,7 @@ Write final output files and send notifications.
 4. **Write blog outline** to configured `output.drafts_dir` (if generated)
 5. **Preserve pipeline state** in configured `output.pipeline_dir` (signals.json, analysis.md, edit log)
 6. **File collision avoidance**: If a file already exists at the target path, append `-2`, `-3`, etc. to the filename before the extension
-7. **Send notification** via configured channels using `scripts/notify.sh`:
+7. **Send notification** via configured channels using `<scripts>/notify.sh`:
    - Summary format: `"{N} signals today. Top angle: {angle_title}. Brief: {path}. Draft: {ready|needs review}"`
    - If notification fails, log the error but do NOT fail the pipeline — the brief has already been written
    - If all notifications are disabled in config, skip silently without logging an error
