@@ -231,7 +231,7 @@ Log all edit changes in the pipeline state (`content/pipeline/YYYY-MM-DD/`) for 
 
 ## Phase 5: Deliver
 
-Write final output files and send notifications.
+Write final output files, commit & push to GitHub, and send an iMessage with links.
 
 ### Steps
 
@@ -241,14 +241,62 @@ Write final output files and send notifications.
 4. **Write blog outline** to configured `output.drafts_dir` (if generated)
 5. **Preserve pipeline state** in configured `output.pipeline_dir` (signals.json, analysis.md, edit log)
 6. **File collision avoidance**: If a file already exists at the target path, append `-2`, `-3`, etc. to the filename before the extension
-7. **Send notification** via configured channels using `<scripts>/notify.sh`:
-   - Summary format: `"{N} signals today. Top angle: {angle_title}. Brief: {path}. Draft: {ready|needs review}"`
-   - If notification fails, log the error but do NOT fail the pipeline — the brief has already been written
-   - If all notifications are disabled in config, skip silently without logging an error
+7. **Commit and push to GitHub:**
+   - `git add` the daily brief, drafts, and pipeline state files
+   - Commit with message: `content: daily brief YYYY-MM-DD — {N} signals, angle: {angle_title}`
+   - `git push origin main`
+   - Determine the GitHub repo URL from `git remote get-url origin` (convert SSH to HTTPS if needed)
+   - Build GitHub links to the committed files: `https://github.com/{owner}/{repo}/blob/main/{file_path}`
+8. **Send iMessage morning brief** — the primary delivery. Self-contained mini-brief with GitHub links you can tap and read on your phone. Send via `osascript` (AppleScript → Messages.app):
+
+   **iMessage format — The Morning Signal:**
+
+   ```
+   ☕ Morning Brief — {date}
+
+   {If captures exist: one punchy sentence about what's on your mind, drawn from recent captures}
+
+   📰 {N} signals scanned. Here's what matters:
+
+   1. {Must-Read #1 title} — {one sentence: why it matters to YOU specifically, not a generic summary}
+
+   2. {Must-Read #2 title} — {one sentence: the insight or tension that makes this worth 5 minutes}
+
+   3. {Must-Read #3 title} — {one sentence: the connection to your work or life}
+
+   💡 Today's angle: "{angle title}"
+   {Two sentences max: the hook of the LinkedIn draft — make it feel like a teaser that pulls the most provocative or vulnerable thread and makes you want to go write}
+
+   📄 {GitHub link to daily brief}
+   ✏️ {GitHub link to LinkedIn draft}
+   ```
+
+   **Rules for the iMessage:**
+   - Write it like a friend texting you the highlights, not like a system notification
+   - Each must-read gets ONE sentence that answers "why should I care about this TODAY"
+   - The angle teaser should make you itch to write — pull the most provocative or vulnerable thread
+   - No metadata, no word counts — just signal and spark
+   - End with tappable GitHub links to the brief and draft
+   - Keep total length under 280 words (roughly 1 phone screen)
+   - If no strong angle today, replace the angle section with: "No burning angle today. The brief has rabbit holes worth exploring when you have coffee."
+
+   **Sending:** Use osascript directly via Bash tool:
+   ```bash
+   osascript -e 'tell application "Messages"
+     set targetService to id of 1st account whose service type = iMessage
+     set theBuddy to participant "<recipient>" of account id targetService
+     send "<message>" to theBuddy
+   end tell'
+   ```
+   Read the recipient from `notifications.imessage.recipient` in config. Escape any double quotes in the message.
+
+   - If iMessage fails (osascript error or timeout), log the error but do NOT fail the pipeline — the brief and draft are already committed and pushed
+   - If notifications are disabled in config, skip silently
 
 ### Edge Cases
 
 - **Output directory doesn't exist**: Create it with `mkdir -p`
+- **Git push fails**: Log error, still send iMessage with local file paths as fallback
 - **Notification fails**: Log error, continue — don't fail the pipeline
 - **All notifications disabled**: Skip silently
 - **Pipeline ran twice today**: Second run creates `-2` suffixed files
