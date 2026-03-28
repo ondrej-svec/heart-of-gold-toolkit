@@ -71,6 +71,38 @@ sources:
     enabled: true
     max_items: 30
 
+# Web search — additional signal via WebSearch tool (optional)
+  web_search:
+    enabled: false
+    keywords: []
+    include_social: false
+
+# Internal sources — directories to read for personal context
+# The pipeline always reads these; list them here for documentation
+internal:
+  - thoughts/
+  - blog/
+  - content/captures/
+
+# Agents — model assignments for each pipeline phase (optional)
+# If omitted, the pipeline skill's default model is used for all phases
+agents:
+  scout:
+    model: sonnet
+  analyst:
+    model: sonnet
+  creator:
+    model: opus
+  editor:
+    model: sonnet
+  publisher:
+    model: haiku
+
+# Context — paths to background files that inform content generation
+context:
+  personal_background: ""
+  journey: ""
+
 # Cadence — how often and how much content to produce
 cadence:
   # LinkedIn posting cadence
