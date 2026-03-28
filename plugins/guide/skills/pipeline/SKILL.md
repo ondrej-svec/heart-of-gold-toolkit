@@ -51,20 +51,33 @@ The fetch scripts live in this plugin's `scripts/` directory. Determine the scri
 
 Score, deduplicate, and group signals into content angles.
 
+### Source Weighting
+
+Not all sources are equal. When scoring, apply these multipliers:
+
+- **Newsletter/RSS signals (Pragmatic Engineer, SWLW, Every, Lenny, Exponential View, Ozan Varol)**: **1.5x weight** — these are curated by humans the user trusts. A mediocre newsletter item beats a mediocre HN item.
+- **Gmail newsletters (TLDR, Morning Brew)**: **1.2x weight** — curated but broader scope.
+- **HN signals**: **1.0x weight (base)** — high volume, high noise. Only HN items scoring 200+ on HN itself should be considered "must-read" tier.
+- **Voice captures**: **2.0x weight** — the user's own thoughts are the highest-value input. Any angle that connects to a capture gets a significant boost.
+
 ### Steps
 
-1. **Score each signal 1-5** on relevance to the user's configured themes (both personal and professional)
+1. **Score each signal 1-5** on relevance to the user's configured themes (both personal and professional), then apply source weighting
 2. **Deduplicate** against the last 3 daily briefs:
    - Skip signals whose URL has appeared in any of the last 3 briefs
    - Skip signals whose title has 85% or higher Jaccard similarity to a title in the last 3 briefs
-3. **Group signals into 2-4 content angles**, each containing:
+3. **Group signals into 4-6 content angles**, each containing:
    - **Internal signal connection** — link to a capture or thought from the user
    - **External signal connection** — the source signal(s) that inspired this angle
    - **"Why now" hook** — what makes this angle timely today
-   - **Suggested format** — LinkedIn post or blog post
-4. **Rank angles** by strength: topic alignment + freshness + personal connection
+   - **Suggested format** — LinkedIn post, blog post, or YouTube/long-form rant
+4. **Rank angles** by strength: topic alignment + freshness + personal connection + source weight
 5. **Cluster** multiple signals on the same topic into a single angle, citing all sources
-6. **Write analysis** to `content/pipeline/YYYY-MM-DD/analysis.md`
+6. **Tag each angle** with a content type:
+   - **LinkedIn** — short, punchy, personal insight (150-300 words). Aim for at least 3 LinkedIn-worthy angles.
+   - **Blog** — longer narrative, emotional arc (1000-2000 words). Flag ~1 per week.
+   - **YouTube/Rant** — topics that deserve deeper unpacking, opinions, or real talk. Things you'd want to talk through on camera. Flag when you feel heat in the angle.
+7. **Write analysis** to `content/pipeline/YYYY-MM-DD/analysis.md`
 
 ### Edge Cases
 
@@ -113,23 +126,28 @@ angles_count: <number of content angles>
 
 ---
 
-## Phase 3B: Create — LinkedIn Draft
+## Phase 3B: Create — LinkedIn Drafts (3 minimum)
 
-Generate a LinkedIn post draft from the strongest angle.
+Generate **at least 3 LinkedIn post drafts**, each from a different angle. The user picks the best one.
 
 ### Steps
 
-1. Use the **#1 ranked (top/strongest) angle** from analysis
-2. Write a **150-300 word** draft in the user's configured voice
+1. Take the **top 3 ranked LinkedIn-tagged angles** from analysis
+2. For each angle, write a **150-300 word** draft in the user's configured voice
 3. Structure: **hook** → **personal connection** → **insight from signal** → **reflective question** ending
-4. Reference specific signals with their URLs that inspired the angle
-5. Write to `content/drafts/YYYY-MM-DD-linkedin.md` (or configured `drafts_dir`)
+4. Each draft should feel genuinely different — different tone, different entry point, different vulnerability level. Don't just rephrase the same take three times.
+5. Reference specific signals with their URLs
+6. Write all 3 to separate files:
+   - `content/drafts/YYYY-MM-DD-linkedin-1.md`
+   - `content/drafts/YYYY-MM-DD-linkedin-2.md`
+   - `content/drafts/YYYY-MM-DD-linkedin-3.md`
 
-### Frontmatter
+### Frontmatter (per file)
 
 ```yaml
 ---
 date: YYYY-MM-DD
+draft: 1  # or 2, 3
 angle: <angle title>
 sources: <list of source URLs>
 word_count: <actual word count>
@@ -139,20 +157,23 @@ voice_score: <set by edit phase>
 
 ### Edge Cases
 
-- **No strong angle today**: If no angle scores above the threshold, skip the LinkedIn draft and note in the brief "no strong angle today"
+- **Fewer than 3 LinkedIn angles**: Write as many as you have. Even 1 is better than 0.
 - **Sensitive angle** (e.g., leaving job, mental health): Flag for careful tone, add `sensitive: true` to frontmatter
-- **Angle similar to recent post** (recency guard): If the top angle is too similar to a recent post, prefer the #2 angle and note in frontmatter
-- **Missing voice reference file**: Fall back to config `tone` field defaults only (no voice profile check)
+- **Angle similar to recent post** (recency guard): If an angle is too similar to a recent post, skip it and use the next one
+- **Missing voice reference file**: Fall back to config `tone` field defaults only
 
 ---
 
-## Phase 3C: Create — Blog Outline
+## Phase 3C: Create — Blog Outline (weekly)
 
-Generate a blog post outline only when the top angle is exceptionally strong.
+Generate a blog post outline approximately **once per week** — when a strong angle appears that deserves deeper treatment.
 
 ### Triggering Condition
 
-Only generate a blog outline when the top angle scores in the **top 10%** (configurable threshold). If blog cadence hasn't been met recently, lower the threshold slightly to encourage more outlines.
+Generate a blog outline when:
+- The top angle scores in the **top 10%** (configurable threshold), OR
+- It's been more than 7 days since the last blog outline was generated (check `content/drafts/` for `*-blog-outline.md` files), OR
+- An angle explicitly connects a personal capture to an external trend (the "intersection" is blog material)
 
 ### Structure — Emotional Arc
 
@@ -181,9 +202,35 @@ needs_write_post: true
 
 ### Edge Cases
 
-- **Multiple strong angles**: Outline only the strongest angle, mention the runner-up in notes
+- **Multiple strong angles**: Outline only the strongest, mention the runner-up in notes
 - **Overlap with existing blog draft** in `blog/` directory: Note the overlap and suggest building on the existing draft
-- **Blog cadence not met**: Lower threshold to encourage more outlines when cadence hasn't been met
+- **Blog cadence not met**: Lower threshold to encourage more outlines when it's been too long since the last one
+
+---
+
+## Phase 3D: Create — YouTube / Long-Form Ideas
+
+Surface topics that deserve deeper unpacking — rants, opinions, real talk that's too meaty for a LinkedIn post and too raw for a polished blog.
+
+### Triggering Condition
+
+Generate a YouTube/long-form idea when:
+- An angle generates strong personal heat (connects to frustration, passion, or a contrarian take)
+- Multiple signals cluster around a debate where the user has lived experience
+- A topic keeps recurring across multiple days (the pipeline should notice this)
+
+### Output
+
+Append to the **Content Ideas** section of the daily brief (not a separate file). Format:
+
+```
+### 🎙️ YouTube / Deep Dive: {topic}
+Why this has legs: {1-2 sentences on why this deserves 10+ minutes of talking, not 200 words}
+Signals: {list of sources}
+The rant seed: {one provocative sentence that could be the opening line on camera}
+```
+
+This is a suggestion, not a draft. The user decides if it's worth pursuing.
 
 ---
 
