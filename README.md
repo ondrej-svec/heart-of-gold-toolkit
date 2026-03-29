@@ -16,17 +16,18 @@ Sixteen skills for Claude Code. Four plugins. Named after *The Hitchhiker's Guid
 
 Your personal content engine. Wakes up at 2 AM, reads the internet for you, and texts you the highlights before coffee.
 
-- Fetches 100+ signals daily from RSS, Gmail newsletters, and Hacker News
-- Opens with a narrative — "here's what's happening in the world" — not a bullet list
-- Generates 3 LinkedIn post drafts, each from a different angle
-- Writes weekly blog outlines following an emotional arc
-- Checks everything against your voice profile (jargon detector, authenticity scoring)
-- Commits to GitHub and sends a rich iMessage brief with clickable links
-- Two-way captures: reply to a nudge on your phone, your thoughts feed tomorrow's brief
+- **Configurable sources** — add your RSS feeds, Gmail newsletters, Hacker News, web search keywords. `/guide:setup` walks you through it in 2 minutes.
+- **Narrative briefs** — opens with "here's what's happening in the world", not a bullet list
+- **3 LinkedIn drafts** per day, each from a different angle
+- **Weekly blog outlines** following an emotional arc
+- **Voice fidelity** — checks everything against your writing profile (jargon detector, authenticity scoring)
+- **Delivers to your phone** — commits to GitHub, sends a rich iMessage brief with clickable links
+- **Two-way captures** — reply to a nudge on your phone, your thoughts feed tomorrow's brief
 
-3 skills · 2 agents · 4 scripts · 300+ tests
+4 skills · 2 agents · 4 scripts · 300+ tests
 
 ```
+/guide:setup       # configure your sources, themes, and voice (run once)
 /guide:pipeline    # run the full content engine
 /guide:capture     # morning/evening thought capture
 /guide:write-post  # guided blog writing (7 phases)
@@ -97,14 +98,13 @@ Install the marketplace and whichever plugins you need:
 /plugin install babel-fish@heart-of-gold-toolkit
 ```
 
-For the Guide plugin, copy the default config and customize:
+For the Guide plugin, run the setup wizard:
 
-```bash
-cp plugins/guide/defaults/config.yaml content/config.yaml
-# Edit: your RSS feeds, themes, voice profile path, notification settings
+```
+/guide:setup
 ```
 
-Then run `/guide:pipeline` and see what happens.
+It asks what you read, what you write about, and how you want to be notified. Takes about 2 minutes. Then it offers to run your first pipeline.
 
 ## Running the Guide on a Schedule
 

@@ -12,9 +12,9 @@ An automated content pipeline for Claude Code. Fetches signals from RSS feeds, G
    /plugin install guide@heart-of-gold-toolkit
    ```
 
-2. **Configure** — copy and customize:
-   ```bash
-   cp plugins/guide/defaults/config.yaml content/config.yaml
+2. **Set up** — the wizard walks you through sources, themes, and voice:
+   ```
+   /guide:setup
    ```
 
 3. **Run**:
@@ -23,6 +23,12 @@ An automated content pipeline for Claude Code. Fetches signals from RSS feeds, G
    ```
 
 ## Skills
+
+### /guide:setup
+
+Interactive configuration wizard. Asks what RSS feeds you read, whether you use Gmail newsletters, what topics matter to you, and how you write. Creates `content/config.yaml` and offers to run your first pipeline.
+
+Run once to get started. Run again any time to add sources or change settings.
 
 ### /guide:pipeline
 

@@ -13,6 +13,15 @@ Run the full content pipeline: fetch signals, analyze relevance, create daily br
 
 ---
 
+## Phase 0: Config Check
+
+Before anything else, check if `content/config.yaml` exists.
+
+- **If it exists**: Read it and proceed to Phase 1.
+- **If it doesn't exist**: Tell the user: "No config found. Run `/guide:setup` to configure your content pipeline — it takes about 2 minutes and I'll walk you through it." Then stop. Do NOT use the defaults config as a silent fallback for a first run — the user needs to configure their own sources and themes.
+
+---
+
 ## Phase 1: Scout (Fetch Sources)
 
 Run all three fetch scripts to gather external signals. Read the user's config from `content/config.yaml`.
@@ -26,7 +35,7 @@ The fetch scripts live in this plugin's `scripts/` directory. Determine the scri
 
 ### Steps
 
-1. **Read config** from `content/config.yaml` (fall back to defaults/config.yaml if missing)
+1. **Read config** from `content/config.yaml`
 2. **Read voice reference** from the path in `voice.reference` config field
 3. **Run fetch scripts** via Bash tool (adjust paths based on plugin location):
    - `python3 <scripts>/fetch-rss.py --config content/config.yaml` — RSS/Atom feeds
