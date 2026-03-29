@@ -54,9 +54,27 @@ connections: [related captures or thoughts]
 - Links to previous captures or thoughts that relate
 ```
 
+## iMessage Capture Mode
+
+When running in a `--channels` session with the iMessage plugin, captures can happen entirely via iMessage:
+
+1. A cron-triggered nudge sends a message to the self-chat via the `reply` MCP tool
+2. The user replies directly in iMessage with their thoughts
+3. Claude reads the reply (via `chat.db` polling), treats it as capture content
+4. Claude asks follow-up questions via `reply` tool ("What's behind that?", "Anything else?")
+5. When the user signals they're done (e.g., "that's it", "done", or stops replying), Claude saves the capture
+
+**Key differences from terminal mode:**
+- Use the `reply` MCP tool for all responses (not `AskUserQuestion`)
+- The user's messages arrive as channel notifications, not terminal input
+- Keep follow-ups short — iMessage is a phone screen, not a terminal
+- Confirm with a brief reply: "Captured. Themes: X, Y. This feeds into tomorrow's brief."
+- Find the self-chat `chat_id` by querying: `sqlite3 ~/Library/Messages/chat.db "SELECT guid FROM chat WHERE chat_identifier LIKE '%<phone>%'"`
+
 ## Edge Cases
 
 - **Config file missing**: Use default directory `content/captures/`
 - **Capture for this period already exists**: Append to the existing file, don't overwrite
 - **User doesn't specify AM or PM**: Auto-detect from current time of day (before noon = AM, after noon = PM)
 - **Standalone usage**: This skill works without the pipeline having run — no dependency on signals.json or analysis.md
+- **iMessage reply with no context**: If a message arrives outside of a capture nudge, treat it as an ad-hoc capture — save it with detected themes

@@ -306,50 +306,71 @@ Write final output files, commit & push to GitHub, and send an iMessage with lin
    - `git push origin main`
    - Determine the GitHub repo URL from `git remote get-url origin` (convert SSH to HTTPS if needed)
    - Build GitHub links to the committed files: `https://github.com/{owner}/{repo}/blob/main/{file_path}`
-8. **Send iMessage morning brief** — the primary delivery. Self-contained mini-brief with GitHub links you can tap and read on your phone. Send via `osascript` (AppleScript → Messages.app):
+8. **Send iMessage morning brief** — the primary delivery. A rich, self-contained mini-brief that's worth reading on its own, with GitHub links at the bottom for deep-diving.
+
+   **How to send:** Use the `reply` MCP tool from the iMessage plugin (available when running with `--channels plugin:imessage@claude-plugins-official`).
+
+   **Finding the chat_id:** The self-chat uses the `any;-;` prefix format. Query it:
+   ```bash
+   sqlite3 ~/Library/Messages/chat.db "SELECT guid FROM chat WHERE chat_identifier LIKE '%<phone_number>%' LIMIT 1"
+   ```
+   Read the phone number from `notifications.imessage.recipient` in config. The typical self-chat GUID is `any;-;+<number>`.
 
    **iMessage format — The Morning Signal:**
 
    ```
-   ☕ Morning Brief — {date}
+   -- Morning Brief -- {date} --
 
-   {If captures exist: one punchy sentence about what's on your mind, drawn from recent captures}
+   THE STORY
+   {3-5 sentences weaving the top signals into a narrative. What's happening
+   in the world right now? What's the tension or thread that connects them?
+   Ground it in specifics — names, numbers, quotes. If captures exist, weave
+   the user's personal context in naturally.}
 
-   📰 {N} signals scanned. Here's what matters:
+   MUST-READS
 
-   1. {Must-Read #1 title} — {one sentence: why it matters to YOU specifically, not a generic summary}
+   1. {Title} ({source, score if HN})
+   {Why it matters to YOU — one sentence, personal, specific}
+   {URL}
 
-   2. {Must-Read #2 title} — {one sentence: the insight or tension that makes this worth 5 minutes}
+   2. {Title}
+   {Why it matters}
+   {URL}
 
-   3. {Must-Read #3 title} — {one sentence: the connection to your work or life}
+   3. {Title}
+   {Why it matters}
+   {URL}
 
-   💡 Today's angle: "{angle title}"
-   {Two sentences max: the hook of the LinkedIn draft — make it feel like a teaser that pulls the most provocative or vulnerable thread and makes you want to go write}
+   TOP ANGLE
 
-   📄 {GitHub link to daily brief}
-   ✏️ {GitHub link to LinkedIn draft}
+   "{Angle title}" — {score}/10
+   {Two sentences: the hook that makes you want to write this. Pull the
+   most provocative or vulnerable thread.}
+
+   --
+   Full brief: {GitHub URL to daily brief}
+   LinkedIn drafts: {GitHub URL to drafts directory}
+   --
+   Heart of Gold -- {N} signals -- {N} angles
    ```
 
    **Rules for the iMessage:**
    - Write it like a friend texting you the highlights, not like a system notification
+   - The Story section is the OPENER — it's what makes someone keep reading
    - Each must-read gets ONE sentence that answers "why should I care about this TODAY"
    - The angle teaser should make you itch to write — pull the most provocative or vulnerable thread
+   - GitHub links go at the BOTTOM, after the content — never send just links
+   - No emojis (they break osascript). Plain ASCII only.
    - No metadata, no word counts — just signal and spark
-   - End with tappable GitHub links to the brief and draft
-   - Keep total length under 280 words (roughly 1 phone screen)
    - If no strong angle today, replace the angle section with: "No burning angle today. The brief has rabbit holes worth exploring when you have coffee."
 
-   **Sending:** Use osascript directly via Bash tool:
-   ```bash
-   osascript -e 'tell application "Messages"
-     set targetService to id of 1st account whose service type = iMessage
-     set theBuddy to participant "<recipient>" of account id targetService
-     send "<message>" to theBuddy
-   end tell'
+   **Sending via reply tool:**
    ```
-   Read the recipient from `notifications.imessage.recipient` in config. Escape any double quotes in the message.
+   reply(chat_id: "any;-;+<number>", text: "<the mini-brief>")
+   ```
 
-   - If iMessage fails (osascript error or timeout), log the error but do NOT fail the pipeline — the brief and draft are already committed and pushed
+   - If the reply tool is not available (not running with --channels), fall back to osascript via Bash
+   - If iMessage fails, log the error but do NOT fail the pipeline — the brief is already committed and pushed
    - If notifications are disabled in config, skip silently
 
 ### Edge Cases
