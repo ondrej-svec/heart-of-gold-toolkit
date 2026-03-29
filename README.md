@@ -28,10 +28,10 @@ The pipeline runs on a schedule (launchd or in-session crons), so you wake up to
 
 | Plugin | Inspired by | What it does | Status |
 |--------|-------------|-------------|--------|
-| **[guide](plugins/guide/)** | The Hitchhiker's Guide | Content pipeline — briefs, LinkedIn drafts, captures, voice editing | **Active** |
-| **[deep-thought](plugins/deep-thought/)** | The Answer Computer | Reasoning — brainstorming, planning, investigation | Agents + knowledge ready, skills coming |
-| **[marvin](plugins/marvin/)** | The Paranoid Android | Quality — code review, knowledge compounding | Planned |
-| **[babel-fish](plugins/babel-fish/)** | Universal Translator | Media — audio, image generation | Planned |
+| **[guide](plugins/guide/)** | The Hitchhiker's Guide | Content pipeline — briefs, LinkedIn drafts, captures, voice editing | **Active** — 3 skills, 2 agents, 300+ tests |
+| **[deep-thought](plugins/deep-thought/)** | The Answer Computer | Reasoning — brainstorming, planning, investigation, CTO advisory | **Active** — 8 skills, 9 agents, 16 knowledge files |
+| **[marvin](plugins/marvin/)** | The Paranoid Android | Quality — code review, knowledge compounding, work execution | **Active** — 3 skills, 2 agents, 3 knowledge files |
+| **[babel-fish](plugins/babel-fish/)** | Universal Translator | Media — audio (ElevenLabs), image generation (Gemini/FLUX) | **Active** — 2 skills |
 
 ## The Guide Plugin
 
