@@ -41,6 +41,7 @@ The fetch scripts live in this plugin's `scripts/` directory. Determine the scri
    - `python3 <scripts>/fetch-rss.py --config content/config.yaml` — RSS/Atom feeds
    - `bash <scripts>/fetch-gmail.sh --config content/config.yaml` — Gmail newsletters
    - `bash <scripts>/fetch-hn.sh --limit <config.sources.hackernews.max_items>` — Hacker News
+   - `python3 <scripts>/fetch-events.py --config content/config.yaml` — Local events (iCal feeds from Meetup/Luma). Requires `icalendar` Python package.
 4. **Read captures** from `content/captures/` (or configured `captures_dir`) — last 7 days of AM/PM captures
 5. **Read recent daily briefs** — last 3 briefs from `content/daily/` for deduplication context
 6. **Combine signals** into a single JSON array
@@ -67,7 +68,16 @@ Not all sources are equal. When scoring, apply these multipliers:
 - **Newsletter/RSS signals (Pragmatic Engineer, SWLW, Every, Lenny, Exponential View, Ozan Varol)**: **1.5x weight** — these are curated by humans the user trusts. A mediocre newsletter item beats a mediocre HN item.
 - **Gmail newsletters (TLDR, Morning Brew)**: **1.2x weight** — curated but broader scope.
 - **HN signals**: **1.0x weight (base)** — high volume, high noise. Only HN items scoring 200+ on HN itself should be considered "must-read" tier.
+- **Local events**: **1.3x weight** — time-sensitive and personally actionable. Events are not editorial content — they don't generate reading list items. Instead, they appear in their own section (see Phase 3).
 - **Voice captures**: **2.0x weight** — the user's own thoughts are the highest-value input. Any angle that connects to a capture gets a significant boost.
+
+### Generic Content Filter
+
+Before scoring, filter out signals that would appear in any general AI/tech newsletter without personalization. If the source is a generic industry publication (CIO.com, McKinsey, Deloitte, Waydev, generic "agentic AI" roundups) AND the signal doesn't connect to a specific capture, theme, or current project — drop it. The brief is personal curation, not industry news. When in doubt, ask: "Would a smart friend send this to me specifically, or would they send it to anyone in tech?" If the answer is "anyone" — cut it.
+
+### Content Angle Deduplication
+
+Track suggested content angles across the last 5 briefs (read previous briefs from `content/daily/`). If an angle has been suggested 3+ times without being written (no corresponding draft in `content/drafts/`), either escalate it ("This angle has come up 4 times — write it today or retire it") or drop it with a note explaining why it's being retired. Never silently suggest the same angle for a 4th time.
 
 ### Steps
 
@@ -103,7 +113,7 @@ Generate the daily reading digest — a document worth reading with your morning
 
 ### Structure
 
-The daily brief has four sections:
+The daily brief has five sections:
 
 1. **The Story** (opening narrative, ~300-500 words) — Weave the strongest signals into a coherent narrative about what's happening in the world RIGHT NOW. Don't list items — tell a story. Connect the dots between seemingly unrelated signals. What's the thread? What's the tension? What's shifting?
 
@@ -115,15 +125,37 @@ The daily brief has four sections:
    - If the user has recent captures, weave their personal context into the story naturally ("...and you're living this — your capture from Tuesday about X maps directly onto...")
    - End with a provocative observation or question that sets up the reading list below
    - This is NOT a summary. It's a narrative. It should feel like the opening of a well-written newsletter.
+   - **The Story is the default opening — always attempt it.** Find the narrative thread. If after honest effort no thread connects 3+ signals, fall back to "Three things worth knowing today" — a brief, punchy alternative that names 3 signals with one sentence each. Never force a bad narrative. But most days, the thread is there if you look across domains.
 
-2. **Reading List** — 8-12 items minimum (up to 15 when signal is strong), organized into tiers:
-   - **Must-Read** (3-5) — highest relevance scores, direct alignment with user's themes. Each gets a title, URL, and a 1-2 sentence hook explaining why it matters to YOU specifically.
+2. **Local Events** — upcoming tech/AI events in the user's city (from iCal feeds). Only show if events exist in the next 7 days. Format:
+
+   ```
+   ## 📅 {City} This Week
+
+   **Tue Apr 1 · 18:30** — Prague Gen AI: "Building with Claude Code"
+     Pracovna & Laskafe, Žižkov · [RSVP](link)
+
+   **Thu Apr 3 · 19:00** — AI Tinkerers: April Demo Night
+     Impact Hub · [RSVP](link)
+   ```
+
+   Rules:
+   - Max 5 events. Sorted by date.
+   - One line per event: day, time, name. Second line: venue, RSVP link. No summaries. No editorial commentary.
+   - Only show events in the next 7 days (the fetch script grabs 14 days, but the brief shows this week only)
+   - If no events in the next 7 days, skip this section entirely — don't show an empty section or a "no events" message
+   - Section title uses the active city name from `config.yaml` → `sources.events.active_city`
+   - Events with `metadata.type == "event"` in `signals.json` are rendered here, NOT in the Reading List
+   - Convert UTC times to the city's local timezone (from the city config)
+
+3. **Reading List** — 8-12 items minimum (up to 15 when signal is strong), organized into tiers:
+   - **Must-Read** (3-5) — highest relevance scores, direct alignment with user's themes. Each gets a title, URL, and a **1–2 sentence hook** max. Never more than 2 sentences. No sub-bullets within an item. Weave the personal relevance into the hook naturally — don't use a fixed formula like "Why it matters to you:" or any repeated header. Just make the sentence about the user, not about the article. If you can't say why it matters in 2 sentences, it's not a Must-Read.
    - **Worth-a-Look** (3-5) — interesting but not urgent. One line each with URL.
    - **Rabbit-Holes** (2-3) — fascinating tangents for when there's time. One line each.
 
 3. **Content Ideas** — 4-6 ranked content angles from the analysis phase, tagged by format (LinkedIn / Blog / YouTube)
 
-4. **What's on Your Mind** — synthesis of the user's recent captures (skip if no captures in last 7 days). If present, place after The Story as a bridge to the reading list.
+4. **What's on Your Mind** — synthesis of the user's recent captures. **Stale capture rule:** If the most recent capture is older than 7 days, do NOT recycle it. Either skip this section entirely or note briefly: "No fresh captures since [date]. Today's brief is all external signal." Never re-summarize old captures as if they're news — that reads like a broken record after 3+ days of the same content.
 
 ### Output
 
@@ -335,6 +367,11 @@ Write final output files, commit & push to GitHub, and send an iMessage with lin
    in the world right now? What's the tension or thread that connects them?
    Ground it in specifics — names, numbers, quotes. If captures exist, weave
    the user's personal context in naturally.}
+
+   THIS WEEK IN {CITY}
+   {Only include if events exist in next 7 days}
+   - {Day} {Time} -- {Event name} @ {Venue}
+   - {Day} {Time} -- {Event name} @ {Venue}
 
    MUST-READS
 
