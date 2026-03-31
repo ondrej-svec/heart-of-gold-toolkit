@@ -82,6 +82,14 @@ with open(sys.argv[1]) as f:
 print(c.get('sources', {}).get('gmail', {}).get('label_id', ''))
 " "$CONFIG_PATH" 2>/dev/null || echo "")
 
+# Check if deep fetching is enabled (fetch_body: true in config)
+FETCH_BODY=$(python3 -c "
+import yaml, sys
+with open(sys.argv[1]) as f:
+    c = yaml.safe_load(f)
+print('true' if c.get('sources', {}).get('gmail', {}).get('fetch_body', False) else 'false')
+" "$CONFIG_PATH" 2>/dev/null || echo "false")
+
 # Fetch emails using gws +triage helper (more reliable than raw API calls —
 # the helper handles auth scopes internally, avoiding insufficientPermissions errors)
 # Fetch recent emails with labels, then filter by label ID in Python
@@ -106,9 +114,45 @@ EMAILS_JSON=$(gws gmail +triage \
 # Transform +triage output to signal format
 # +triage returns {messages: [{id, subject, from, date, labels}]}
 # Filter by label_id if configured, then limit to max_items
-echo "$EMAILS_JSON" | python3 -c "
-import json, sys, os
-from datetime import datetime
+
+# Determine the scripts directory (where this script lives)
+SCRIPTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+if [[ "$FETCH_BODY" == "true" ]]; then
+  # Deep mode: filter messages first, then pass to fetch-gmail-deep.py for
+  # full body fetching, link extraction, and article following
+  echo "$EMAILS_JSON" | python3 -c "
+import json, sys, yaml
+
+label_id = '$GMAIL_LABEL_ID'
+max_items = int('$MAX_ITEMS')
+config_path = '$CONFIG_PATH'
+
+data = json.load(sys.stdin)
+messages = data.get('messages', []) if isinstance(data, dict) else data
+
+# Filter by label ID if configured
+if label_id:
+    messages = [m for m in messages if label_id in m.get('labels', [])]
+
+# Limit to max_items
+messages = messages[:max_items]
+
+# Read gmail config for deep processor
+with open(config_path) as f:
+    config = yaml.safe_load(f)
+gmail_config = config.get('sources', {}).get('gmail', {})
+
+json.dump({'messages': messages, 'config': gmail_config}, sys.stdout)
+" 2>/dev/null | python3 "$SCRIPTS_DIR/fetch-gmail-deep.py" || {
+    echo "Error: Deep Gmail processing failed" >&2
+    exit 1
+  }
+else
+  # Shallow mode: subject-only signals (original behavior)
+  echo "$EMAILS_JSON" | python3 -c "
+import json, sys
+from datetime import datetime, timezone
 
 label_id = '$GMAIL_LABEL_ID'
 max_items = int('$MAX_ITEMS')
@@ -135,7 +179,7 @@ for email in messages:
         continue
 
     # Parse date or use current time
-    published = datetime.utcnow().isoformat()
+    published = datetime.now(timezone.utc).isoformat()
     if date_str:
         # Try common date formats from Gmail headers
         for fmt in ('%a, %d %b %Y %H:%M:%S %z', '%a, %d %b %Y %H:%M:%S %z (%Z)',
@@ -161,6 +205,7 @@ for email in messages:
 
 json.dump(signals, sys.stdout, indent=2)
 " 2>/dev/null || {
-  echo "Error: Failed to parse gws output" >&2
-  exit 1
-}
+    echo "Error: Failed to parse gws output" >&2
+    exit 1
+  }
+fi

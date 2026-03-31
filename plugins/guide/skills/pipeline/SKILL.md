@@ -24,7 +24,7 @@ Before anything else, check if `content/config.yaml` exists.
 
 ## Phase 1: Scout (Fetch Sources)
 
-Run all three fetch scripts to gather external signals. Read the user's config from `content/config.yaml`.
+Run the pipeline fetch script to gather all external signals deterministically.
 
 ### Finding Scripts
 
@@ -37,23 +37,28 @@ The fetch scripts live in this plugin's `scripts/` directory. Determine the scri
 
 1. **Read config** from `content/config.yaml`
 2. **Read voice reference** from the path in `voice.reference` config field
-3. **Run fetch scripts** via Bash tool (adjust paths based on plugin location):
-   - `python3 <scripts>/fetch-rss.py --config content/config.yaml` — RSS/Atom feeds
-   - `bash <scripts>/fetch-gmail.sh --config content/config.yaml` — Gmail newsletters
-   - `bash <scripts>/fetch-hn.sh --limit <config.sources.hackernews.max_items>` — Hacker News
-   - `python3 <scripts>/fetch-events.py --config content/config.yaml` — Local events (iCal feeds from Meetup/Luma). Requires `icalendar` Python package.
-4. **Read captures** from `content/captures/` (or configured `captures_dir`) — last 7 days of AM/PM captures
-5. **Read recent daily briefs** — last 3 briefs from `content/daily/` for deduplication context
-6. **Combine signals** into a single JSON array
-7. **Write combined signals** to `content/pipeline/YYYY-MM-DD/signals.json`
-   - If pipeline directory already exists for today, append run number (e.g., `signals-2.json`)
-8. **Log and report** which sources succeeded and which failed with error details
+3. **Run the pipeline fetcher** — a single deterministic script that calls ALL configured sources (RSS, Gmail, HN, Events/iCal), combines them, normalizes scores, and writes output:
+   ```
+   bash <scripts>/run-pipeline-fetch.sh --config content/config.yaml
+   ```
+   This script:
+   - Calls each enabled source (fetch-rss.py, fetch-gmail.sh, fetch-hn.sh, fetch-events.py)
+   - Combines all signals into a single array
+   - Normalizes scores to 0.0-1.0 with source weight multipliers applied
+   - Writes `content/pipeline/YYYY-MM-DD/signals.json` (with collision avoidance: signals-2.json, etc.)
+   - Writes `content/pipeline/YYYY-MM-DD/fetch-log.json` with per-source status
+   - **Do NOT run individual fetch scripts yourself.** The runner handles all of them.
+4. **Read `signals.json`** from the pipeline directory — this is your input for Phase 2
+5. **Read `fetch-log.json`** — check which sources succeeded/failed. If a source failed, mention it in the brief footer.
+6. **Read captures** from `content/captures/` (or configured `captures_dir`) — last 7 days of AM/PM captures
+7. **Read recent daily briefs** — last 3 briefs from `content/daily/` for deduplication context
 
 ### Edge Cases
 
-- **All fetch scripts fail**: Notify user "no external signals today" and produce brief from captures only
+- **All fetch scripts fail** (runner exits 1): Notify user "no external signals today" and produce brief from captures only
 - **No captures exist**: Proceed with external signals only — skip capture synthesis
-- **Pipeline directory already exists**: If `signals.json` already exists, write `signals-2.json`, `signals-3.json`, etc.
+- **Pipeline directory already exists**: The runner handles collision avoidance automatically (signals-2.json, signals-3.json, etc.)
+- **A single source fails**: The runner still succeeds (exit 0) and logs the failure in fetch-log.json. Mention it in the brief footer.
 
 ---
 
@@ -61,15 +66,18 @@ The fetch scripts live in this plugin's `scripts/` directory. Determine the scri
 
 Score, deduplicate, and group signals into content angles.
 
-### Source Weighting
+### Pre-Computed Relevance Scores
 
-Not all sources are equal. When scoring, apply these multipliers:
+Each signal in `signals.json` already has a `relevance_score` field (0.0-1.0) with source weight multipliers applied upstream by the pipeline fetcher. **Use this score as the primary ranking input.** Do not apply your own source weighting — it's already baked in.
 
-- **Newsletter/RSS signals (Pragmatic Engineer, SWLW, Every, Lenny, Exponential View, Ozan Varol)**: **1.5x weight** — these are curated by humans the user trusts. A mediocre newsletter item beats a mediocre HN item.
-- **Gmail newsletters (TLDR, Morning Brew)**: **1.2x weight** — curated but broader scope.
-- **HN signals**: **1.0x weight (base)** — high volume, high noise. Only HN items scoring 200+ on HN itself should be considered "must-read" tier.
-- **Local events**: **1.3x weight** — time-sensitive and personally actionable. Events are not editorial content — they don't generate reading list items. Instead, they appear in their own section (see Phase 3).
-- **Voice captures**: **2.0x weight** — the user's own thoughts are the highest-value input. Any angle that connects to a capture gets a significant boost.
+The weights (applied by `run-pipeline-fetch.sh`):
+- RSS: 1.5x — curated by humans the user trusts
+- Gmail newsletters: 1.2x — curated but broader scope. Gmail signals now include full email body content and fetched article text (not just subject lines).
+- HN: 1.0x — high volume, high noise. A score of 0.5+ means 250+ HN points.
+- Events: 1.3x — time-sensitive. Events appear in their own brief section, not the reading list.
+- Captures: 2.0x — the user's own thoughts are the highest-value input
+
+**How to use `relevance_score`:** Sort signals by score descending. Top-scoring signals become Must-Read candidates. Then apply your editorial judgment: theme relevance, deduplication, narrative clustering. The score is a starting point, not the final answer.
 
 ### Generic Content Filter
 
@@ -81,7 +89,7 @@ Track suggested content angles across the last 5 briefs (read previous briefs fr
 
 ### Steps
 
-1. **Score each signal 1-5** on relevance to the user's configured themes (both personal and professional), then apply source weighting
+1. **Use pre-computed `relevance_score`** from signals.json as the primary ranking, then apply your own 1-5 editorial judgment on theme relevance (personal and professional from config)
 2. **Deduplicate** against the last 3 daily briefs:
    - Skip signals whose URL has appeared in any of the last 3 briefs
    - Skip signals whose title has 85% or higher Jaccard similarity to a title in the last 3 briefs
