@@ -1,0 +1,14 @@
+{
+  "name": "render-mindmap",
+  "version": "0.1.0",
+  "description": "Terminal-native Unicode mind map renderer",
+  "type": "module",
+  "main": "index.js",
+  "bin": {
+    "render-mindmap": "./index.js"
+  },
+  "dependencies": {
+    "chalk": "^5.4.1",
+    "cli-boxes": "^4.0.1"
+  }
+}

@@ -246,16 +246,16 @@ Use **AskUserQuestion** with:
 - header: "Next step"
 - options:
   1. label: "Start /work (Recommended)", description: "Begin implementing this plan"
-  2. label: "Review and refine", description: "Adjust the plan based on your feedback"
-  3. label: "Get /review", description: "Structured evaluation of the plan document before starting"
+  2. label: "Visualize", description: "Render a mind map of this plan in the terminal"
+  3. label: "Review and refine", description: "Adjust the plan based on your feedback"
   4. label: "Done for now", description: "Return later — to start: /work {plan-path}"
 - multiSelect: false
 
-**If user selects "Review and refine":** Accept feedback, update the plan, then present these options again.
-
 **If user selects "Start /work":** Suggest running `/work {plan-path}`.
 
-**If user selects "Get /review":** Suggest running `/review {plan-path}`.
+**If user selects "Visualize":** Run `/babel-fish:visualize {plan-path}` to render a mind map of the plan structure. After rendering, return to this handoff with the remaining options.
+
+**If user selects "Review and refine":** Accept feedback, update the plan, then present these options again.
 
 **If user selects "Done for now":** Confirm the path.
 

@@ -261,13 +261,16 @@ Use **AskUserQuestion** with:
 - header: "Next step"
 - options:
   1. label: "Proceed to /plan", description: "Turn these decisions into an implementation plan"
-  2. label: "Keep exploring", description: "More questions or refine decisions before moving on"
-  3. label: "Done for now", description: "Return later — to plan: /plan {brainstorm-path}"
+  2. label: "Visualize", description: "Render a mind map of this brainstorm in the terminal"
+  3. label: "Keep exploring", description: "More questions or refine decisions before moving on"
+  4. label: "Done for now", description: "Return later — to plan: /plan {brainstorm-path}"
 - multiSelect: false
 
-**If user selects "Keep exploring":** Return to Phase 3 and continue asking questions one at a time. When satisfied, update the document and return to this handoff.
-
 **If user selects "Proceed to /plan":** Suggest running `/plan {brainstorm-path}`.
+
+**If user selects "Visualize":** Run `/babel-fish:visualize {brainstorm-path}` to render a mind map of the brainstorm structure. After rendering, return to this handoff with the remaining options.
+
+**If user selects "Keep exploring":** Return to Phase 3 and continue asking questions one at a time. When satisfied, update the document and return to this handoff.
 
 **If user selects "Done for now":** Confirm the path.
 

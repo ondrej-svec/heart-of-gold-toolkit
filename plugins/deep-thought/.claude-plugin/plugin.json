@@ -1,7 +1,7 @@
 {
   "name": "deep-thought",
-  "version": "0.1.0",
-  "description": "The Answer Computer — reasoning tools for brainstorming, planning, and deep thinking",
+  "version": "0.2.0",
+  "description": "The Answer Computer — reasoning tools for brainstorming, planning, architecture design, and deep thinking",
   "author": {
     "name": "ondrej-svec",
     "url": "https://github.com/ondrej-svec"
