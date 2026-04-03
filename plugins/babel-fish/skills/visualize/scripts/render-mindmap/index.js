@@ -24,6 +24,7 @@ import { execSync } from 'child_process';
 import { parseMarkdown, parseJSON } from './parse.js';
 import { renderMindmap } from './render.js';
 import { renderCompact } from './compact.js';
+import { renderVertical } from './vertical.js';
 
 function main() {
   const args = process.argv.slice(2);
@@ -82,11 +83,18 @@ function main() {
   if (opts.compact) {
     const output = renderCompact(tree, { color: opts.color, maxDepth: opts.depth });
     console.log(output);
-  } else {
+  } else if (opts.horizontal) {
     const output = renderMindmap(tree, {
       maxWidth: opts.width,
       maxDepth: opts.depth,
       color: opts.color,
+    });
+    console.log(output);
+  } else {
+    // Default: vertical layout (fits narrow panels like Claude Code)
+    const output = renderVertical(tree, {
+      color: opts.color,
+      maxDepth: opts.depth,
     });
     console.log(output);
   }
@@ -109,6 +117,7 @@ function parseArgs(args) {
     color: true,
     json: false,
     compact: false,
+    horizontal: false,
     html: false,
     htmlOutput: null,
   };
@@ -125,6 +134,8 @@ function parseArgs(args) {
       opts.json = true;
     } else if (arg === '--compact') {
       opts.compact = true;
+    } else if (arg === '--horizontal') {
+      opts.horizontal = true;
     } else if (arg === '--html') {
       opts.html = true;
       // Next arg might be output path (if it doesn't start with -)

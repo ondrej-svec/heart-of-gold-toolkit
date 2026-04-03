@@ -90,15 +90,23 @@ When invoked as `/visualize [path]`:
 
 ## Phase 1 — Render
 
+**IMPORTANT: Output the mind map in Claude's response text, NOT as bash tool output.**
+
+Claude Code's bash output panel truncates long output and wraps wide content, breaking alignment. Instead:
+
 1. Locate the renderer script (see above)
 2. Ensure dependencies are installed
-3. Run the renderer via bash:
+3. Run the renderer with `--no-color`, redirect to a temp file:
    ```bash
-   node "$SCRIPT" [options] [file]
+   node "$SCRIPT" --no-color [file] > /tmp/mindmap-result.txt 2>&1
    ```
-4. The output appears inline in the terminal with colors
+4. Read `/tmp/mindmap-result.txt`
+5. Output the contents inside a markdown fenced code block in your response text
+6. Clean up: `rm /tmp/mindmap-result.txt`
 
-**Width:** Default is the terminal width (`$COLUMNS` or 120). For narrow terminals, use `--depth 1` to ensure readability.
+The default mode is **vertical layout** — boxes on main branches, compact leaves, ~40 chars wide. Fits perfectly in Claude Code's response area.
+
+**For shell usage** (not through Claude Code): Run without `--no-color` for ANSI colors, or use `--horizontal` for the wide spatial layout.
 
 ## Phase 2 — Offer Next Steps
 
