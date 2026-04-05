@@ -1,0 +1,43 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "if": "Bash(rm -rf *)",
+            "command": "echo 'Blocked: destructive rm -rf' >&2; exit 2"
+          },
+          {
+            "type": "command",
+            "if": "Bash(git push --force*)",
+            "command": "echo 'Blocked: force push' >&2; exit 2"
+          },
+          {
+            "type": "command",
+            "if": "Bash(git push -f*)",
+            "command": "echo 'Blocked: force push' >&2; exit 2"
+          },
+          {
+            "type": "command",
+            "if": "Bash(sudo *)",
+            "command": "echo 'Blocked: sudo' >&2; exit 2"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "if": "Edit(*.ts)|Write(*.ts)|Edit(*.tsx)|Write(*.tsx)",
+            "command": "npx biome check --no-errors-on-unmatched \"${CLAUDE_TOOL_INPUT_FILE_PATH}\" 2>/dev/null || true"
+          }
+        ]
+      }
+    ]
+  }
+}

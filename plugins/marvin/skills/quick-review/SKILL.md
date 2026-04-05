@@ -1,10 +1,9 @@
 ---
-name: review
+name: quick-review
 description: >
-  Marvin's opinionated quality pass — simplicity, test integrity, and correctness.
-  Not a deep architectural review. Just Marvin, looking at your code with the weight
-  of the universe on his shoulders, telling you what's wrong. Triggers: review, check
-  my code, quality check, marvin review, is this good.
+  Fast opinionated quality pass — simplicity, test integrity, and correctness.
+  Not a deep review. One pass, one voice. For depth, use /review (deep-thought).
+  Triggers: quick review, quality check, sanity check, check my code, is this good.
 allowed-tools:
   - Read
   - Grep

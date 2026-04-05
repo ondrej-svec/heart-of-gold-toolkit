@@ -5,6 +5,12 @@
 
 An automated content pipeline for Claude Code. Fetches signals from RSS feeds, Gmail newsletters, and Hacker News, then produces a narrative daily brief, multiple LinkedIn drafts, and blog outlines — written in your authentic voice, delivered to your phone.
 
+## Security & Trust
+
+Guide is not just prompt text — it ships executable helper scripts and workflows. When configured, it can read newsletter content from Gmail, fetch external URLs from those newsletters, and send notifications through iMessage or Slack.
+
+Use it only in environments and accounts you trust, review the scripts before enabling them, and keep credentials such as Slack webhooks or Gmail auth outside the repository.
+
 ## Quick Start
 
 1. **Install**:

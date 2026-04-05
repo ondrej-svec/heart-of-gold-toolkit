@@ -1,0 +1,12 @@
+{
+  "name": "quellis",
+  "version": "0.1.0",
+  "description": "AI coaching companion — ICF methodology, powerful questions, anti-sycophancy",
+  "author": "Ondrej Svec",
+  "license": "MIT",
+  "skills": [
+    "coach",
+    "reflect",
+    "goal-checkin"
+  ]
+}

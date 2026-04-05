@@ -59,36 +59,40 @@ if ! command -v gws &>/dev/null; then
   exit 1
 fi
 
-# Read label and max_items from config (pass path as argument, SEC-004)
-GMAIL_LABEL=$(python3 -c "
-import yaml, sys
-with open(sys.argv[1]) as f:
-    c = yaml.safe_load(f)
-print(c.get('sources', {}).get('gmail', {}).get('label', 'Content-Feed'))
-" "$CONFIG_PATH" 2>/dev/null || echo "Content-Feed")
+# Read Gmail settings from config in one pass without interpolating shell values
+read_gmail_settings() {
+  python3 - "$1" <<'PY'
+import sys
+import yaml
 
-MAX_ITEMS=$(python3 -c "
-import yaml, sys
-with open(sys.argv[1]) as f:
-    c = yaml.safe_load(f)
-print(c.get('sources', {}).get('gmail', {}).get('max_items', 20))
-" "$CONFIG_PATH" 2>/dev/null || echo "20")
+config_path = sys.argv[1]
+with open(config_path) as f:
+    c = yaml.safe_load(f) or {}
 
-# Read label_id from config (for filtering by label ID rather than display name)
-GMAIL_LABEL_ID=$(python3 -c "
-import yaml, sys
-with open(sys.argv[1]) as f:
-    c = yaml.safe_load(f)
-print(c.get('sources', {}).get('gmail', {}).get('label_id', ''))
-" "$CONFIG_PATH" 2>/dev/null || echo "")
+gmail = c.get('sources', {}).get('gmail', {}) or {}
+label = str(gmail.get('label', 'Content-Feed'))
+max_items = gmail.get('max_items', 20)
+label_id = str(gmail.get('label_id', ''))
+fetch_body = 'true' if gmail.get('fetch_body', False) else 'false'
 
-# Check if deep fetching is enabled (fetch_body: true in config)
-FETCH_BODY=$(python3 -c "
-import yaml, sys
-with open(sys.argv[1]) as f:
-    c = yaml.safe_load(f)
-print('true' if c.get('sources', {}).get('gmail', {}).get('fetch_body', False) else 'false')
-" "$CONFIG_PATH" 2>/dev/null || echo "false")
+print(label)
+print(max_items)
+print(label_id)
+print(fetch_body)
+PY
+}
+
+if mapfile -t GMAIL_SETTINGS < <(read_gmail_settings "$CONFIG_PATH" 2>/dev/null); then
+  GMAIL_LABEL="${GMAIL_SETTINGS[0]:-Content-Feed}"
+  MAX_ITEMS="${GMAIL_SETTINGS[1]:-20}"
+  GMAIL_LABEL_ID="${GMAIL_SETTINGS[2]:-}"
+  FETCH_BODY="${GMAIL_SETTINGS[3]:-false}"
+else
+  GMAIL_LABEL="Content-Feed"
+  MAX_ITEMS="20"
+  GMAIL_LABEL_ID=""
+  FETCH_BODY="false"
+fi
 
 # Fetch emails using gws +triage helper (more reliable than raw API calls —
 # the helper handles auth scopes internally, avoiding insufficientPermissions errors)
@@ -121,50 +125,48 @@ SCRIPTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 if [[ "$FETCH_BODY" == "true" ]]; then
   # Deep mode: filter messages first, then pass to fetch-gmail-deep.py for
   # full body fetching, link extraction, and article following
-  echo "$EMAILS_JSON" | python3 -c "
-import json, sys, yaml
+  echo "$EMAILS_JSON" | python3 - "$GMAIL_LABEL_ID" "$MAX_ITEMS" "$CONFIG_PATH" <<'PY' 2>/dev/null | python3 "$SCRIPTS_DIR/fetch-gmail-deep.py" || {
+import json
+import sys
+import yaml
 
-label_id = '$GMAIL_LABEL_ID'
-max_items = int('$MAX_ITEMS')
-config_path = '$CONFIG_PATH'
+label_id = sys.argv[1]
+max_items = int(sys.argv[2])
+config_path = sys.argv[3]
 
 data = json.load(sys.stdin)
 messages = data.get('messages', []) if isinstance(data, dict) else data
 
-# Filter by label ID if configured
 if label_id:
     messages = [m for m in messages if label_id in m.get('labels', [])]
 
-# Limit to max_items
 messages = messages[:max_items]
 
-# Read gmail config for deep processor
 with open(config_path) as f:
-    config = yaml.safe_load(f)
-gmail_config = config.get('sources', {}).get('gmail', {})
+    config = yaml.safe_load(f) or {}
+gmail_config = config.get('sources', {}).get('gmail', {}) or {}
 
 json.dump({'messages': messages, 'config': gmail_config}, sys.stdout)
-" 2>/dev/null | python3 "$SCRIPTS_DIR/fetch-gmail-deep.py" || {
+PY
     echo "Error: Deep Gmail processing failed" >&2
     exit 1
   }
 else
   # Shallow mode: subject-only signals (original behavior)
-  echo "$EMAILS_JSON" | python3 -c "
-import json, sys
+  echo "$EMAILS_JSON" | python3 - "$GMAIL_LABEL_ID" "$MAX_ITEMS" <<'PY' 2>/dev/null || {
+import json
+import sys
 from datetime import datetime, timezone
 
-label_id = '$GMAIL_LABEL_ID'
-max_items = int('$MAX_ITEMS')
+label_id = sys.argv[1]
+max_items = int(sys.argv[2])
 
 data = json.load(sys.stdin)
 messages = data.get('messages', []) if isinstance(data, dict) else data
 
-# Filter by label ID if configured
 if label_id:
     messages = [m for m in messages if label_id in m.get('labels', [])]
 
-# Limit to max_items
 messages = messages[:max_items]
 
 signals = []
@@ -174,14 +176,11 @@ for email in messages:
     date_str = email.get('date', '') or ''
     msg_id = email.get('id', '') or ''
 
-    # Skip emails with no subject (likely image-only or empty)
     if not subject or len(subject.strip()) < 5:
         continue
 
-    # Parse date or use current time
     published = datetime.now(timezone.utc).isoformat()
     if date_str:
-        # Try common date formats from Gmail headers
         for fmt in ('%a, %d %b %Y %H:%M:%S %z', '%a, %d %b %Y %H:%M:%S %z (%Z)',
                     '%a, %d %b %Y %H:%M:%S %Z'):
             try:
@@ -194,7 +193,7 @@ for email in messages:
         'source': 'gmail',
         'title': subject,
         'url': f'gmail://message/{msg_id}',
-        'content': subject,  # +triage doesn't return body; subject used as signal
+        'content': subject,
         'published_at': published,
         'metadata': {
             'sender': sender,
@@ -204,7 +203,7 @@ for email in messages:
     })
 
 json.dump(signals, sys.stdout, indent=2)
-" 2>/dev/null || {
+PY
     echo "Error: Failed to parse gws output" >&2
     exit 1
   }

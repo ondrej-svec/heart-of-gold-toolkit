@@ -1,3 +1,10 @@
+---
+name: write-post
+description: >
+  Guided 7-phase blog post writing. Use when writing a long-form blog post from scratch
+  or from a pipeline-generated outline. Triggers: write post, blog post, write article.
+---
+
 # /guide:write-post — Blog Post Writing
 
 > Write a long-form blog post from scratch or from a pipeline-generated outline.

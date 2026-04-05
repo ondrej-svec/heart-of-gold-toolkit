@@ -5,6 +5,12 @@
 
 A media generation plugin for Claude Code. Turns text into audio content and generates images from prompts.
 
+## Security & Trust
+
+Babel Fish uses third-party media APIs when you enable its workflows. Review the skill instructions and helper scripts before use, and keep provider credentials in environment variables or local secret files outside the repository.
+
+Generated media may also be sent to external providers, so treat prompts and source material accordingly.
+
 ## Skills
 
 ### `/babel-fish:audio`

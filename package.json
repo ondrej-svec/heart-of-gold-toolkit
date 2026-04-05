@@ -1,0 +1,40 @@
+{
+  "name": "@heart-of-gold/toolkit",
+  "version": "0.1.3",
+  "type": "module",
+  "description": "Cross-platform installer for Heart of Gold skills — works with Codex, OpenCode, Pi, Claude Code, and more",
+  "bin": {
+    "heart-of-gold": "src/index.ts"
+  },
+  "scripts": {
+    "check:publish-safety": "python3 scripts/check-publish-safety.py",
+    "check:security": "python3 scripts/check-security-regressions.py",
+    "prepublishOnly": "npm run check:publish-safety"
+  },
+  "dependencies": {
+    "citty": "^0.1.6",
+    "js-yaml": "^4.1.0"
+  },
+  "license": "MIT",
+  "author": {
+    "name": "Ondrej Svec",
+    "url": "https://github.com/ondrej-svec"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ondrej-svec/heart-of-gold-toolkit.git"
+  },
+  "homepage": "https://github.com/ondrej-svec/heart-of-gold-toolkit",
+  "keywords": [
+    "codex",
+    "claude-code",
+    "opencode",
+    "pi",
+    "ai-agents",
+    "skills",
+    "agents-md",
+    "agentskills",
+    "harness-engineering",
+    "heart-of-gold"
+  ]
+}

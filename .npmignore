@@ -1,0 +1,27 @@
+# Dev/internal files
+.dippy
+.claude/
+.env
+.env.*
+# Keep .claude-plugin/ dirs — the CLI needs marketplace.json and plugin.json manifests
+.github/
+.pytest_cache/
+**/__pycache__/
+**/*.pyc
+*.test.ts
+CLAUDE.md
+pytest.ini
+bun.lock
+bun.lockb
+
+# Plugin test dirs
+**/tests/
+**/evals/
+
+# Python artifacts
+*.egg-info/
+dist/
+build/
+
+# Docs (not needed by consumers)
+docs/
