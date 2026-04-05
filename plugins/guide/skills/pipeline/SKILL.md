@@ -1,3 +1,8 @@
+---
+name: pipeline
+description: Run the daily content pipeline to fetch signals, analyze relevance, draft output, edit for voice fidelity, and deliver the brief
+---
+
 # /guide:pipeline — Daily Content Pipeline
 
 > "Time is an illusion. Lunchtime doubly so." — But your daily brief runs on schedule.

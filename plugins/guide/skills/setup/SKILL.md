@@ -1,3 +1,8 @@
+---
+name: setup
+description: Configure the Guide content pipeline by creating or updating content/config.yaml, sources, themes, and voice profile settings
+---
+
 # /guide:setup — Configure Your Content Pipeline
 
 > "Would it save you a lot of time if I just gave up and went mad now?"

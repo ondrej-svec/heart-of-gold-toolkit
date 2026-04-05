@@ -1,3 +1,8 @@
+---
+name: capture
+description: Capture what's on your mind — morning intentions or evening reflections — and save a structured daily thought record
+---
+
 # /guide:capture — Daily Thought Capture
 
 > Capture what's on your mind — morning intentions or evening reflections.
