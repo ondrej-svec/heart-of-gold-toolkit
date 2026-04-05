@@ -10,9 +10,6 @@ allowed-tools:
   - Grep
   - Glob
   - Agent
-  - AskUserQuestion
-  - TaskCreate
-  - TaskUpdate
   - Write
   - Edit
   - Bash
@@ -50,12 +47,14 @@ Execute a plan and ship it. This is the ONLY skill that writes code. Read tasks,
 
 **If invoked without a path:**
 - Check `docs/plans/` (or project override path) for the most recent active plan (`status: approved` or `status: in_progress` in frontmatter)
-- **If one found:** Use **AskUserQuestion** (header: "Plan", question: "Found plan: [title]. Start working on this?") with options: "Yes, start" and "Different plan".
-- **If multiple found:** Use **AskUserQuestion** (header: "Plan", question: "Multiple active plans found. Which one?") with each plan as an option.
-- **If none found:** Use **AskUserQuestion** (header: "No plan", question: "No active plan found. What would you like to do?") with options: "Create a /deep-thought:plan first" and "Describe what to build".
+- **If one found:** Ask the user whether to start that plan or choose a different one.
+- **If multiple found:** Ask the user which plan to use.
+- **If none found:** Ask whether to create a `/deep-thought:plan` first or describe what to build.
+
+Prefer the harness's structured choice UI when available. Otherwise present concise numbered options in plain text.
 
 **If anything in the plan is unclear:**
-Use **AskUserQuestion** for clarifications now — better to ask than build wrong.
+Ask clarifying questions now — better to ask than build wrong.
 
 ### Autonomy Activation
 
@@ -91,7 +90,11 @@ Follow the project's branching conventions (check CLAUDE.md). Pull latest change
 **If on a feature branch:** Continue on it.
 **If on main/default branch:** Check CLAUDE.md for branching rules.
   - **If project uses trunk-based development:** Continue on main.
-  - **If project uses feature branches:** Use **AskUserQuestion** (header: "Branch", question: "Create a feature branch, or work on main?") with options: "New branch (Recommended)" (description: "Isolated work, easy to review") and "Stay on main" (description: "Direct commit, no PR needed").
+  - **If project uses feature branches:** Ask whether to create a feature branch or stay on main.
+    - Prefer the harness's structured choice UI when available
+    - Otherwise present two plain-text options:
+      1. **New branch (Recommended)** — Isolated work, easy to review
+      2. **Stay on main** — Direct commit, no PR needed
 
 Update plan status to `in_progress` if it was `approved`.
 
@@ -103,21 +106,21 @@ Update plan status to `in_progress` if it was `approved`.
 
 **Entry:** Environment set up.
 
-**Create trackable tasks from the plan** using **TaskCreate** for each major task:
-- subject: task description from the plan
-- description: context, acceptance criteria, dependencies
-- activeForm: present participle (e.g., "Adding auth middleware")
+Create visible task tracking from the plan for each major task.
+
+- If the harness provides task or progress UI, mirror the major plan tasks there.
+- Otherwise report task transitions clearly in text (`in progress`, `completed`, `blocked`) and keep the plan checkboxes as the source of truth.
 
 For each task in dependency order:
 
 ```
 while (unchecked tasks remain):
-  1. TaskUpdate status → "in_progress" (shows spinner to user)
+  1. Mark the current task as in progress
   2. Read the task and any referenced files
   3. Look for similar patterns in the codebase (grep, glob)
   4. Implement following existing conventions
   5. Run relevant tests
-  6. If tests pass → TaskUpdate status → "completed"
+  6. If tests pass → mark the task completed
   7. Check off the task in the plan ([ ] → [x])
   8. Evaluate: commit now or continue?
 ```
@@ -208,15 +211,14 @@ Summary:
 Acceptance criteria: all met / [list any that need verification]
 ```
 
-Use **AskUserQuestion** with:
-- question: "Work complete. What would you like to do?"
-- header: "Next step"
-- options:
-  1. label: "Review code", description: "Run /marvin:review on the changes before merging"
-  2. label: "Document insights", description: "Run /marvin:compound if this work has patterns worth preserving"
-  3. label: "Release notes", description: "Generate three-audience notes (customer, engineering, business)"
-  4. label: "Done", description: "All finished"
-- multiSelect: false
+Ask the user what to do next.
+
+- Prefer the harness's structured choice UI if available
+- Otherwise present this short plain-text choice list:
+  1. **Review code** — Run `/marvin:review` on the changes before merging
+  2. **Document insights** — Run `/marvin:compound` if this work has patterns worth preserving
+  3. **Release notes** — Generate three-audience notes (customer, engineering, business)
+  4. **Done** — All finished
 
 **If user selects "Generate release notes":**
 

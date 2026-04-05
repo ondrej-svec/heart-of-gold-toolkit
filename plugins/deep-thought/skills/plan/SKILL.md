@@ -10,7 +10,6 @@ allowed-tools:
   - Grep
   - Glob
   - Agent
-  - AskUserQuestion
   - Write
   - Edit
 ---
@@ -50,7 +49,9 @@ Strategic planning that fits the problem. Answers **HOW** to build what was deci
 **If the user provided a topic but no brainstorm:**
 - Check `docs/brainstorms/` (or project override path) for a recent match (last 14 days, semantic match on filename/frontmatter)
 - **If one found:** Read it and announce. Skip Phase 1.
-- **If multiple found:** Use **AskUserQuestion** (header: "Brainstorm", question: "Multiple brainstorms match. Which one?") with each brainstorm as an option (label: filename, description: title from frontmatter). Add a "None" option: "Proceed without brainstorm context".
+- **If multiple found:** Ask the user which brainstorm to use.
+  - Prefer the harness's structured choice UI if available
+  - Otherwise present a short plain-text option list with each matching brainstorm plus `None — proceed without brainstorm context`
 - **If none found:** Continue to Phase 1.
 
 **Exit:** Context understood — brainstorm consumed (if exists), scope clear enough to research.
@@ -61,7 +62,7 @@ Strategic planning that fits the problem. Answers **HOW** to build what was deci
 
 **Entry:** No brainstorm exists. User provided a topic or description.
 
-Use **AskUserQuestion** to ask clarifying questions — one at a time, not a questionnaire:
+Ask clarifying questions one at a time, not a questionnaire. Prefer the harness's structured question UI when available; otherwise ask plainly in text and wait for the answer before continuing:
 - What problem does this solve?
 - What's the desired outcome?
 - Any constraints? (time, tech, dependencies)
@@ -241,15 +242,14 @@ See `../knowledge/discovery-patterns.md` → "Recursive Why" for the loop techni
 
 **Entry:** Plan written and saved.
 
-Use **AskUserQuestion** with:
-- question: "Plan ready at {path}. What would you like to do next?"
-- header: "Next step"
-- options:
-  1. label: "Start /work (Recommended)", description: "Begin implementing this plan"
-  2. label: "Visualize", description: "Render a mind map of this plan in the terminal"
-  3. label: "Review and refine", description: "Adjust the plan based on your feedback"
-  4. label: "Done for now", description: "Return later — to start: /work {plan-path}"
-- multiSelect: false
+Ask the user what to do next.
+
+- Prefer the harness's structured choice UI if available
+- Otherwise present this short plain-text choice list:
+  1. **Start /work (Recommended)** — Begin implementing this plan
+  2. **Visualize** — Render a mind map of this plan in the terminal
+  3. **Review and refine** — Adjust the plan based on feedback
+  4. **Done for now** — Return later; to start: `/work {plan-path}`
 
 **If user selects "Start /work":** Suggest running `/work {plan-path}`.
 

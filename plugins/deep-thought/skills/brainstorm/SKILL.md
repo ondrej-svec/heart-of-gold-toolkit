@@ -9,7 +9,6 @@ allowed-tools:
   - Grep
   - Glob
   - Agent
-  - AskUserQuestion
   - Write
   - Edit
 ---
@@ -43,13 +42,12 @@ Collaborative discovery before planning. Answers **WHAT** to build and **WHY** �
 Not everything needs a brainstorm.
 
 **If requirements are already clear and specific:**
-Use **AskUserQuestion** with:
-- question: "Your requirements seem clear enough for /plan. Brainstorm first, or go straight to planning?"
-- header: "Approach"
-- options:
-  1. label: "Go to /plan (Recommended)", description: "Requirements are clear — skip brainstorming and start planning"
-  2. label: "Brainstorm first", description: "Explore the problem space before committing to an approach"
-- multiSelect: false
+Ask the user whether to skip directly to planning or brainstorm first.
+
+- Prefer the harness's structured question UI if available
+- Otherwise present a short plain-text choice list with these options:
+  1. **Go to /plan (Recommended)** — Requirements are clear; skip brainstorming and start planning
+  2. **Brainstorm first** — Explore the problem space before committing to an approach
 
 - If user selects **Go to /plan** → exit this skill, suggest `/plan`
 - If user selects **Brainstorm first** → continue to Phase 1
@@ -70,7 +68,7 @@ Use **AskUserQuestion** with:
 
 This is the critical step. Before exploring solutions, question the problem.
 
-Use **AskUserQuestion** to ask ONE question at a time. Do not dump a questionnaire. Start with:
+Ask **one question at a time**. Do not dump a questionnaire. Prefer the harness's structured question UI when available; otherwise ask plainly in text and wait for the answer before continuing. Start with:
 
 1. "What problem are we actually solving?" — Strip away assumptions. Get to the root need.
 2. "Who has this problem and when?" — Context changes solutions.
@@ -127,7 +125,7 @@ Through collaborative dialogue, explore 2-3 approaches. For each:
 - **What it costs** (complexity, maintenance, time, risk)
 - **Who's done this before** (prior art in the codebase or industry)
 
-Use **AskUserQuestion** to ask one question at a time. Start broad (purpose, users), narrow to specifics (constraints, edge cases).
+Ask one question at a time. Start broad (purpose, users), narrow to specifics (constraints, edge cases). Prefer explicit option lists when there are 2-4 natural choices.
 
 **If any open questions emerge:** You MUST ask the user about each one. Do not assume answers or defer them silently.
 
@@ -165,9 +163,11 @@ Once an approach is selected, run the Recursive Why loop before locking it in. T
    ✗ Weak: "We always use WebSockets for this" (habit, not requirement)
    ```
 
-5. **Use AskUserQuestion** if any unverified or weak assumptions are found:
-   - question: "Found [N] unverified assumptions. How do you want to handle them?"
-   - options: "Proceed anyway (accept the risk)", "Investigate before committing", "Reconsider approach"
+5. **Ask the user explicitly** if any unverified or weak assumptions are found.
+   Prefer the harness's structured choice UI when available; otherwise present this short option list in plain text:
+   - "Proceed anyway (accept the risk)"
+   - "Investigate before committing"
+   - "Reconsider approach"
 
 **Depth:** 2-3 levels of "why" per assumption. Stop at bedrock, not at a fixed number.
 
@@ -256,15 +256,14 @@ If a novel pattern was discovered during brainstorming (approach nobody's tried,
 
 **Entry:** Document written (Phase 5 complete).
 
-Use **AskUserQuestion** with:
-- question: "Brainstorm captured at {path}. What would you like to do next?"
-- header: "Next step"
-- options:
-  1. label: "Proceed to /plan", description: "Turn these decisions into an implementation plan"
-  2. label: "Visualize", description: "Render a mind map of this brainstorm in the terminal"
-  3. label: "Keep exploring", description: "More questions or refine decisions before moving on"
-  4. label: "Done for now", description: "Return later — to plan: /plan {brainstorm-path}"
-- multiSelect: false
+Ask the user what to do next.
+
+- Prefer the harness's structured choice UI if available
+- Otherwise present this short plain-text choice list:
+  1. **Proceed to /plan** — Turn these decisions into an implementation plan
+  2. **Visualize** — Render a mind map of this brainstorm in the terminal
+  3. **Keep exploring** — More questions or refine decisions before moving on
+  4. **Done for now** — Return later; to plan: `/plan {brainstorm-path}`
 
 **If user selects "Proceed to /plan":** Suggest running `/plan {brainstorm-path}`.
 

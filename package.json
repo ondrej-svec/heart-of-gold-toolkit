@@ -9,7 +9,8 @@
   "scripts": {
     "check:publish-safety": "python3 scripts/check-publish-safety.py",
     "check:security": "python3 scripts/check-security-regressions.py",
-    "prepublishOnly": "npm run check:publish-safety"
+    "check:compat": "python3 scripts/check-harness-compatibility.py",
+    "prepublishOnly": "npm run check:publish-safety && npm run check:compat"
   },
   "dependencies": {
     "citty": "^0.1.6",
@@ -30,11 +31,24 @@
     "claude-code",
     "opencode",
     "pi",
+    "pi-package",
     "ai-agents",
     "skills",
     "agents-md",
     "agentskills",
     "harness-engineering",
     "heart-of-gold"
-  ]
+  ],
+  "peerDependencies": {
+    "@mariozechner/pi-ai": "*",
+    "@mariozechner/pi-coding-agent": "*"
+  },
+  "pi": {
+    "extensions": [
+      "./extensions/pi"
+    ],
+    "skills": [
+      "./plugins/*/skills"
+    ]
+  }
 }

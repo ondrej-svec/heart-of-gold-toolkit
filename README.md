@@ -24,10 +24,19 @@ bunx @heart-of-gold/toolkit install --to opencode
 
 ### Pi Coding Agent
 ```bash
+# Install shared skills into Pi's native skill directory
 bunx @heart-of-gold/toolkit install --to pi
+
+# Or install the package directly in Pi to get skills + pi-native extensions
+pi install npm:@heart-of-gold/toolkit
 ```
 
 Pi also discovers skills from the shared `~/.agents/skills/` location, so installs done with the OpenCode target are usable from Pi too.
+
+When installed as a Pi package, Heart of Gold also exposes pi-native enhancement commands for flagship workflows:
+- `/hog-brainstorm` — guided brainstorm intake for the shared `brainstorm` skill
+- `/hog-plan` — planning mode entrypoint with pi-friendly tool defaults
+- `/hog-work` — execution mode entrypoint with stronger work guardrails
 
 ### List available skills
 ```bash
@@ -136,6 +145,7 @@ The toolkit ships as an npm package with a CLI for installing skills into any su
 
 - `--to pi` installs to Pi's native `~/.pi/agent/skills/`
 - `--to opencode` installs to shared `~/.agents/skills/`, which Pi also discovers
+- `pi install npm:@heart-of-gold/toolkit` installs the package directly in Pi, including the shared skills plus pi-native extensions
 
 ```bash
 # Install all plugins into Codex
@@ -164,10 +174,12 @@ Before publishing to npm, run the safety checks:
 ```bash
 npm run check:publish-safety
 npm run check:security
+npm run check:compat
 ```
 
 - `check:publish-safety` verifies the `npm pack` file list and fails if the publish would include blocked files such as `.env` or obvious secrets such as private keys, Slack webhooks, GitHub tokens, npm tokens, or AWS access keys.
 - `check:security` runs lightweight regression checks for sensitive Guide scripts and is also enforced in GitHub Actions.
+- `check:compat` ensures the flagship shared skills (`brainstorm`, `plan`, `work`) keep their harness-neutral interaction contract rather than drifting toward pi-only or Claude-only assumptions.
 
 ## Requirements
 

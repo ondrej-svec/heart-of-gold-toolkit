@@ -27,3 +27,6 @@ jobs:
 
       - name: Run security regression checks
         run: npm run check:security
+
+      - name: Run harness compatibility checks
+        run: npm run check:compat
