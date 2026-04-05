@@ -40,6 +40,8 @@ When installed as a Pi package, Heart of Gold also exposes pi-native enhancement
 - `/hog-plan` — planning mode entrypoint with pi-friendly tool defaults
 - `/hog-work` — execution mode entrypoint with stronger work guardrails
 
+For Pi, these flagship commands intentionally replace the direct shared-skill entries for `brainstorm`, `plan`, and `work` so the command palette stays clean and the Pi-native interactive flow is the default.
+
 ### List available skills
 ```bash
 bunx @heart-of-gold/toolkit list

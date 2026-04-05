@@ -48,7 +48,10 @@
       "./extensions/pi"
     ],
     "skills": [
-      "./plugins/*/skills"
+      "./plugins/*/skills",
+      "!./plugins/deep-thought/skills/brainstorm",
+      "!./plugins/deep-thought/skills/plan",
+      "!./plugins/marvin/skills/work"
     ]
   }
 }
