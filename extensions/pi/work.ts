@@ -7,11 +7,11 @@ const BLOCKED_COMMANDS = [/\bgit\s+add\s+\.\b/i, /\brm\s+(-rf?|--recursive)/i];
 export default function workExtension(pi: ExtensionAPI) {
 	let workMode = false;
 
-	pi.registerCommand("hog-work", {
+	pi.registerCommand("marvin-work", {
 		description: "Interactive pi-first entrypoint for the shared work skill",
 		handler: async (args, ctx) => {
 			if (!ctx.hasUI) {
-				ctx.ui.notify("/hog-work requires interactive mode", "warning");
+				ctx.ui.notify("/marvin-work requires interactive mode", "warning");
 				return;
 			}
 
@@ -33,7 +33,7 @@ export default function workExtension(pi: ExtensionAPI) {
 			workMode = true;
 			const theme = ctx.ui.theme;
 			ctx.ui.setStatus(
-				"hog-work",
+				"marvin-work",
 				theme.fg("accent", "◉") + theme.fg("dim", ` Work mode active — ${runMode}`),
 			);
 
@@ -56,11 +56,11 @@ export default function workExtension(pi: ExtensionAPI) {
 		},
 	});
 
-	pi.registerCommand("hog-work-off", {
+	pi.registerCommand("marvin-work-off", {
 		description: "Disable Heart of Gold work-mode guardrails",
 		handler: async (_args, ctx) => {
 			workMode = false;
-			ctx.ui.setStatus("hog-work", "");
+			ctx.ui.setStatus("marvin-work", "");
 			ctx.ui.notify("Work mode disabled", "info");
 		},
 	});

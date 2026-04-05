@@ -13,11 +13,11 @@ export default function planExtension(pi: ExtensionAPI) {
 		}
 	};
 
-	pi.registerCommand("hog-plan", {
+	pi.registerCommand("deep-thought-plan", {
 		description: "Interactive pi-first entrypoint for planning mode and the shared plan skill",
 		handler: async (args, ctx) => {
 			if (!ctx.hasUI) {
-				ctx.ui.notify("/hog-plan requires interactive mode", "warning");
+				ctx.ui.notify("/deep-thought-plan requires interactive mode", "warning");
 				return;
 			}
 
@@ -54,7 +54,7 @@ export default function planExtension(pi: ExtensionAPI) {
 
 			const theme = ctx.ui.theme;
 			ctx.ui.setStatus(
-				"hog-plan",
+				"deep-thought-plan",
 				theme.fg("accent", "◉") + theme.fg("dim", " Plan mode active"),
 			);
 
@@ -67,18 +67,18 @@ export default function planExtension(pi: ExtensionAPI) {
 		},
 	});
 
-	pi.registerCommand("hog-execute", {
+	pi.registerCommand("marvin-execute", {
 		description: "Exit planning mode, restore tools, and optionally start work",
 		handler: async (args, ctx) => {
 			if (previousTools) {
 				pi.setActiveTools(previousTools);
 				previousTools = null;
 			}
-			ctx.ui.setStatus("hog-plan", "");
+			ctx.ui.setStatus("deep-thought-plan", "");
 
 			const target = args.trim();
 			if (!target) {
-				ctx.ui.notify("Planning mode cleared. Run /hog-work <plan-path> when ready.", "info");
+				ctx.ui.notify("Planning mode cleared. Run /marvin-work <plan-path> when ready.", "info");
 				return;
 			}
 

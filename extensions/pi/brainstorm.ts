@@ -10,11 +10,11 @@ function sendPrompt(pi: ExtensionAPI, prompt: string, ctx: Parameters<NonNullabl
 }
 
 export default function brainstormExtension(pi: ExtensionAPI) {
-	pi.registerCommand("hog-brainstorm", {
+	pi.registerCommand("deep-thought-brainstorm", {
 		description: "Interactive pi-first intake for the shared brainstorm skill",
 		handler: async (args, ctx) => {
 			if (!ctx.hasUI) {
-				ctx.ui.notify("/hog-brainstorm requires interactive mode", "warning");
+				ctx.ui.notify("/deep-thought-brainstorm requires interactive mode", "warning");
 				return;
 			}
 
@@ -58,7 +58,7 @@ export default function brainstormExtension(pi: ExtensionAPI) {
 
 			const theme = ctx.ui.theme;
 			ctx.ui.setStatus(
-				"hog-brainstorm",
+				"deep-thought-brainstorm",
 				theme.fg("accent", "◉") + theme.fg("dim", " Brainstorm flow active"),
 			);
 			sendPrompt(pi, prompt, ctx);

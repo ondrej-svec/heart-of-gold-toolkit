@@ -48,10 +48,31 @@
       "./extensions/pi"
     ],
     "skills": [
-      "./plugins/*/skills",
-      "!./plugins/deep-thought/skills/brainstorm",
-      "!./plugins/deep-thought/skills/plan",
-      "!./plugins/marvin/skills/work"
+      "./plugins/babel-fish/skills/audio",
+      "./plugins/babel-fish/skills/image",
+      "./plugins/babel-fish/skills/visualize",
+      "./plugins/deep-thought/skills/architect",
+      "./plugins/deep-thought/skills/architecture-review",
+      "./plugins/deep-thought/skills/craft-skill",
+      "./plugins/deep-thought/skills/cto",
+      "./plugins/deep-thought/skills/investigate",
+      "./plugins/deep-thought/skills/review",
+      "./plugins/deep-thought/skills/think",
+      "./plugins/guide/skills/capture",
+      "./plugins/guide/skills/codex",
+      "./plugins/guide/skills/gemini",
+      "./plugins/guide/skills/pipeline",
+      "./plugins/guide/skills/setup",
+      "./plugins/guide/skills/write-post",
+      "./plugins/marvin/skills/compound",
+      "./plugins/marvin/skills/quick-review",
+      "./plugins/marvin/skills/redteam",
+      "./plugins/marvin/skills/scaffold",
+      "./plugins/marvin/skills/test-writer",
+      "./plugins/quellis/skills/coach",
+      "./plugins/quellis/skills/goal-checkin",
+      "./plugins/quellis/skills/goal-setting",
+      "./plugins/quellis/skills/reflect"
     ]
   }
 }
