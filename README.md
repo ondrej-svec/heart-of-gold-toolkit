@@ -36,12 +36,13 @@ pi install npm:@heart-of-gold/toolkit
 Pi also discovers skills from the shared `~/.agents/skills/` location, so installs done with the OpenCode target are usable from Pi too.
 
 When installed as a Pi package, Heart of Gold exposes Pi-native extension commands for the flagship workflows:
-- `/deep-thought-brainstorm` — guided brainstorm intake for the shared `brainstorm` skill
-- `/deep-thought-plan` — planning mode entrypoint with pi-friendly tool defaults
-- `/marvin-work` — execution mode entrypoint with stronger work guardrails
-- `/marvin-execute` — leave planning mode and begin execution
+- `/deep-thought-brainstorm` — start a brainstorm (collaborative discovery)
+- `/deep-thought-plan` — start planning (research and produce a plan document)
+- `/marvin-work` — start executing a plan (with always-on safety guardrails)
 
-For Pi, these extension commands replace the direct shared-skill entries for `brainstorm`, `plan`, and `work` so the command palette stays clean and there is only one obvious command per flagship workflow.
+The skills themselves enforce their own boundaries (read-only for brainstorm/plan, safe commands for work) via `allowed-tools` and prompt constraints — no manual mode switching needed.
+
+The work extension also provides always-on guardrails that protect `.env`, `.git/`, and `node_modules/` from edits, block `git add .` and destructive `rm`, and require confirmation for `git push` / `npm publish`.
 
 ### List available skills
 ```bash

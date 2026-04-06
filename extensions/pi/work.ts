@@ -5,76 +5,15 @@ const CONFIRM_COMMANDS = [/\bgit\s+push\b/i, /\bnpm\s+publish\b/i, /\bbun\s+publ
 const BLOCKED_COMMANDS = [/\bgit\s+add\s+\.\b/i, /\brm\s+(-rf?|--recursive)/i];
 
 export default function workExtension(pi: ExtensionAPI) {
-	let workMode = false;
-
-	pi.registerCommand("marvin-work", {
-		description: "Interactive pi-first entrypoint for the shared work skill",
-		handler: async (args, ctx) => {
-			if (!ctx.hasUI) {
-				ctx.ui.notify("/marvin-work requires interactive mode", "warning");
-				return;
-			}
-
-			const planPath = args.trim() || (await ctx.ui.editor("Plan path", ""))?.trim();
-			if (!planPath) {
-				ctx.ui.notify("Cancelled", "info");
-				return;
-			}
-
-			const runMode = await ctx.ui.select("How strict should work mode be?", [
-				"Normal guardrails (recommended)",
-				"Strict guardrails for shipping work",
-			]);
-			if (!runMode) {
-				ctx.ui.notify("Cancelled", "info");
-				return;
-			}
-
-			workMode = true;
-			const theme = ctx.ui.theme;
-			ctx.ui.setStatus(
-				"marvin-work",
-				theme.fg("accent", "◉") + theme.fg("dim", ` Work mode active — ${runMode}`),
-			);
-
-			const prompt = [
-				`/skill:work ${planPath}`,
-				"",
-				"Use pi guardrails while executing:",
-				"- keep progress visible as tasks move from in-progress to complete",
-				"- do not use `git add .`",
-				"- confirm push/publish actions deliberately",
-				"- protect .env, .git/, and node_modules/ from accidental edits",
-			].join("\n");
-
-			if (ctx.isIdle()) {
-				pi.sendUserMessage(prompt);
-			} else {
-				pi.sendUserMessage(prompt, { deliverAs: "followUp" });
-				ctx.ui.notify("Work prompt queued as follow-up", "info");
-			}
-		},
-	});
-
-	pi.registerCommand("marvin-work-off", {
-		description: "Disable Heart of Gold work-mode guardrails",
-		handler: async (_args, ctx) => {
-			workMode = false;
-			ctx.ui.setStatus("marvin-work", "");
-			ctx.ui.notify("Work mode disabled", "info");
-		},
-	});
-
+	// Always-on guardrails — no mode toggle needed
 	pi.on("tool_call", async (event, ctx) => {
-		if (!workMode) return undefined;
-
 		if (event.toolName === "write" || event.toolName === "edit") {
 			const path = String(event.input.path ?? "");
 			if (PROTECTED_PATHS.some((segment) => path.includes(segment))) {
 				if (ctx.hasUI) {
-					ctx.ui.notify(`Blocked protected path in work mode: ${path}`, "warning");
+					ctx.ui.notify(`⛔ Protected path: ${path}`, "warning");
 				}
-				return { block: true, reason: `Protected path in work mode: ${path}` };
+				return { block: true, reason: `Protected path: ${path}` };
 			}
 		}
 
@@ -82,7 +21,7 @@ export default function workExtension(pi: ExtensionAPI) {
 		const command = String(event.input.command ?? "");
 
 		if (BLOCKED_COMMANDS.some((pattern) => pattern.test(command))) {
-			return { block: true, reason: `Blocked unsafe command in work mode: ${command}` };
+			return { block: true, reason: `Blocked unsafe command: ${command}` };
 		}
 
 		if (!CONFIRM_COMMANDS.some((pattern) => pattern.test(command))) {
@@ -93,11 +32,31 @@ export default function workExtension(pi: ExtensionAPI) {
 			return { block: true, reason: `Interactive confirmation required for: ${command}` };
 		}
 
-		const choice = await ctx.ui.select(`Confirm work-mode command:\n\n${command}`, ["Allow", "Block"]);
+		const choice = await ctx.ui.select(`Confirm: ${command}`, ["Allow", "Block"]);
 		if (choice !== "Allow") {
 			return { block: true, reason: `Blocked by user: ${command}` };
 		}
 
 		return undefined;
+	});
+
+	pi.registerCommand("marvin-work", {
+		description: "Start executing a plan — implement with guardrails",
+		handler: async (args, ctx) => {
+			const planPath = args.trim() || (ctx.hasUI ? (await ctx.ui.editor("Plan path", ""))?.trim() : undefined);
+			if (!planPath) {
+				ctx.ui.notify("Usage: /marvin-work <plan path>", "info");
+				return;
+			}
+
+			const prompt = `/skill:work ${planPath}`;
+
+			if (ctx.isIdle()) {
+				pi.sendUserMessage(prompt);
+			} else {
+				pi.sendUserMessage(prompt, { deliverAs: "followUp" });
+				ctx.ui.notify("Work queued as follow-up", "info");
+			}
+		},
 	});
 }
