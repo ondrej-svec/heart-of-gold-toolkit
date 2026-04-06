@@ -5,6 +5,9 @@ export function transformContentForCodex(content: string): string {
   return content
     .replace(/~\/\.claude\//g, "~/.codex/")
     .replace(/\.claude\//g, ".codex/")
+    .replace(/\/brainstorm\b/g, "$brainstorm")
+    .replace(/\/plan\b/g, "$plan")
+    .replace(/\/work\b/g, "$work")
     .replace(
       /Prefer the harness's structured question UI when available; otherwise ask plainly in text and wait for the answer before continuing\./g,
       "In Codex, prefer the structured user-input UI when available; otherwise ask plainly in text and wait for the answer before continuing."

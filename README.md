@@ -17,7 +17,7 @@
 bunx @heart-of-gold/toolkit install --to codex
 ```
 
-The Codex target also applies Codex-specific wording transforms for flagship shared skills so interactive flows like `brainstorm` and `plan` more strongly encourage Codex's structured user-input UI instead of falling back to plain text when richer selection UX is available.
+The Codex target also applies Codex-specific wording transforms for flagship shared skills so interactive flows like `brainstorm` and `plan` more strongly encourage Codex's structured user-input UI instead of falling back to plain text when richer selection UX is available. It also rewrites flagship handoff command references like `/plan` and `/work` to Codex-style `$plan` and `$work` in installed skill text.
 
 ### OpenCode
 ```bash
