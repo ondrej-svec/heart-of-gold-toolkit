@@ -34,8 +34,11 @@ Includes ready-to-run Python scripts. Claude writes them to a temp file and exec
 | Hardcode API key in script | Leaks credentials to git history | Security incident |
 | Skip voice selection | Default voice may not match content tone | Wasted credits on re-gen |
 | Generate full podcast without preview | Long audio = expensive; mistakes compound | Non-refundable credits |
-| Use `eleven_v3` for everything | 5,000 char limit — wrong for long-form | Truncated audio |
 | Import pydub for concatenation | Broken on Python 3.13+ (audioop removed) | Runtime crash |
+| Use VoiceSettings with cloned voices | Custom settings destabilize cloned voices | Garbled/robotic audio |
+| Use `...` for pauses | Causes hesitation/nervousness artifacts | Unnatural stuttering |
+| Use large chunks for long content | Quality degrades in second half | Robotic pacing |
+| Skip `language_code` with accented speakers | Model guesses language from accent | Chinese/French mid-narration |
 
 ## Phase 0: Environment Setup
 
@@ -63,11 +66,9 @@ import os
 
 def get_api_key() -> str:
     """Resolve ElevenLabs API key from CLI store, env var, or fail."""
-    # 1. CLI stored key
     key_file = os.path.expanduser("~/.elevenlabs/api_key")
     if os.path.exists(key_file):
         return open(key_file).read().strip()
-    # 2. Environment variable
     key = os.environ.get("ELEVENLABS_API_KEY", "")
     if key:
         return key
@@ -80,17 +81,15 @@ def get_api_key() -> str:
 ### Step 2: Install SDK (if needed)
 
 ```bash
-# Check if installed
 python3 -c "import elevenlabs" 2>/dev/null || uv pip install --system --break-system-packages elevenlabs
 ```
 
 **IMPORTANT:** Do NOT install pydub. It's broken on Python 3.13+ (audioop removed). The scripts
-below use raw MP3 byte concatenation instead — MP3 is a frame-based format and files can be
+below use raw MP3 byte concatenation — MP3 is a frame-based format and files can be
 concatenated directly.
 
 **IMPORTANT:** On Python 3.14+, `client.text_to_speech.convert()` returns a **generator**, not
-bytes. All scripts below use a `to_bytes()` helper to normalize this. Never call `f.write(audio)`
-directly — always wrap with `to_bytes(audio)` first.
+bytes. All scripts below use a `to_bytes()` helper to normalize this.
 
 ### Step 3: Verify Connection
 
@@ -111,16 +110,13 @@ for v in voices.voices[:10]:
 ```
 
 **CRITICAL:** Voice IDs are **account-specific**. Never hardcode voice IDs from examples or
-documentation — always run Step 3 first to discover the actual IDs available on the user's
-account. The same voice name (e.g., "Alice") may have a different ID across accounts.
+documentation — always run Step 3 first to discover the actual IDs available.
 
 **Exit:** Auth verified, SDK installed, voices listed.
 
 ## Phase 1: Quick Text-to-Speech
 
-**Entry:** User wants a single audio file from text (< 10,000 chars).
-
-Write this script to a temp file and execute:
+**Entry:** User wants a single audio file from text (< 5,000 chars).
 
 ```python
 #!/usr/bin/env python3
@@ -128,16 +124,12 @@ Write this script to a temp file and execute:
 import os
 from elevenlabs.client import ElevenLabs
 
-# --- CONFIG (Claude fills these — run Phase 0 Step 3 to list voice IDs) ---
 TEXT = """Your text here."""
-VOICE_ID = "FILL_FROM_VOICE_LIST"            # Run voice list first!
-MODEL_ID = "eleven_multilingual_v2"           # See model table below
-OUTPUT_FORMAT = "mp3_44100_128"
+VOICE_ID = "FILL_FROM_VOICE_LIST"
+MODEL_ID = "eleven_multilingual_v2"
 OUTPUT_PATH = "output.mp3"
-# --- END CONFIG ---
 
 def to_bytes(audio) -> bytes:
-    """Normalize convert() output — returns bytes on <3.14, generator on >=3.14."""
     return audio if isinstance(audio, bytes) else b"".join(audio)
 
 key_file = os.path.expanduser("~/.elevenlabs/api_key")
@@ -149,338 +141,365 @@ audio = to_bytes(client.text_to_speech.convert(
     text=TEXT,
     voice_id=VOICE_ID,
     model_id=MODEL_ID,
-    output_format=OUTPUT_FORMAT,
+    output_format="mp3_44100_128",
+    language_code="en",  # ALWAYS set for cloned/accented voices
 ))
 
 with open(OUTPUT_PATH, "wb") as f:
     f.write(audio)
-
-size_kb = os.path.getsize(OUTPUT_PATH) / 1024
-print(f"Saved to {OUTPUT_PATH} ({size_kb:.0f} KB)")
+print(f"Saved to {OUTPUT_PATH} ({os.path.getsize(OUTPUT_PATH) / 1024:.0f} KB)")
 ```
 
-**Exit:** Audio file saved, size reported.
+**Exit:** Audio file saved.
 
-## Phase 2: Podcast / Long-Form Audio
+## Phase 2: Long-Form Narration (Blog Posts, Articles)
 
-**Entry:** User wants podcast-style audio (single or multi-voice).
+**Entry:** User wants narration of long-form content (> 5,000 chars).
 
-This is the main generator. Write it to a temp file, fill in the CONFIG section, execute.
+**THIS IS THE CRITICAL PHASE.** Long-form audio requires special handling to maintain
+quality throughout. The approach below was battle-tested and is the only one that
+produces consistent quality across 10+ minute narrations.
 
-**IMPORTANT:** Uses raw MP3 byte concatenation (no pydub). For pauses between segments,
-generates a short silent audio clip via the API once and reuses it.
+### Step 1: Prepare Speech Text
 
-### Single-Voice Podcast
+Create a separate `speech-text.md` adapted for listening:
+
+| Written form | Speech form | Why |
+|-------------|-------------|-----|
+| `90%` | `ninety percent` | TTS mispronounces digits |
+| `1.7 times` | `one point seven times` | Same |
+| `2 AM` | `two in the morning` | Natural speech |
+| `Kačka` | `Kachka` | Phonetic for TTS |
+| `Žaneta` | `Zhaneta` | Phonetic for TTS |
+| `Aibility` | `Eigh-bility` | Phonetic — write directly in text |
+| `**bold text**` | `bold text` | Strip all markdown |
+| `---` | *(remove)* | Strip section breaks |
+
+**Pause control:**
+- `<break time="0.7s" />` — sub-section pause (v2 supports SSML break tags)
+- `<break time="1.0s" />` — major section transition
+- `<break time="1.2s" />` — thesis/key moment (max recommended)
+- **NEVER use `...`** — causes hesitation/nervousness artifacts
+- **NEVER use more than 5-6 break tags total** — too many cause instability
+- Let paragraph breaks and short sentences create natural pacing
+
+**What NOT to do:**
+- Don't add verbal filler ("Hey", "So look", "OK so") — sounds like a podcast host
+- Don't over-break sentences into fragments — the model handles natural sentence rhythm fine
+- Don't use `<lexeme>` tags — they get read aloud as text
+- Don't rely on pronunciation dictionaries — they silently fail with some model/voice combos.
+  Write pronunciation phonetically directly in the text instead.
+
+### Step 2: Generate with Request Stitching
+
+**Why this approach:** Large chunks (4000+ chars) degrade in quality — the model loses
+emotional range and natural pacing in the second half. Small chunks (800-1200 chars)
+stay high quality. Request stitching chains them together for continuity.
+
+**CRITICAL for cloned voices:**
+- **`language_code="en"` is mandatory** — without it, the model guesses language from
+  accent and can switch to Chinese/French mid-narration
+- **Do NOT pass VoiceSettings** — default settings produce the best results with cloned
+  voices. Every custom setting tested made it worse (garbled, robotic, unnatural)
 
 ```python
 #!/usr/bin/env python3
-"""ElevenLabs single-voice podcast generator.
+"""ElevenLabs long-form narration with request stitching.
 
-Splits long text on paragraph boundaries, generates per-chunk with
-previous_text continuity, concatenates MP3 bytes directly.
+Splits text into small chunks, chains via previous_request_ids for
+continuity, uses httpx directly to access request-id headers.
 """
 import os
-from elevenlabs.client import ElevenLabs
+import httpx
 
-# --- CONFIG (Claude fills these — run Phase 0 Step 3 to list voice IDs) ---
-SCRIPT = """
-Your podcast script here.
-
-Split into paragraphs with blank lines.
-
-Each paragraph becomes natural speech.
-"""
-VOICE_ID = "FILL_FROM_VOICE_LIST"            # Run voice list first!
-MODEL_ID = "eleven_multilingual_v2"
-OUTPUT_PATH = "podcast.mp3"
-CHUNK_SIZE = 4500                             # chars per API call (leave margin under 5k/10k limit)
+# --- CONFIG ---
+SPEECH_TEXT_PATH = "speech-text.md"
+VOICE_ID = "FILL_FROM_VOICE_LIST"
+OUTPUT_PATH = "speech.mp3"
+CHUNK_SIZE = 1000          # chars per chunk — keep 800-1200 for quality
+LANGUAGE_CODE = "en"       # ALWAYS set for cloned/accented voices
 # --- END CONFIG ---
 
-def to_bytes(audio) -> bytes:
-    """Normalize convert() output — returns bytes on <3.14, generator on >=3.14."""
-    return audio if isinstance(audio, bytes) else b"".join(audio)
+api_key_file = os.path.expanduser("~/.elevenlabs/api_key")
+api_key = open(api_key_file).read().strip() if os.path.exists(api_key_file) else os.environ["ELEVENLABS_API_KEY"]
 
-key_file = os.path.expanduser("~/.elevenlabs/api_key")
-api_key = open(key_file).read().strip() if os.path.exists(key_file) else os.environ["ELEVENLABS_API_KEY"]
-client = ElevenLabs(api_key=api_key)
+with open(SPEECH_TEXT_PATH, "r") as f:
+    text = f.read()
 
-# Split on paragraph boundaries
-paragraphs = [p.strip() for p in SCRIPT.strip().split("\n\n") if p.strip()]
+# Split into small chunks at paragraph boundaries
+paragraphs = text.split("\n\n")
 chunks, current = [], ""
-for para in paragraphs:
-    if len(current) + len(para) + 2 > CHUNK_SIZE:
-        if current:
-            chunks.append(current)
-        current = para
+for p in paragraphs:
+    if len(current) + len(p) + 2 > CHUNK_SIZE and current.strip():
+        chunks.append(current.strip())
+        current = p
     else:
-        current = f"{current}\n\n{para}" if current else para
-if current:
-    chunks.append(current)
+        current = f"{current}\n\n{p}" if current else p
+if current.strip():
+    chunks.append(current.strip())
 
-print(f"Script: {len(SCRIPT)} chars -> {len(chunks)} chunks")
+print(f"Script: {len(text)} chars -> {len(chunks)} chunks")
+for i, c in enumerate(chunks):
+    print(f"  Chunk {i+1}: {len(c)} chars")
 
-# Generate silence for pauses (one short phrase, reuse the bytes)
-silence = to_bytes(client.text_to_speech.convert(
-    text="...",
-    voice_id=VOICE_ID,
-    model_id=MODEL_ID,
-    output_format="mp3_44100_128",
-))
+url = f"https://api.elevenlabs.io/v1/text-to-speech/{VOICE_ID}"
+headers = {"xi-api-key": api_key, "Content-Type": "application/json"}
 
-# Generate and concatenate
-audio_parts = []
+all_audio = b""
+prev_request_id = None
+
 for i, chunk in enumerate(chunks):
-    print(f"  [{i+1}/{len(chunks)}] {len(chunk)} chars: {chunk[:50]}...")
-    audio_bytes = to_bytes(client.text_to_speech.convert(
-        text=chunk,
-        voice_id=VOICE_ID,
-        model_id=MODEL_ID,
-        output_format="mp3_44100_128",
-        previous_text=chunks[i - 1][-200:] if i > 0 else None,
-    ))
-    audio_parts.append(audio_bytes)
-    if i < len(chunks) - 1:
-        audio_parts.append(silence)
+    data = {
+        "text": chunk,
+        "model_id": "eleven_multilingual_v2",
+        "output_format": "mp3_44100_128",
+        "language_code": LANGUAGE_CODE,
+    }
+
+    # Chain to previous chunk for prosody continuity
+    if prev_request_id:
+        data["previous_request_ids"] = [prev_request_id]
+
+    # Give forward context from next chunk
+    if i + 1 < len(chunks):
+        data["next_text"] = chunks[i + 1][:500]
+
+    print(f"  [{i+1}/{len(chunks)}] {len(chunk)} chars...", end=" ", flush=True)
+
+    resp = httpx.post(url, json=data, headers=headers, timeout=60)
+    if resp.status_code != 200:
+        print(f"ERROR {resp.status_code}: {resp.text[:200]}")
+        break
+
+    prev_request_id = resp.headers.get("request-id")
+    all_audio += resp.content
+    print(f"done ({len(resp.content)//1024} KB)")
 
 with open(OUTPUT_PATH, "wb") as f:
-    for part in audio_parts:
-        f.write(part)
+    f.write(all_audio)
 
 size_mb = os.path.getsize(OUTPUT_PATH) / (1024 * 1024)
 print(f"\nSaved to {OUTPUT_PATH} ({size_mb:.1f} MB)")
 ```
 
-### Multi-Voice Podcast (Dialogue)
+**Always test first:** Generate chunks 1-2 as a preview clip before committing to
+the full generation. Credits are non-refundable.
+
+### Step 3: Review and Iterate
+
+Listen to the full audio. If specific sections sound off:
+- Regenerate only that chunk using `previous_request_ids` (from the preceding chunk)
+  and `next_request_ids` (from the following chunk) to maintain flow
+- Request IDs expire after 2 hours — regenerate within that window
+
+**Exit:** Long-form narration audio saved.
+
+## Phase 3: Voice Cloning
+
+**Entry:** User wants a custom voice from their audio.
+
+### Recording Requirements
+
+| Requirement | Details |
+|------------|---------|
+| Duration | **1-2 minutes** (more than 3 min can be detrimental) |
+| Content | Read your own writing — natural intonation matches best |
+| Quality | Quiet room, no background noise, consistent distance from mic |
+| Format | MP3 128kbps or higher, mono or stereo |
+| Style | Consistent pace and tone — the clone replicates EVERYTHING |
+| Avoid | Stumbles, "uhm"s, long pauses, whispers, shouting, music |
+
+**CRITICAL:** Do NOT pre-process the recording with ffmpeg filters (silenceremove,
+loudnorm, etc.). These strip voice characteristics the clone needs. The only
+acceptable preprocessing is trimming to length.
+
+### Instant Voice Clone
+
+```python
+from elevenlabs import ElevenLabs
+
+client = ElevenLabs(api_key=get_api_key())
+
+voice = client.voices.ivc.create(
+    name="User Voice",
+    description="Natural speaking voice for narration",
+    files=[open("recording.mp3", "rb")],
+    remove_background_noise=False,  # Preserve voice characteristics
+)
+print(f"Voice ID: {voice.voice_id}")
+```
+
+**After cloning, ALWAYS test with a short clip before generating long content:**
+
+```python
+audio_gen = client.text_to_speech.convert(
+    text="A short test sentence to verify the voice sounds right.",
+    voice_id=voice.voice_id,
+    model_id="eleven_multilingual_v2",
+    output_format="mp3_44100_128",
+    language_code="en",
+    # DO NOT pass voice_settings — defaults are best for clones
+)
+```
+
+### Model Compatibility with Cloned Voices
+
+| Model | Works with clones? | Notes |
+|-------|-------------------|-------|
+| `eleven_multilingual_v2` | **YES** — use this | Best voice fidelity with clones |
+| `eleven_v3` | **NO** | Smooth output but voice identity completely lost |
+| `eleven_flash_v2_5` | Untested | May work, lower quality expected |
+| `eleven_turbo_v2_5` | Untested | May work |
+
+### Voice Settings with Clones
+
+**Do NOT override VoiceSettings for cloned voices.** Default settings produce the
+best results. Every combination tested (stability 0.3-0.8, similarity 0.5-1.0,
+style 0.3-0.7, speaker boost on/off) made the output worse — garbled, robotic,
+or unnatural pacing.
+
+If you must tweak, test with a single sentence first and compare to the no-settings
+version before committing to a full generation.
+
+**Exit:** Custom voice created and tested.
+
+## Phase 4: Single-Voice Podcast
+
+**Entry:** User wants podcast-style audio (single voice, long content).
+
+Use the **Phase 2 Long-Form Narration** approach with request stitching.
+The old approach (4500-char chunks with `previous_text`) produces lower
+quality than small chunks with `previous_request_ids`.
+
+## Phase 5: Multi-Voice Podcast (Dialogue)
 
 ```python
 #!/usr/bin/env python3
-"""ElevenLabs multi-voice podcast generator.
-
-Each segment has a voice_id and text. Generates per-segment,
-concatenates MP3 bytes with silence pauses between speakers.
-"""
+"""ElevenLabs multi-voice podcast generator."""
 import os
 from elevenlabs.client import ElevenLabs
 
-# --- CONFIG (Claude fills these — run Phase 0 Step 3 to list voice IDs) ---
 SEGMENTS = [
-    # (voice_id, text)
-    # Voice IDs are account-specific! Always run the voice list first.
-    ("VOICE_ID_HOST", "Welcome to the show. Today we're talking about..."),
-    ("VOICE_ID_GUEST", "Thanks for having me. Let's dive into the science."),
-    ("VOICE_ID_HOST", "So how does this actually work?"),
-    ("VOICE_ID_GUEST", "Great question. It starts with..."),
+    ("VOICE_ID_HOST", "Welcome to the show..."),
+    ("VOICE_ID_GUEST", "Thanks for having me..."),
 ]
 MODEL_ID = "eleven_multilingual_v2"
 OUTPUT_PATH = "dialogue-podcast.mp3"
-# --- END CONFIG ---
 
 def to_bytes(audio) -> bytes:
-    """Normalize convert() output — returns bytes on <3.14, generator on >=3.14."""
     return audio if isinstance(audio, bytes) else b"".join(audio)
 
-# Voice name lookup for logging
-VOICE_NAMES = {}
-
-key_file = os.path.expanduser("~/.elevenlabs/api_key")
-api_key = open(key_file).read().strip() if os.path.exists(key_file) else os.environ["ELEVENLABS_API_KEY"]
-client = ElevenLabs(api_key=api_key)
-
-# Resolve voice names for logging
-try:
-    voices = client.voices.get_all()
-    VOICE_NAMES = {v.voice_id: v.name for v in voices.voices}
-except Exception:
-    pass
-
-# Generate silence for pauses
-silence = to_bytes(client.text_to_speech.convert(
-    text="...",
-    voice_id=SEGMENTS[0][0],
-    model_id=MODEL_ID,
-    output_format="mp3_44100_128",
-))
-
-print(f"Generating {len(SEGMENTS)} segments...")
+client = ElevenLabs(api_key=get_api_key())
 
 audio_parts = []
 for i, (voice_id, text) in enumerate(SEGMENTS):
-    name = VOICE_NAMES.get(voice_id, voice_id[:12])
-    preview = text[:60].replace("\n", " ")
-    print(f"  [{i+1}/{len(SEGMENTS)}] {name}: {preview}...")
-
+    print(f"  [{i+1}/{len(SEGMENTS)}] {text[:50]}...")
     audio_bytes = to_bytes(client.text_to_speech.convert(
         text=text,
         voice_id=voice_id,
         model_id=MODEL_ID,
         output_format="mp3_44100_128",
+        language_code="en",
     ))
     audio_parts.append(audio_bytes)
-    if i < len(SEGMENTS) - 1:
-        audio_parts.append(silence)
 
 with open(OUTPUT_PATH, "wb") as f:
     for part in audio_parts:
         f.write(part)
 
-size_mb = os.path.getsize(OUTPUT_PATH) / (1024 * 1024)
-print(f"\nSaved to {OUTPUT_PATH} ({size_mb:.1f} MB)")
+print(f"Saved to {OUTPUT_PATH}")
 ```
 
-**Exit:** Podcast audio file saved.
-
-## Phase 3: Voice Cloning
-
-**Entry:** User wants a custom voice from audio samples.
-
-### Instant Voice Clone (1-5 min of audio)
-
-```python
-voice = client.clone(
-    name="My Custom Voice",
-    description="Professional male, mid-30s, neutral accent",
-    files=["sample1.mp3", "sample2.mp3"],
-)
-print(f"Cloned voice ID: {voice.voice_id}")
-```
-
-### Voice Design (Generate New Voice)
-
-```python
-audio = client.text_to_speech.convert(
-    text="Testing a designed voice.",
-    voice_id="custom",
-    model_id="eleven_multilingual_v2",
-)
-```
-
-**Exit:** Custom voice created and tested.
-
-## Phase 4: Sound Effects
+## Phase 6: Sound Effects
 
 ```python
 audio = client.text_to_sound_effects.convert(
     text="Heavy rain on a tin roof with distant thunder",
     duration_seconds=10.0,
 )
-
 with open("rain.mp3", "wb") as f:
-    f.write(audio)
+    f.write(to_bytes(audio))
 ```
 
-Tips: be specific ("footsteps on gravel" > "walking sounds"), include environment ("in a cathedral"), specify duration.
+Tips: be specific ("footsteps on gravel" > "walking sounds"), include environment, specify duration.
 
-## Phase 5: Speech-to-Speech (Voice Transform)
+## Phase 7: Speech-to-Speech (Voice Transform)
 
 ```python
 with open("input.mp3", "rb") as f:
     input_audio = f.read()
 
-transformed = client.speech_to_speech.convert(
+transformed = to_bytes(client.speech_to_speech.convert(
     audio=input_audio,
     voice_id="target_voice_id",
     model_id="eleven_english_sts_v2",
-)
-
+))
 with open("transformed.mp3", "wb") as f:
     f.write(transformed)
 ```
 
-Preserves timing, emotion, pacing. Changes voice identity.
-
-## Phase 6: Audio Isolation (Noise Removal)
+## Phase 8: Audio Isolation (Noise Removal)
 
 ```python
 with open("noisy.mp3", "rb") as f:
-    noisy_audio = f.read()
-
-clean = client.audio_isolation.audio_isolation(audio=noisy_audio)
-
+    clean = to_bytes(client.audio_isolation.audio_isolation(audio=f.read()))
 with open("clean.mp3", "wb") as f:
     f.write(clean)
 ```
 
-## Phase 7: Dubbing / Translation
-
-```python
-result = client.dubbing.dub_a_video_or_an_audio_file(
-    file=open("video.mp4", "rb"),
-    target_lang="es",
-    source_lang="en",
-)
-dubbing_id = result.dubbing_id
-
-# Poll for completion
-import time
-while True:
-    status = client.dubbing.get_dubbing_project_metadata(dubbing_id)
-    if status.status == "dubbed":
-        break
-    print(f"Status: {status.status}...")
-    time.sleep(10)
-
-dubbed = client.dubbing.get_dubbed_file(dubbing_id, target_lang="es")
-with open("dubbed_es.mp4", "wb") as f:
-    f.write(dubbed)
-```
-
 ## CLI Quick Reference
 
-When the ElevenLabs CLI (`elevenlabs`) is installed and authenticated:
-
 ```bash
-# Auth
 elevenlabs auth login              # Interactive API key setup
 elevenlabs auth whoami --no-ui     # Check status
 elevenlabs auth logout             # Remove stored key
-
-# Agents (conversational AI)
-elevenlabs agents init             # Init project
-elevenlabs agents add "My Agent"   # Create agent
-elevenlabs agents push             # Deploy to ElevenLabs
-elevenlabs agents list --no-ui     # List agents
-
-# The CLI is focused on agent management, NOT TTS.
-# For TTS/podcast/audio generation, use the Python SDK (this skill).
 ```
+
+The CLI is focused on agent management, NOT TTS. For TTS, use the Python SDK.
 
 ## Model Selection
 
-| Model ID | Best For | Char Limit | Latency | Languages | Cost |
-|----------|----------|------------|---------|-----------|------|
-| `eleven_v3` | Dramatic, expressive | 5,000 | ~300ms | 70+ | Standard |
-| `eleven_multilingual_v2` | Long-form, stable | 10,000 | Standard | 29 | Standard |
-| `eleven_flash_v2_5` | Ultra-low latency | 40,000 | ~75ms | 32 | 50% cheaper |
-| `eleven_turbo_v2_5` | Quality + speed | 40,000 | ~250ms | 32 | Standard |
+| Model ID | Best For | Char Limit | Latency | Clone Support |
+|----------|----------|------------|---------|---------------|
+| `eleven_multilingual_v2` | **Long-form, cloned voices** | 10,000 | Standard | **YES** |
+| `eleven_v3` | Dramatic, expressive (stock voices) | 5,000 | ~300ms | NO — loses identity |
+| `eleven_flash_v2_5` | Ultra-low latency | 40,000 | ~75ms | Untested |
+| `eleven_turbo_v2_5` | Quality + speed | 40,000 | ~250ms | Untested |
 
 ```
-Need < 75ms latency?
-├─ Yes → eleven_flash_v2_5
+Using a cloned voice?
+├─ Yes → eleven_multilingual_v2 (only reliable option)
 └─ No → Content > 5,000 chars?
    ├─ Yes → eleven_multilingual_v2
    └─ No → Need dramatic delivery?
       ├─ Yes → eleven_v3
-      └─ No → eleven_turbo_v2_5
+      └─ No → Need low latency?
+         ├─ Yes → eleven_flash_v2_5
+         └─ No → eleven_turbo_v2_5
 ```
 
-## Voice Settings
+## Pause & Pronunciation Control
 
-| Preset | Stability | Similarity | Use Case |
-|--------|-----------|------------|----------|
-| Stable narration | 0.8 | 0.75 | Podcasts, audiobooks |
-| Expressive | 0.3 | 0.85 | Dramatic reading |
-| Balanced | 0.5 | 0.5 | General purpose |
+### Pauses
 
-```python
-from elevenlabs import VoiceSettings
+| Method | Works? | Notes |
+|--------|--------|-------|
+| `<break time="0.7s" />` | **YES** (v2 only) | SSML break tag, up to 3s. Use sparingly (max 5-6 per generation) |
+| Paragraph breaks | **YES** | Natural, reliable, no cost |
+| Short sentences | **YES** | Best method — rhythm from writing |
+| `...` ellipsis | **NO** | Causes hesitation/nervousness artifacts |
+| Multiple dashes `-- --` | Somewhat | Inconsistent |
 
-audio = client.text_to_speech.convert(
-    text="...",
-    voice_id="...",
-    model_id="eleven_multilingual_v2",
-    voice_settings=VoiceSettings(stability=0.8, similarity_boost=0.75),
-)
-```
+### Pronunciation
+
+| Method | Works? | Notes |
+|--------|--------|-------|
+| Phonetic spelling in text | **YES** | Most reliable: "Eigh-bility" instead of "Aibility" |
+| Pronunciation dictionary API | **UNRELIABLE** | Silently ignored with some model/voice combos |
+| `<lexeme>` tags in text | **NO** | Read aloud as text |
+| `<phoneme>` SSML tags | v2: NO, Flash v2: YES | Only works with specific models |
+
+**Rule: Always use phonetic spelling directly in the speech text.** Don't rely on dictionaries or SSML phoneme tags.
 
 ## Output Formats
 
@@ -488,47 +507,45 @@ audio = client.text_to_speech.convert(
 |--------|---------|----------|
 | `mp3_44100_128` | High | Default, general purpose |
 | `mp3_44100_192` | Highest MP3 | Archival |
-| `mp3_22050_32` | Low | Previews |
 | `pcm_44100` | Lossless | Post-processing |
-
-## Error Handling
-
-```python
-from elevenlabs.core import ApiError
-
-try:
-    audio = client.text_to_speech.convert(...)
-except ApiError as e:
-    if e.status_code == 401:
-        print("Bad API key. Run: elevenlabs auth login")
-    elif e.status_code == 429:
-        print("Rate limited. Wait and retry.")
-    elif e.status_code == 422:
-        print(f"Invalid params: {e.body}")
-    else:
-        raise
-```
 
 ## Cost Awareness
 
 - Characters are the billing unit — every API call costs characters
+- **Small-chunk stitching uses ~1.5x the character count** (overhead per request)
 - **Preview short clips first** before generating long content
 - **Cache generated audio** — don't regenerate the same text
 - `eleven_flash_v2_5` is 50% cheaper than other models
-- The silence-for-pauses trick costs ~3 characters per pause ("...")
+- Request IDs expire after 2 hours — regenerate within that window
+
+## Error Handling
+
+```python
+# When using httpx directly (for request stitching):
+resp = httpx.post(url, json=data, headers=headers, timeout=60)
+if resp.status_code == 401:
+    print("Bad API key.")
+elif resp.status_code == 400 and "quota_exceeded" in resp.text:
+    print("Out of credits.")
+elif resp.status_code != 200:
+    print(f"Error {resp.status_code}: {resp.text[:200]}")
+```
 
 ## Validate
 
 - [ ] API key loaded from `~/.elevenlabs/api_key` or env var, never hardcoded
-- [ ] Model selected matches content length (see model table)
-- [ ] Voice selected and approved by user before generation
-- [ ] For podcasts: script reviewed before generation (credits are non-refundable)
-- [ ] Output format matches downstream requirements
+- [ ] Model selected matches voice type (v2 for clones, see model table)
+- [ ] `language_code` set for cloned or accented voices
+- [ ] No VoiceSettings overrides for cloned voices
+- [ ] No `...` ellipses in speech text
+- [ ] Speech text reviewed — numbers written out, names phonetic
+- [ ] Test clip generated and approved before full generation
+- [ ] For long-form: using request stitching with small chunks
 - [ ] Audio file saved outside git-tracked directories
 - [ ] File size and duration reported to user
 
 ## What Makes This babel-fish
 
-- **Heart of Gold** — the improbably good ship runs on infinite improbability; this skill turns text into voice with similarly improbable ease
-- **Multi-Format Production** — text content becomes audio content in one pass
-- **Creative Courage** — ship audio content that would have taken a recording studio
+- **Battle-tested** — every recommendation comes from proven success or documented failure
+- **Request stitching** — the key to consistent long-form quality
+- **Clone-aware** — different rules for cloned vs stock voices, learned the hard way
