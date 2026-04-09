@@ -56,6 +56,15 @@ Prefer the harness's structured choice UI when available. Otherwise present conc
 **If anything in the plan is unclear:**
 Ask clarifying questions now — better to ask than build wrong.
 
+If the plan authorizes design-heavy, copy-heavy, or boundary-sensitive work, verify before leaving Phase 0 that the plan already includes:
+- target outcome and anti-goals
+- references and anti-references
+- proof-slice or rollout rule
+- explicit rejection criteria
+- preview artifacts when the task depends on human judgment
+
+If those items are missing, stop and return to planning. Do not invent the missing subjective contract during implementation.
+
 ### Autonomy Activation
 
 When a plan file is provided: **default to autonomous mode.** Plans are pre-approved decisions — execute without re-litigating them.
@@ -136,6 +145,8 @@ while (unchecked tasks remain):
 4. Check CLAUDE.md for project conventions
 
 **Stage specific files — never `git add .`**
+
+If the plan requires a proof slice, do not propagate beyond that slice until its verification passes. If preview review or plan adherence fails, update the plan instead of improvising the missing contract in code.
 
 **Exit:** All tasks checked off, all tests passing.
 

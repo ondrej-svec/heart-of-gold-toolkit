@@ -76,6 +76,7 @@ Then gather project context:
 2. Check what the change touches — auth, scoring, data, migrations, money → extra scrutiny
 3. Read the related plan or brainstorm if referenced in commits or PR description
 4. Note what's tested and what's not in the diff
+5. If the work is design-heavy, copy-heavy, or boundary-sensitive, check whether the plan included non-goals, references, anti-references, proof-slice discipline, and preview artifacts
 
 **Exit:** Conventions loaded, risk areas identified, related context read.
 
@@ -118,13 +119,16 @@ See `../knowledge/socratic-patterns.md` for CoVe technique details.
 
 ### For Document Reviews
 
-Read the full document — don't skim. Evaluate against five criteria:
+Read the full document — don't skim. Evaluate against eight criteria:
 
 1. **Does it explain WHY?** Decision rationale, not just "we'll use X."
 2. **Are risks identified?** What could go wrong? Mitigations?
 3. **Is the scope clear?** Explicit in/out of scope?
 4. **Are acceptance criteria measurable?** Testable? "Users can do X" not "the system is good."
-5. **Is it actionable?** Could someone start `/work` from this right now?
+5. **Are constraints and non-goals explicit?** Could autonomous work stay inside the lane?
+6. **Is propagation discipline clear?** Proof slice first or broad rollout?
+7. **If the work is subjective or boundary-sensitive, is the contract explicit?** References, anti-references, tone rules, rejection criteria.
+8. **If the work is design-heavy, is there a preview gate?** Concrete preview artifacts and a review step before implementation.
 
 ### For Architecture Reviews
 
@@ -220,6 +224,9 @@ Use **AskUserQuestion** with:
 - [ ] Checked scope (clear in/out)
 - [ ] Checked criteria (measurable, testable)
 - [ ] Checked actionability (can `/work` start from this?)
+- [ ] Checked non-goals and constraints (especially for autonomous work)
+- [ ] Checked subjective contract completeness when applicable
+- [ ] Checked preview artifacts and preview gate when applicable
 
 ## When NOT to Use /review
 

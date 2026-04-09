@@ -112,6 +112,13 @@ Launch research agents **in parallel**:
 
 **If no relevant findings:** Say so. Don't invent relevance.
 
+If the task is design-heavy, copy-heavy, or boundary-sensitive, also surface:
+- relevant references already present in the repo
+- anti-references or known bad patterns from past work
+- whether a preview artifact will likely be required before autonomous implementation
+
+The goal is not only "what exists?" It is also "what should the future plan pull toward and stay away from?"
+
 **Exit:** Findings presented. User has seen what exists before exploring approaches.
 
 ---
@@ -128,6 +135,16 @@ Through collaborative dialogue, explore 2-3 approaches. For each:
 Ask one question at a time. Start broad (purpose, users), narrow to specifics (constraints, edge cases). Prefer explicit option lists when there are 2-4 natural choices.
 
 **If any open questions emerge:** You MUST ask the user about each one. Do not assume answers or defer them silently.
+
+If the chosen approach depends on taste, hierarchy, copy quality, workshop framing, or boundary judgment, you MUST also capture before leaving this phase:
+- target outcome
+- anti-goals
+- references
+- anti-references
+- tone or taste rules
+- representative proof slice
+- explicit rejection criteria
+- whether preview artifacts will be required
 
 **Exit when:**
 - The approach is clear and the user signals a decision
@@ -222,6 +239,19 @@ related:
 
 ## Why This Approach
 {Decision rationale — what it optimizes for, why alternatives were rejected}
+
+## Subjective Contract (when needed)
+- Target outcome: {What the result should feel or read like}
+- Anti-goals: {What it must not become}
+- References: {Positive models or repo examples}
+- Anti-references: {Patterns or tones to avoid}
+- Tone or taste rules: {Editorial, design, or teaching constraints}
+- Rejection criteria: {Concrete reasons to say the result is wrong}
+
+## Preview And Proof Slice (when needed)
+- Proof slice: {One representative slice to prove first}
+- Required preview artifacts: {HTML mockup, ASCII preview, screenshot comp, etc.}
+- Rollout rule: {When this can propagate broadly}
 
 ## Key Design Decisions
 

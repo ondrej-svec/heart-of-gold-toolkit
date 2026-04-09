@@ -59,6 +59,8 @@ Auto-detect capture type:
   3. label: "Learning", description: "Pattern, preference, or principle for CLAUDE.md or memory"
 - multiSelect: false
 
+Repeated workflow friction counts as captureable knowledge. If the same clarification keeps happening during `brainstorm`, `plan`, `work`, or `review`, capture whether it belongs in repo doctrine or in reusable toolkit workflow guidance.
+
 **Exit:** Capture type determined.
 
 ---
@@ -119,7 +121,8 @@ Determine the right location:
 ### Learning Capture
 
 - **Project-specific:** Add to project CLAUDE.md or memory files
-- **Toolkit-wide:** Add to the relevant plugin's `../knowledge/` directory
+- **Toolkit-wide:** Add to the relevant plugin's `../knowledge/` directory or skill docs
+- **Hybrid:** Split repo-local truth from toolkit-wide truth explicitly instead of mixing them
 - Keep it concise — one pattern per entry
 
 **Exit:** Knowledge extracted and structured.
@@ -220,6 +223,7 @@ Before delivering, verify:
 - [ ] **Verified:** Root cause confirmed, fix tested (not just proposed)
 - [ ] **No duplicates:** Searched existing docs — this is genuinely new
 - [ ] **Correctly typed:** Solution vs context doc vs learning — right structure and location
+- [ ] **Layered correctly:** Repo-local rule vs toolkit-wide workflow truth is explicit
 - [ ] **No application code modified** — knowledge documents only
 
 ## What Makes This Heart of Gold

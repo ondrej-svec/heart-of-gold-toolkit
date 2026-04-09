@@ -105,6 +105,13 @@ Search past plans for similar features. Surface proven patterns and past risks:
 
 See `../knowledge/active-memory-integration.md` for retrieval patterns.
 
+If the task is design-heavy, copy-heavy, or boundary-sensitive, also search for:
+- existing preview artifacts or mockups
+- repo docs that define tone, design, or boundary rules
+- prior plans that succeeded or drifted on subjective work
+
+Surface both positive models and anti-models. Strong autonomous planning needs references and anti-references, not just similar code.
+
 **Exit:** Codebase patterns known, past solutions surfaced, constraints identified.
 
 ### Autonomy Gate (Medium Challenge)
@@ -175,18 +182,32 @@ confidence: high | medium | low
 **All plans include:**
 1. **Title and one-line summary**
 2. **Problem Statement** — What's wrong or missing? Why does this matter?
-3. **Proposed Solution** — High-level approach
-4. **Implementation Tasks** — Checkboxes with dependency ordering. These become the tracker for `/work`.
-5. **Acceptance Criteria** — How do we know it's done? Measurable, testable.
+3. **Target End State** — What should be true when this lands?
+4. **Scope and Non-Goals** — What is explicitly outside this change?
+5. **Proposed Solution** — High-level approach
+6. **Implementation Tasks** — Checkboxes with dependency ordering. These become the tracker for `/work`.
+7. **Acceptance Criteria** — How do we know it's done? Measurable, testable.
 
 **Standard and detailed plans also include:**
-6. **Decision Rationale** — Why this approach? Alternatives considered? Tradeoffs?
-7. **Assumptions** — What must be true for this plan to work? (see Assumption Audit below)
-8. **Risk Analysis** — What could go wrong? How do we mitigate it?
+8. **Decision Rationale** — Why this approach? Alternatives considered? Tradeoffs?
+9. **Constraints and Boundaries** — Architectural, editorial, release, privacy, or operating rules that stay fixed
+10. **Assumptions** — What must be true for this plan to work? (see Assumption Audit below)
+11. **Risk Analysis** — What could go wrong? How do we mitigate it?
 
 **Detailed plans also include:**
-9. **Phased Implementation** — Phases with exit criteria per phase
-10. **References** — Links to brainstorm, relevant code, past solutions
+12. **Phased Implementation** — Phases with exit criteria per phase
+13. **References** — Links to brainstorm, relevant code, past solutions
+
+**For subjective or boundary-sensitive plans, also include:**
+- **Target outcome** — the felt or perceived result, not just the structural change
+- **Anti-goals** — what the result must not become
+- **References** — positive models or repo examples
+- **Anti-references** — patterns or tones to avoid
+- **Tone or taste rules** — explicit editorial, design, or teaching constraints
+- **Representative proof slice** — one slice to prove before propagation
+- **Rollout rule** — when it is safe to spread the pattern
+- **Rejection criteria** — what makes the result wrong even if it compiles
+- **Required preview artifacts** — the concrete previews needed before autonomous `work` starts
 
 **Confidence calibration (stated in frontmatter and body):**
 - **High:** Clear requirements + existing codebase patterns + bounded scope
@@ -233,6 +254,21 @@ Before finalizing, identify the assumptions the plan depends on and run the Recu
 **Depth:** 2-3 levels per assumption. If the brainstorm already ran an Assumption Audit, inherit its findings — don't repeat the work, just verify nothing changed.
 
 See `../knowledge/discovery-patterns.md` → "Recursive Why" for the loop technique.
+
+### Subjective Contract And Preview Gate
+
+If the task materially changes UI, copy, information architecture, facilitation flow, or a trust boundary judged partly by human review, the plan must additionally include:
+- target outcome
+- anti-goals
+- references
+- anti-references
+- tone or taste rules
+- representative proof slice
+- rollout rule
+- rejection criteria
+- required preview artifacts
+
+For design-heavy tasks, autonomous `work` should not start until at least one preview artifact exists. Acceptable preview forms include an HTML/static mockup, a terminal-friendly structural preview, or another concrete representation that makes drift obvious before implementation. The plan should also say who reviews the preview and what failure sends the work back to planning.
 
 **Exit:** Plan document written.
 
