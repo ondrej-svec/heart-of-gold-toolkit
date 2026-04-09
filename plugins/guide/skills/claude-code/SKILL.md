@@ -81,6 +81,7 @@ When this skill is used from Codex, the skill cannot bypass Codex sandbox policy
 - Prefer the direct `claude` command patterns in this skill. Do not silently substitute the bundled wrapper for the normal path just because it exists.
 - Run inside the sandbox first when the task is clearly local and read-only.
 - If Claude Code needs network access, auth refresh, access outside the writable sandbox, or the in-sandbox run fails or hangs for likely sandbox reasons, rerun via `exec_command` with `sandbox_permissions: "require_escalated"`.
+- If you verify that direct `claude -p` works outside the sandbox but hangs inside it in the current environment, stop treating the sandboxed path as normal. For the rest of that Codex session, prefer reviewer-approved elevated execution as the default path for actual Claude invocations.
 - Use a concise justification that tells the reviewer why Claude Code needs elevation, for example:
   - "Do you want me to run Claude Code with network access so it can authenticate and complete this review?"
   - "Do you want me to rerun Claude Code outside the sandbox because the in-sandbox headless run appears blocked by permissions?"
@@ -254,6 +255,7 @@ claude -r latest -p \
 - If Claude Code reports permission issues, choose the correct permission mode or constrain tools explicitly.
 - If a headless run gets stuck on permissions, either switch to `plan`, use `acceptEdits`, or provide `--allowedTools` / a permission prompt tool.
 - In Codex, if the likely cause is sandboxing or network denial, rerun with reviewer-approved `require_escalated` execution instead of repeatedly retrying the same sandboxed command.
+- In Codex, if you have already confirmed that elevated execution works and sandboxed execution hangs, do not re-run the sandboxed path again during the same task.
 - Do not use `bypassPermissions` unless the user explicitly approves it.
 - If the direct `claude` path fails, report that failure directly. Do not route around it by pretending a wrapper run or a self-authored review is equivalent to Claude output.
 - Do not automatically fall back to concatenating many files into stdin just because a direct Claude run failed once.
