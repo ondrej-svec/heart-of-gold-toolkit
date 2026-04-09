@@ -7,7 +7,7 @@ import { targetsCommand } from "./commands/targets";
 const main = defineCommand({
   meta: {
     name: "heart-of-gold",
-    version: "0.1.17",
+    version: "0.1.18",
     description:
       "Cross-platform installer for Heart of Gold skills — Codex, OpenCode, Pi, Claude Code, and more",
   },

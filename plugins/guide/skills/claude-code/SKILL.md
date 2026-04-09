@@ -9,7 +9,14 @@ Use this skill to hand a bounded task to Claude Code from the current harness, c
 
 This skill is task-based, not review-only. Anthropic's `plan` mode is a read-only analysis mode, but because Claude Code frames it as "Plan Mode," do not treat it as the default for reviews. Prefer `default` for normal reviews and `acceptEdits` for implementation work unless you specifically want strict read-only behavior.
 
-The canonical execution path is direct `claude` CLI usage, mirroring the `codex` skill's direct `codex exec` pattern. The bundled wrapper is optional and must not replace the direct path unless the user explicitly asks for it or you are debugging Claude Code invocation behavior itself.
+The canonical execution path is direct `claude` CLI usage, mirroring the `codex` skill's direct `codex exec` pattern. Keep the workflow simple:
+
+- Ask which model to use.
+- Run one direct `claude` command.
+- If it works, summarize Claude's output.
+- If it fails or hangs, report that clearly and stop.
+
+Do not turn a failed Claude run into an improvised shell pipeline, background polling loop, or manual artifact-concatenation workaround unless the user explicitly asks for that style of invocation.
 
 ## Available Models
 
@@ -65,6 +72,7 @@ Choose the permission mode based on what Claude Code needs to do:
    - `plan` only when you specifically want read-only analysis with no command execution
 7. Run the command, capture stdout/stderr, and summarize the outcome for the user.
 8. If Claude Code does not actually return output, stop and report that failure. Do not substitute your own review or analysis and present it as if it came from Claude Code.
+9. Do not add fallback layers automatically. One direct Claude attempt is the normal path. A retry is acceptable only when the user asks for it or when you have a concrete reason to change one thing, such as model, permission mode, or execution environment.
 
 ## Codex Execution
 
@@ -84,16 +92,31 @@ When this skill is used from Codex, the skill cannot bypass Codex sandbox policy
 - Use `--max-turns` for automation. It keeps review and implementation runs bounded.
 - Use `--output-format json` when another agent or script needs structured output.
 - Use `--allowedTools` to make headless runs more reliable and safer.
-- Pipe diffs or logs into Claude for read-only analysis instead of asking Claude to execute shell commands just to fetch them.
+- Prefer letting Claude inspect the repo directly for normal review and implementation tasks.
+- Pass diffs or logs via stdin only when the user explicitly wants artifact-only review or when direct repo access is intentionally unavailable.
 - Use `acceptEdits` for real implementation work; do not force read-only `plan` mode onto edit tasks.
 - Use `bypassPermissions` only in a trusted sandbox and only with explicit user approval.
 - Use `-r latest -p` for follow-up instead of re-explaining the entire task.
+- Avoid giant `cat file1 file2 ... | claude ...` constructions as a default strategy. They are brittle, hard to inspect, and a poor substitute for direct Claude access to the repo.
 
 ## Recommended Patterns
 
-### 1. Review a provided diff
+### 1. Review the repo directly
 
-Pass the diff via stdin and ask for review directly. Use `default` unless you specifically want strict read-only analysis:
+Use this as the normal review path:
+
+```bash
+claude -p \
+  --output-format text \
+  --model sonnet \
+  --permission-mode default \
+  --max-turns 4 \
+  "Review how the workshop skill is designed in this repo and whether it should be improved. Return findings ordered by severity."
+```
+
+### 2. Review a provided diff only
+
+Use stdin only when you intentionally want a bounded artifact review:
 
 ```bash
 git diff --staged | claude -p \
@@ -104,9 +127,9 @@ git diff --staged | claude -p \
   "Review this diff. Return findings ordered by severity with file paths and concise explanations."
 ```
 
-### 2. Ask Claude to inspect the repo and analyze
+### 3. Ask Claude to inspect the repo and analyze with tighter tool bounds
 
-Use `default` or a constrained tool set when Claude needs to discover context itself:
+Use this when Claude should inspect the repo but you want tighter limits:
 
 ```bash
 claude -p \
@@ -118,7 +141,7 @@ claude -p \
   "Analyze the current changes and explain the main design risks."
 ```
 
-### 3. Ask Claude to implement or refactor
+### 4. Ask Claude to implement or refactor
 
 Use `acceptEdits` when Claude should change files:
 
@@ -132,7 +155,7 @@ claude -p \
   "Implement the requested change in the current repo, keep the diff minimal, and summarize what changed."
 ```
 
-### 4. Resume the latest Claude Code session
+### 5. Resume the latest Claude Code session
 
 ```bash
 claude -r latest -p \
@@ -140,7 +163,7 @@ claude -r latest -p \
   "Focus only on the migration risk you mentioned earlier. What is the safest rollout plan?"
 ```
 
-### 5. Request structured output for automation
+### 6. Request structured output for automation
 
 ```bash
 claude -p \
@@ -151,7 +174,7 @@ claude -p \
   "Summarize the provided diff as JSON with keys: verdict, findings, risks."
 ```
 
-### 6. Use strict read-only analysis mode explicitly
+### 7. Use strict read-only analysis mode explicitly
 
 Use `plan` only when you want Claude prevented from executing commands or editing files:
 
@@ -233,3 +256,4 @@ claude -r latest -p \
 - In Codex, if the likely cause is sandboxing or network denial, rerun with reviewer-approved `require_escalated` execution instead of repeatedly retrying the same sandboxed command.
 - Do not use `bypassPermissions` unless the user explicitly approves it.
 - If the direct `claude` path fails, report that failure directly. Do not route around it by pretending a wrapper run or a self-authored review is equivalent to Claude output.
+- Do not automatically fall back to concatenating many files into stdin just because a direct Claude run failed once.
