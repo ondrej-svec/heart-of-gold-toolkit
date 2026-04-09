@@ -49,12 +49,14 @@ Hard rule: do not use `plan` for ordinary reviews just because it sounds safe. F
 4. Do not add `--effort high` by default. Use the CLI default unless the user explicitly wants deeper reasoning or the task is unusually ambiguous.
 5. Assemble the direct `claude` command with the appropriate options:
    - `-p, --print`
-   - `--output-format text`
+   - `--output-format text` for short runs that should complete quickly
+   - `--output-format stream-json --verbose` for long repo reviews, investigations, or any run where you need progress visibility
    - `--model <MODEL>`
    - `--permission-mode <MODE>`
    - `--max-turns <N>`
    - `"your prompt here"` immediately after `-p` when using variadic flags like `--allowedTools`
-   - `--allowedTools <TOOL> [<TOOL> ...]` when you want predictable read-only repo inspection
+   - `--allowedTools <TOOL> [<TOOL> ...]` only to pre-approve tools without prompting
+   - `--disallowedTools <TOOL> [<TOOL> ...]` when you actually need to prevent specific tools
 6. Run the command, capture the output, and summarize Claude's actual result.
 7. If Claude does not actually return output, stop and report failure plainly.
 
@@ -64,6 +66,7 @@ When this skill is used from Codex, use the execution path that actually works h
 
 - For real Claude runs in this environment, prefer `exec_command` with `sandbox_permissions: "require_escalated"`.
 - Do not treat the sandboxed path as normal. Direct `claude -p` has been verified to work outside the sandbox and to hang or misbehave inside it.
+- For long repo reviews from Codex, prefer `--output-format stream-json --verbose` so progress is visible. Plain `text` output can remain silent for a long time even when Claude is actively working.
 - Use a narrow approval request tied to the Claude invocation, for example:
   - "Do you want me to run Claude Code outside the sandbox so it can complete this review?"
   - "Do you want me to run Claude Code with network/auth access so it can complete this task?"
@@ -78,11 +81,13 @@ Use this as the default review path:
 ```bash
 claude -p \
   "Review this repository and return findings ordered by severity with file references where possible." \
-  --output-format text \
+  --output-format stream-json \
+  --verbose \
   --model sonnet \
   --permission-mode default \
   --max-turns 8 \
-  --allowedTools "Read" "Grep" "Glob" "LS" "Bash(git status:*)" "Bash(git diff:*)"
+  --allowedTools "Read" "Grep" "Glob" "LS" "Bash(git status:*)" "Bash(git diff:*)" \
+  --disallowedTools "Edit" "Write" "NotebookEdit"
 ```
 
 ### 2. Review current changes only
@@ -103,11 +108,13 @@ Use this when the prompt names several directories or asks for deeper inspection
 ```bash
 claude -p \
   "Inspect the relevant parts of this repo, evaluate the design, and return evidence-based findings ordered by severity." \
-  --output-format text \
+  --output-format stream-json \
+  --verbose \
   --model opus \
   --permission-mode default \
   --max-turns 8 \
-  --allowedTools "Read" "Grep" "Glob" "LS" "Bash(git status:*)" "Bash(git diff:*)"
+  --allowedTools "Read" "Grep" "Glob" "LS" "Bash(git status:*)" "Bash(git diff:*)" \
+  --disallowedTools "Edit" "Write" "NotebookEdit"
 ```
 
 ### 4. Implementation or refactor
@@ -138,10 +145,12 @@ claude -r latest -p "Focus only on the open issue you identified earlier and pro
 
 - Stop and report failures whenever `claude --version` or a `claude -p` command exits non-zero.
 - If Claude reaches `max turns`, report that plainly. Do not paraphrase it as a hang.
-- If Claude hangs or returns no output, report that plainly and stop.
+- If `--output-format text` stays silent during a long repo review, do not assume it is hung. Re-run or start with `--output-format stream-json --verbose` to confirm whether Claude is actively working.
+- If Claude truly hangs or returns no output even in streaming mode, report that plainly and stop.
 - Do not substitute your own review and imply it came from Claude.
 - Do not automatically switch to `plan` after a failed `default` run.
 - Do not pass the prompt after `--allowedTools`, because this CLI can consume it as another allowed tool and then fail with "Input must be provided..."
+- Do not describe `--allowedTools` as a strict read-only sandbox. It pre-approves tools; it does not, by itself, ban other tools.
 - Do not automatically fall back to giant `cat file1 file2 ... | claude ...` pipelines.
 - Do not use the bundled wrapper unless the user explicitly asks for it or you are debugging the invocation itself.
 
