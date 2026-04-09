@@ -13,11 +13,15 @@ This skill is task-based, not review-only. Use `plan` for safe read-only analysi
 
 | Model | Best for |
 | --- | --- |
+| `default` | Anthropic's recommended default for the current account and environment |
 | `sonnet` | Default recommendation for most coding, review, and analysis tasks |
 | `opus` | Stronger reasoning for ambiguous, high-stakes, or architecture-heavy work |
 | `haiku` | Fast, lightweight follow-ups and narrow questions |
+| `opusplan` | Hybrid mode that uses `opus` for planning and `sonnet` for execution |
 
-Default recommendation: `sonnet` for most tasks, `opus` when depth matters more than speed.
+Prefer aliases over hardcoded snapshot names in this skill, because Anthropic documents aliases as the stable Claude Code interface and moves them forward as newer snapshots ship.
+
+Default recommendation: `sonnet` for most tasks, `opus` when depth matters more than speed, and `opusplan` when the task naturally alternates between planning and execution.
 
 ## Permission Modes
 
@@ -33,7 +37,7 @@ Choose the permission mode based on what Claude Code needs to do:
 `plan` is not the general default for this skill. It is only the safe default for bounded read-only tasks.
 
 ## Running a Task
-1. Ask the user which model to use (default: `sonnet`) and which permission mode to use when that choice materially affects behavior.
+1. Ask the user which model alias to use (default: `sonnet`) and which permission mode to use when that choice materially affects behavior.
 2. Decide whether Claude should receive the artifact directly or discover it itself:
    - Pass diffs, logs, or file contents via stdin for safe read-only review
    - Let Claude inspect the working tree when the task requires tool use
