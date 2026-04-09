@@ -42,10 +42,11 @@ Hard rule: do not use `plan` for ordinary reviews just because it sounds safe. F
    - implementation / refactor / fix: `acceptEdits`
    - strict read-only planning requested by the user: `plan`
 3. Treat `--max-turns` as an optional circuit breaker, not a default quality knob.
-   - omit it for long repo reviews or investigations unless you specifically need a hard cap
-   - narrow question or follow-up: `3`
-   - normal file or diff review: `6`
-   - implementation / refactor when you must bound automation: `10` to `12`
+   - default: omit `--max-turns`
+   - use it only when the user explicitly asks for a bounded run, or when you are intentionally doing a narrow one-shot
+   - narrow question or follow-up when a hard cap is intentionally desired: `3`
+   - normal file or diff review when a hard cap is intentionally desired: `6`
+   - implementation / refactor when a hard cap is intentionally desired: `10` to `12`
 4. Do not add `--effort high` by default. Use the CLI default unless the user explicitly wants deeper reasoning or the task is unusually ambiguous.
 5. Assemble the direct `claude` command with the appropriate options:
    - `-p, --print`
@@ -67,7 +68,7 @@ When this skill is used from Codex, use the execution path that actually works h
 - For real Claude runs in this environment, prefer `exec_command` with `sandbox_permissions: "require_escalated"`.
 - Do not treat the sandboxed path as normal. Direct `claude -p` has been verified to work outside the sandbox and to hang or misbehave inside it.
 - For long repo reviews from Codex, prefer `--output-format stream-json --verbose` so progress is visible. Plain `text` output can remain silent for a long time even when Claude is actively working.
-- For long repo reviews from Codex, do not default to a low `--max-turns`. Claude may spend several turns exploring the repo before producing the review.
+- For long repo reviews from Codex, do not add `--max-turns` unless the user explicitly wants a hard cap. Claude may spend several turns exploring the repo before producing the review.
 - Use a narrow approval request tied to the Claude invocation, for example:
   - "Do you want me to run Claude Code outside the sandbox so it can complete this review?"
   - "Do you want me to run Claude Code with network/auth access so it can complete this task?"
@@ -97,8 +98,7 @@ git diff --staged | claude -p \
   "Review this diff and return findings ordered by severity with concise explanations." \
   --output-format text \
   --model sonnet \
-  --permission-mode default \
-  --max-turns 6
+  --permission-mode default
 ```
 
 ### 3. Multi-directory repo investigation
@@ -123,8 +123,7 @@ claude -p \
   "Implement the requested change in this repo, keep the diff minimal, and summarize what changed." \
   --output-format text \
   --model sonnet \
-  --permission-mode acceptEdits \
-  --max-turns 12
+  --permission-mode acceptEdits
 ```
 
 ### 5. Resume the latest session
@@ -144,7 +143,8 @@ claude -r latest -p "Focus only on the open issue you identified earlier and pro
 
 - Stop and report failures whenever `claude --version` or a `claude -p` command exits non-zero.
 - If Claude reaches `max turns`, report that plainly. Do not paraphrase it as a hang.
-- Do not assume a repo review should fit in `6` or `8` turns. Exploration-heavy runs can legitimately need more.
+- Do not add `--max-turns` by default. If the user did not ask for a hard cap, leave it out.
+- Do not assume a repo review should fit in a small fixed turn count. Exploration-heavy runs can legitimately need more.
 - If `--output-format text` stays silent during a long repo review, do not assume it is hung. Re-run or start with `--output-format stream-json --verbose` to confirm whether Claude is actively working.
 - If Claude truly hangs or returns no output even in streaming mode, report that plainly and stop.
 - Do not substitute your own review and imply it came from Claude.
