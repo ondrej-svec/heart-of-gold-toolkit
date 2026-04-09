@@ -61,6 +61,15 @@ const TESTS: Record<string, RuleTest[]> = {
       good: "Strana 23–26 obsahuje české texty mezi slova – vložené – parenteticky",
     },
     {
+      // R6 must NOT fire on multi-segment identifiers like the
+      // Liberating Structures method name `1-2-4-All`. The bad example
+      // uses a standalone numeric range; the good example uses the
+      // method name, which should be left alone.
+      ruleId: "cs-R6-dash",
+      bad: "Pošlete mi 2-3 otázky před sessionou",
+      good: "Použijte 1-2-4-All formát na reflexi, pošlete mi 2–3 otázky",
+    },
+    {
       ruleId: "cs-R7-sentence-case-heading",
       bad: "# Jak Nastavit Vývojové Prostředí Pro Workshop",
       good: "# Jak nastavit vývojové prostředí pro workshop",

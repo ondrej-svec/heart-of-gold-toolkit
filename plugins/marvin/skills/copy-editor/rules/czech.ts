@@ -284,7 +284,15 @@ const R5: Rule = {
 // markdown list markers like "\n- text" where the `-` is a bullet, not
 // a dash between two words.
 const R6A_HYPHEN_AS_DASH = /(\p{L})[ \t]+-[ \t]+(\p{L})/gu;
-const R6B_NUMERIC_RANGE = /(\d)-(\d)/g;
+// R6B matches a genuine standalone numeric range like `2-3` or `23-26`
+// but not:
+//   - a chain segment: `1-2-4-All` (the Liberating Structures method)
+//   - the middle of a multi-digit number: `23-26` should match once as
+//     the whole pair, not also as `3-2` inside it
+//   - a slug or identifier like `phase-1-2` or `reveal-1-2-4-all`
+// The lookbehind/lookahead assertions ensure the numeric pair is not
+// adjacent to another digit or hyphen on either side.
+const R6B_NUMERIC_RANGE = /(?<![\d-])(\d+)-(\d+)(?![\d-])/g;
 
 const R6: Rule = {
   id: "cs-R6-dash",

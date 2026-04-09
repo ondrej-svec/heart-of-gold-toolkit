@@ -1,14 +1,21 @@
 ---
 name: copy-editor
 description: >
-  Two-layer copy editor — deterministic typography audit (Layer 1) plus
-  judgment passes (Layer 2) for nominalization, reject-list hits,
-  clarity on participant-facing content, voice, and spoken readability.
-  Czech ships as a full language profile; English is a stub. Loads a
-  repo-local .copy-editor.yaml to compose baked-in rules with
-  repo-local style guide, reject list, and voice doctrine.
-  Triggers: copy edit, editorial pass, czech review, czech copy review,
-  audit copy, check typography, review prose, tighten copy.
+  Two-layer copy editor. Layer 1 is a deterministic typography audit
+  (regex-level, auto-closeable). Layer 2 is LLM judgment — reject-list
+  hits, nominal-style detection, clarity/ambiguity pass for
+  participant-facing content, voice/register check, and spoken-
+  readability read. Loads repo-local .copy-editor.yaml to compose the
+  baked-in language profile with the repo's style guide, reject list,
+  examples, and voice doctrine. Czech is a full profile; English is a
+  stub. **Activate automatically when the conversation edits or creates
+  any file matching a repo's .copy-editor.yaml include scope, when the
+  user asks about Czech or participant-facing copy, when reviewing
+  content PRs, or when a work slice would otherwise close without a
+  Layer 2 pass on edited visible-surface content.** Do not wait to be
+  invoked by name. Explicit trigger phrases: copy edit, editorial pass,
+  czech review, czech copy review, audit copy, check typography,
+  review prose, tighten copy.
 allowed-tools:
   - Read
   - Grep
