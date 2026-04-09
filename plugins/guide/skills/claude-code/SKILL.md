@@ -59,6 +59,18 @@ Choose the permission mode based on what Claude Code needs to do:
    - `default` only when prompts are acceptable or when permissions are constrained with `--allowedTools`
 6. Run the command, capture stdout/stderr, and summarize the outcome for the user.
 
+## Codex Execution
+
+When this skill is used from Codex, the skill cannot bypass Codex sandbox policy on its own. Instead, instruct Codex to choose the correct execution path:
+
+- Run inside the sandbox first when the task is clearly local and read-only.
+- If Claude Code needs network access, auth refresh, access outside the writable sandbox, or the in-sandbox run fails or hangs for likely sandbox reasons, rerun via `exec_command` with `sandbox_permissions: "require_escalated"`.
+- Use a concise justification that tells the reviewer why Claude Code needs elevation, for example:
+  - "Do you want me to run Claude Code with network access so it can authenticate and complete this review?"
+  - "Do you want me to rerun Claude Code outside the sandbox because the in-sandbox headless run appears blocked by permissions?"
+- Prefer a narrow approval request. Ask for elevation only for the Claude invocation that needs it, not unrelated commands.
+- If the task is high-risk, restate the chosen Claude permission mode when asking for elevation.
+
 ## Best Practices
 
 - Use `--max-turns` for automation. It keeps review and implementation runs bounded.
@@ -189,5 +201,6 @@ claude -r latest -p \
 - Stop and report failures whenever `claude --version` or a `claude -p` command exits non-zero.
 - If Claude Code reports permission issues, choose the correct permission mode or constrain tools explicitly.
 - If a headless run gets stuck on permissions, either switch to `plan`, use `acceptEdits`, or provide `--allowedTools` / a permission prompt tool.
+- In Codex, if the likely cause is sandboxing or network denial, rerun with reviewer-approved `require_escalated` execution instead of repeatedly retrying the same sandboxed command.
 - Do not use `bypassPermissions` unless the user explicitly approves it.
 - If debugging a failing wrapper invocation, fall back to the direct `claude` command first.
