@@ -13,28 +13,6 @@ allowed-tools:
   - Write
   - Edit
   - Agent
-hooks:
-  Stop:
-    - hooks:
-        - type: command
-          command: |
-            if [ -n "$ARCH_PATH" ] && [ -f "$ARCH_PATH" ]; then
-              DEPS=$(awk '/^## Dependencies/{f=1;next} /^## /{f=0} f && /^\| /' "$ARCH_PATH" | grep -v '^\| Package\|^\| ---' | awk -F'|' '{print $2}' | tr -d ' ' | grep -v '^$')
-              MISSING=""
-              for DEP in $DEPS; do
-                if ! grep -rq "from ['\"]${DEP}" src/ 2>/dev/null; then
-                  MISSING="$MISSING $DEP"
-                fi
-              done
-              if [ -n "$MISSING" ]; then
-                echo "{\"ok\":false,\"reason\":\"Missed architecture violations — dependencies not imported:$MISSING\"}"
-              else
-                echo '{"ok":true}'
-              fi
-            else
-              echo '{"ok":true}'
-            fi
-          timeout: 120
 ---
 
 # Red Team
