@@ -41,11 +41,11 @@ Hard rule: do not use `plan` for ordinary reviews just because it sounds safe. F
    - review / analysis / debugging: `default`
    - implementation / refactor / fix: `acceptEdits`
    - strict read-only planning requested by the user: `plan`
-3. Pick a sane `--max-turns`:
+3. Treat `--max-turns` as an optional circuit breaker, not a default quality knob.
+   - omit it for long repo reviews or investigations unless you specifically need a hard cap
    - narrow question or follow-up: `3`
    - normal file or diff review: `6`
-   - multi-directory repo review or investigation: `8`
-   - implementation / refactor: `10` to `12`
+   - implementation / refactor when you must bound automation: `10` to `12`
 4. Do not add `--effort high` by default. Use the CLI default unless the user explicitly wants deeper reasoning or the task is unusually ambiguous.
 5. Assemble the direct `claude` command with the appropriate options:
    - `-p, --print`
@@ -53,7 +53,7 @@ Hard rule: do not use `plan` for ordinary reviews just because it sounds safe. F
    - `--output-format stream-json --verbose` for long repo reviews, investigations, or any run where you need progress visibility
    - `--model <MODEL>`
    - `--permission-mode <MODE>`
-   - `--max-turns <N>`
+   - `--max-turns <N>` only when you intentionally want to cap the run
    - `"your prompt here"` immediately after `-p` when using variadic flags like `--allowedTools`
    - `--allowedTools <TOOL> [<TOOL> ...]` only to pre-approve tools without prompting
    - `--disallowedTools <TOOL> [<TOOL> ...]` when you actually need to prevent specific tools
@@ -67,6 +67,7 @@ When this skill is used from Codex, use the execution path that actually works h
 - For real Claude runs in this environment, prefer `exec_command` with `sandbox_permissions: "require_escalated"`.
 - Do not treat the sandboxed path as normal. Direct `claude -p` has been verified to work outside the sandbox and to hang or misbehave inside it.
 - For long repo reviews from Codex, prefer `--output-format stream-json --verbose` so progress is visible. Plain `text` output can remain silent for a long time even when Claude is actively working.
+- For long repo reviews from Codex, do not default to a low `--max-turns`. Claude may spend several turns exploring the repo before producing the review.
 - Use a narrow approval request tied to the Claude invocation, for example:
   - "Do you want me to run Claude Code outside the sandbox so it can complete this review?"
   - "Do you want me to run Claude Code with network/auth access so it can complete this task?"
@@ -85,7 +86,6 @@ claude -p \
   --verbose \
   --model sonnet \
   --permission-mode default \
-  --max-turns 8 \
   --allowedTools "Read" "Grep" "Glob" "LS" "Bash(git status:*)" "Bash(git diff:*)" \
   --disallowedTools "Edit" "Write" "NotebookEdit"
 ```
@@ -112,7 +112,6 @@ claude -p \
   --verbose \
   --model opus \
   --permission-mode default \
-  --max-turns 8 \
   --allowedTools "Read" "Grep" "Glob" "LS" "Bash(git status:*)" "Bash(git diff:*)" \
   --disallowedTools "Edit" "Write" "NotebookEdit"
 ```
@@ -145,6 +144,7 @@ claude -r latest -p "Focus only on the open issue you identified earlier and pro
 
 - Stop and report failures whenever `claude --version` or a `claude -p` command exits non-zero.
 - If Claude reaches `max turns`, report that plainly. Do not paraphrase it as a hang.
+- Do not assume a repo review should fit in `6` or `8` turns. Exploration-heavy runs can legitimately need more.
 - If `--output-format text` stays silent during a long repo review, do not assume it is hung. Re-run or start with `--output-format stream-json --verbose` to confirm whether Claude is actively working.
 - If Claude truly hangs or returns no output even in streaming mode, report that plainly and stop.
 - Do not substitute your own review and imply it came from Claude.
