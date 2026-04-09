@@ -31,7 +31,7 @@ output_format="text"
 resume_value=""
 continue_mode=0
 cwd=""
-add_dirs=()
+declare -a add_dirs=()
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -127,9 +127,11 @@ if [[ -n "$effort" ]]; then
   cmd+=(--effort "$effort")
 fi
 
-for dir in "${add_dirs[@]}"; do
-  cmd+=(--add-dir "$dir")
-done
+if ((${#add_dirs[@]} > 0)); then
+  for dir in "${add_dirs[@]}"; do
+    cmd+=(--add-dir "$dir")
+  done
+fi
 
 cmd+=("$prompt")
 

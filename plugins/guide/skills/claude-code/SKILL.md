@@ -5,114 +5,114 @@ description: Use when the user asks to run Claude Code CLI (`claude`, `claude re
 
 # Claude Code CLI Skill Guide
 
-Use this skill to hand a bounded task to Claude Code from the current harness, capture the output, and summarize it back to the user.
+## Available Models
 
-## Defaults
+| Model | Best for |
+| --- | --- |
+| `sonnet` | Default recommendation for most coding, review, and analysis tasks |
+| `opus` | Stronger reasoning for ambiguous or high-stakes reviews |
+| `haiku` | Faster and cheaper for lightweight follow-ups |
 
-- Default model: `sonnet`
-- Default permission mode for review or analysis: `plan`
-- Default permission mode for requested edits: `acceptEdits`
-- Default effort: `medium`
-
-Prefer the harness's structured question UI when available; otherwise ask plainly in text and wait for the answer before continuing.
+Default recommendation: `sonnet` for most tasks, `opus` when depth matters more than speed.
 
 ## Running a Task
+1. Ask the user which model to use (default: `sonnet`) AND which permission mode to use (`plan`, `acceptEdits`, `default`, `auto`, or `bypassPermissions`) in a single prompt when both matter.
+2. Default to `--permission-mode plan` for reviews, read-only analysis, and second opinions.
+3. Assemble the command with the appropriate options:
+   - `-p, --print` for non-interactive output
+   - `--output-format <text|json|stream-json>`
+   - `--model <MODEL>`
+   - `--permission-mode <MODE>`
+   - `--effort <low|medium|high|max>`
+   - `--add-dir <DIR>` when Claude Code must read outside the current working directory
+   - `"your prompt here"` as the final positional argument
+4. Prefer `--output-format text` unless the caller explicitly needs JSON.
+5. Run the command, capture stdout/stderr, and summarize the outcome for the user.
+6. After Claude Code completes, tell the user they can resume by asking for `claude resume` or another Claude Code follow-up.
 
-1. Ask the user which model to use if they care. Default to `sonnet`.
-2. Ask for permission mode only when it materially affects safety:
-   - `plan` for review, analysis, and read-only second opinions
-   - `acceptEdits` when the user explicitly wants Claude Code to make local changes
-   - `bypassPermissions` only with explicit user approval
-3. Resolve the bundled runner relative to this skill:
-   - `scripts/run-claude-code.sh`
-4. Build a concrete prompt for Claude Code. For review requests, include scope and output shape:
-   - Ask for findings ordered by severity
-   - Ask for file paths in each finding
-   - Ask for a short final verdict
-5. Run the bundled script:
-
-```bash
-bash <skill-dir>/scripts/run-claude-code.sh \
-  --prompt "<PROMPT>" \
-  --model <MODEL> \
-  --permission-mode <MODE> \
-  --effort <EFFORT>
-```
-
-6. Capture stdout and summarize the result for the user.
-7. If the user wants a follow-up, resume the latest Claude Code session instead of starting from scratch:
-
-```bash
-bash <skill-dir>/scripts/run-claude-code.sh \
-  --resume latest \
-  --prompt "<FOLLOW_UP_PROMPT>" \
-  --model <MODEL> \
-  --permission-mode <MODE> \
-  --effort <EFFORT>
-```
-
-## Quick Reference
-
-| Use case | Permission mode | Suggested prompt shape |
+### Quick Reference
+| Use case | Permission mode | Key flags |
 | --- | --- | --- |
-| Read-only code review | `plan` | "Review the current diff and return findings ordered by severity with file paths." |
-| Architecture second opinion | `plan` | "Assess this design and name the top risks, tradeoffs, and missing tests." |
-| Targeted implementation | `acceptEdits` | "Implement X, keep changes minimal, and explain what changed." |
-| Continue prior thread | prior mode | Resume with a narrow follow-up prompt instead of restating everything |
+| Read-only review or analysis | `plan` | `-p --output-format text --permission-mode plan` |
+| Apply local edits | `acceptEdits` | `-p --output-format text --permission-mode acceptEdits` |
+| Stronger review pass | `plan` | `--model opus --effort high` |
+| Resume recent session | Inherited | `-r latest -p "new prompt" --output-format text` |
 
-## Prompting Guidance
-
-- Keep prompts bounded. Claude Code performs better when the scope is explicit.
-- Name the artifact under review: current diff, specific files, or a directory.
-- For reviews, ask for bugs, regressions, missing tests, and risky assumptions first.
-- For implementation requests, specify what must not change.
-- If you disagree with the result, treat Claude Code as a colleague and challenge it with evidence.
-
-## Examples
+## Recommended Commands
 
 ### Review the current diff
 
 ```bash
-bash <skill-dir>/scripts/run-claude-code.sh \
-  --prompt "Review the current git diff. Return only findings, ordered by severity, with file paths and concise explanations." \
+claude -p \
+  --output-format text \
   --model sonnet \
   --permission-mode plan \
-  --effort medium
+  --effort medium \
+  "Review the current git diff. Return findings ordered by severity with file paths and concise explanations."
 ```
 
-### Ask Claude Code to inspect a single file
+### Review a specific file
 
 ```bash
-bash <skill-dir>/scripts/run-claude-code.sh \
-  --prompt "Review src/server.ts for correctness, edge cases, and missing tests. Keep the response concise." \
+claude -p \
+  --output-format text \
   --model sonnet \
   --permission-mode plan \
-  --effort high
+  --effort high \
+  "Review src/server.ts for correctness, regressions, and missing tests. Keep the response concise."
 ```
 
 ### Continue the latest Claude Code session
 
 ```bash
-bash <skill-dir>/scripts/run-claude-code.sh \
-  --resume latest \
-  --prompt "Focus only on the migration risk you mentioned. What is the safest rollout plan?" \
-  --model sonnet \
-  --permission-mode plan \
-  --effort medium
+claude -r latest -p \
+  --output-format text \
+  "Focus only on the migration risk you mentioned. What is the safest rollout plan?"
 ```
 
-## Script
+## Optional Wrapper
 
-Use the bundled runner instead of assembling `claude` commands ad hoc:
+This skill also ships a convenience wrapper at `scripts/run-claude-code.sh`.
+
+Use it only as a thin helper around the direct `claude` commands above:
 
 - `scripts/run-claude-code.sh --check` verifies that Claude Code is installed
-- `scripts/run-claude-code.sh --help` prints usage
+- `scripts/run-claude-code.sh --prompt "..." --permission-mode plan` mirrors the direct CLI usage
 
-The wrapper keeps flag handling deterministic and portable when this skill is installed into Codex, Pi, or other agent harnesses.
+Prefer the direct `claude` commands in this document when debugging, because they are easier to inspect and adapt.
+
+## Following Up
+
+- After every Claude Code command, confirm whether the user wants a follow-up, a resume, or a different model / permission mode.
+- When resuming, keep the new prompt narrow instead of restating the whole task.
+- Restate the chosen model, effort, and permission mode when proposing a retry.
+
+## Critical Evaluation of Claude Code Output
+
+Claude Code is a colleague, not an authority.
+
+### Guidelines
+- Trust your own knowledge when confident.
+- Push back if Claude Code makes a claim that conflicts with the code or docs in front of you.
+- Research disagreements before accepting them for high-impact decisions.
+- Do not defer blindly on models, tool flags, or fast-moving best practices.
+
+### When Claude Code Seems Wrong
+1. State the disagreement clearly to the user.
+2. Provide evidence from the codebase, documentation, or your own verification.
+3. Optionally resume the Claude Code session with a corrective prompt:
+
+```bash
+claude -r latest -p \
+  --output-format text \
+  "I disagree with your earlier conclusion because [evidence]. Re-evaluate only that point."
+```
+
+4. Treat the exchange as a discussion, not a correction ritual.
 
 ## Error Handling
 
-- Stop and report failures when `claude --version` or the runner exits non-zero.
-- If Claude Code is missing, tell the user to install or authenticate Claude Code before retrying.
-- If output is partial or Claude reports permission issues, summarize that clearly and ask whether to retry with a different permission mode.
+- Stop and report failures whenever `claude --version` or a `claude -p` command exits non-zero.
+- If Claude Code reports permission issues, retry only after choosing the correct `--permission-mode`.
 - Do not use `bypassPermissions` unless the user explicitly approves it.
+- If debugging a failing wrapper invocation, fall back to the direct `claude` command first.
