@@ -280,7 +280,10 @@ const R5: Rule = {
  * We avoid firing on code-ish patterns by requiring at least one
  * alphabetic context character around the hyphen in case (a).
  */
-const R6A_HYPHEN_AS_DASH = /(\p{L})\s-\s(\p{L})/gu;
+// R6A uses horizontal whitespace only (space/tab) to avoid firing on
+// markdown list markers like "\n- text" where the `-` is a bullet, not
+// a dash between two words.
+const R6A_HYPHEN_AS_DASH = /(\p{L})[ \t]+-[ \t]+(\p{L})/gu;
 const R6B_NUMERIC_RANGE = /(\d)-(\d)/g;
 
 const R6: Rule = {
