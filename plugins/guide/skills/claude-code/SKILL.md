@@ -79,7 +79,8 @@ Choose the permission mode based on what Claude Code needs to do:
 When this skill is used from Codex, the skill cannot bypass Codex sandbox policy on its own. Instead, instruct Codex to choose the correct execution path:
 
 - Prefer the direct `claude` command patterns in this skill. Do not silently substitute the bundled wrapper for the normal path just because it exists.
-- Run inside the sandbox first when the task is clearly local and read-only.
+- In this environment, actual `claude -p` runs have been verified to hang inside the Codex sandbox but succeed outside it. Treat reviewer-approved elevated execution as the default practical path for real Claude invocations.
+- Use the sandboxed path only when the user explicitly wants to test sandbox behavior or when you have a concrete reason to believe the sandbox limitation no longer applies.
 - If Claude Code needs network access, auth refresh, access outside the writable sandbox, or the in-sandbox run fails or hangs for likely sandbox reasons, rerun via `exec_command` with `sandbox_permissions: "require_escalated"`.
 - If you verify that direct `claude -p` works outside the sandbox but hangs inside it in the current environment, stop treating the sandboxed path as normal. For the rest of that Codex session, prefer reviewer-approved elevated execution as the default path for actual Claude invocations.
 - Use a concise justification that tells the reviewer why Claude Code needs elevation, for example:
@@ -254,6 +255,7 @@ claude -r latest -p \
 - If Claude Code hangs or times out, report that Claude did not complete in this environment. Do not continue with a self-authored substitute while implying it came from Claude.
 - If Claude Code reports permission issues, choose the correct permission mode or constrain tools explicitly.
 - If a headless run gets stuck on permissions, either switch to `plan`, use `acceptEdits`, or provide `--allowedTools` / a permission prompt tool.
+- In this environment, prefer reviewer-approved elevated execution for real Claude runs instead of treating sandbox execution as the normal path.
 - In Codex, if the likely cause is sandboxing or network denial, rerun with reviewer-approved `require_escalated` execution instead of repeatedly retrying the same sandboxed command.
 - In Codex, if you have already confirmed that elevated execution works and sandboxed execution hangs, do not re-run the sandboxed path again during the same task.
 - Do not use `bypassPermissions` unless the user explicitly approves it.
