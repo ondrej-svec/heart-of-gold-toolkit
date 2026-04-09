@@ -7,7 +7,7 @@ description: Use when the user asks to run Claude Code CLI (`claude`, `claude re
 
 Use this skill to hand a bounded task to Claude Code from the current harness, capture the result, and summarize it back to the user.
 
-This skill is task-based, not review-only. Use `plan` for safe read-only analysis, but use other permission modes when the task requires command execution or edits.
+This skill is task-based, not review-only. Anthropic's `plan` mode is a read-only analysis mode, but because Claude Code frames it as "Plan Mode," do not treat it as the default for reviews. Prefer `default` for normal reviews and `acceptEdits` for implementation work unless you specifically want strict read-only behavior.
 
 The canonical execution path is direct `claude` CLI usage, mirroring the `codex` skill's direct `codex exec` pattern. The bundled wrapper is optional and must not replace the direct path unless the user explicitly asks for it or you are debugging Claude Code invocation behavior itself.
 
@@ -31,19 +31,19 @@ Choose the permission mode based on what Claude Code needs to do:
 
 | Mode | Use when | Notes |
 | --- | --- | --- |
-| `plan` | The task is read-only and Claude does not need to execute commands or edit files | Safest option for reviewing provided diffs, logs, file contents, or design docs |
+| `plan` | You explicitly want strict read-only analysis with no command execution or edits | Best for exploration, planning, or artifact-only analysis; not the default recommendation for review |
 | `default` | Claude may need to inspect the repo more freely and you can tolerate permission prompts | Good interactive default; less reliable in headless automation unless permissions are pre-arranged |
 | `acceptEdits` | Claude should be able to make local code changes | Strong default for implementation, refactors, and fixes |
 | `bypassPermissions` | Full automation is required in a trusted sandbox and the user explicitly approves it | High risk; do not default to this |
 
-`plan` is not the general default for this skill. It is only the safe default for bounded read-only tasks.
+`plan` is not the general default for this skill. Use it only when you specifically want Claude in strict read-only analysis mode.
 
 ## Running a Task
 1. Always ask the user which model alias to use (default: `sonnet`) before running Claude Code, unless the user already specified the model.
 2. Ask for permission mode in the same prompt when the user did not specify it. Default to:
-   - `plan` for bounded read-only analysis
+   - `default` for reviews and analysis
    - `acceptEdits` for implementation or refactoring work
-   - `default` when Claude needs broader repo exploration without auto-edit authority
+   - `plan` only when the user explicitly wants strict read-only analysis
 3. Decide whether Claude should receive the artifact directly or discover it itself:
    - Pass diffs, logs, or file contents via stdin for safe read-only review
    - Let Claude inspect the working tree when the task requires tool use
@@ -60,9 +60,9 @@ Choose the permission mode based on what Claude Code needs to do:
    - `"your prompt here"` as the final positional argument
 5. Prefer `--output-format text` for human-readable summaries and `--output-format json` for automation or machine parsing.
 6. In headless automation, prefer explicit permissions:
-   - `plan` for provided artifacts
+   - `default` for most review and analysis runs
    - `acceptEdits` for edit-capable runs
-   - `default` only when prompts are acceptable or when permissions are constrained with `--allowedTools`
+   - `plan` only when you specifically want read-only analysis with no command execution
 7. Run the command, capture stdout/stderr, and summarize the outcome for the user.
 8. If Claude Code does not actually return output, stop and report that failure. Do not substitute your own review or analysis and present it as if it came from Claude Code.
 
@@ -91,15 +91,15 @@ When this skill is used from Codex, the skill cannot bypass Codex sandbox policy
 
 ## Recommended Patterns
 
-### 1. Review a provided diff safely
+### 1. Review a provided diff
 
-Pass the diff via stdin and keep Claude in `plan` mode:
+Pass the diff via stdin and ask for review directly. Use `default` unless you specifically want strict read-only analysis:
 
 ```bash
 git diff --staged | claude -p \
   --output-format text \
   --model sonnet \
-  --permission-mode plan \
+  --permission-mode default \
   --max-turns 1 \
   "Review this diff. Return findings ordered by severity with file paths and concise explanations."
 ```
@@ -146,9 +146,22 @@ claude -r latest -p \
 claude -p \
   --output-format json \
   --model sonnet \
-  --permission-mode plan \
+  --permission-mode default \
   --max-turns 1 \
   "Summarize the provided diff as JSON with keys: verdict, findings, risks."
+```
+
+### 6. Use strict read-only analysis mode explicitly
+
+Use `plan` only when you want Claude prevented from executing commands or editing files:
+
+```bash
+git diff --staged | claude -p \
+  --output-format text \
+  --model sonnet \
+  --permission-mode plan \
+  --max-turns 1 \
+  "Analyze this diff and explain the key risks. Keep the response concise."
 ```
 
 ## Optional Wrapper
