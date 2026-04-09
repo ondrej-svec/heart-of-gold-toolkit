@@ -1,6 +1,6 @@
 {
   "name": "@heart-of-gold/toolkit",
-  "version": "0.1.9",
+  "version": "0.1.10",
   "type": "module",
   "description": "Cross-platform installer for Heart of Gold skills — works with Codex, OpenCode, Pi, Claude Code, and more",
   "bin": {
@@ -59,6 +59,7 @@
       "./plugins/deep-thought/skills/review",
       "./plugins/deep-thought/skills/think",
       "./plugins/guide/skills/capture",
+      "./plugins/guide/skills/claude-code",
       "./plugins/guide/skills/codex",
       "./plugins/guide/skills/gemini",
       "./plugins/guide/skills/pipeline",

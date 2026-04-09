@@ -2,7 +2,7 @@
 
 > **Don't Panic.**
 
-25 skills for AI coding agents. Five plugins. Works with **Claude Code, Codex, OpenCode, Pi**, and any tool supporting the [agentskills.io](https://agentskills.io) standard. Named after *The Hitchhiker's Guide to the Galaxy* because the universe is absurd and your tools should at least have personality.
+29 skills for AI coding agents. Five plugins. Works with **Claude Code, Codex, OpenCode, Pi**, and any tool supporting the [agentskills.io](https://agentskills.io) standard. Named after *The Hitchhiker's Guide to the Galaxy* because the universe is absurd and your tools should at least have personality.
 
 ## Installation
 
@@ -107,13 +107,14 @@ Your personal content engine.
 
 Configurable sources (RSS, Gmail, HN, web search), narrative briefs, LinkedIn drafts, blog outlines, voice fidelity checking, iMessage delivery, and two-way captures.
 
-6 skills · 2 agents · 4 scripts
+7 skills · 2 agents · 5 scripts
 
 ```
 /guide:setup       # configure your sources, themes, and voice
 /guide:pipeline    # run the full content engine
 /guide:capture     # morning/evening thought capture
 /guide:write-post  # guided blog writing (7 phases)
+/guide:claude-code # Claude Code CLI guidance
 /guide:codex       # Codex CLI guidance
 /guide:gemini      # Gemini CLI guidance
 ```
