@@ -37,11 +37,15 @@ Choose the permission mode based on what Claude Code needs to do:
 `plan` is not the general default for this skill. It is only the safe default for bounded read-only tasks.
 
 ## Running a Task
-1. Ask the user which model alias to use (default: `sonnet`) and which permission mode to use when that choice materially affects behavior.
-2. Decide whether Claude should receive the artifact directly or discover it itself:
+1. Always ask the user which model alias to use (default: `sonnet`) before running Claude Code, unless the user already specified the model.
+2. Ask for permission mode in the same prompt when the user did not specify it. Default to:
+   - `plan` for bounded read-only analysis
+   - `acceptEdits` for implementation or refactoring work
+   - `default` when Claude needs broader repo exploration without auto-edit authority
+3. Decide whether Claude should receive the artifact directly or discover it itself:
    - Pass diffs, logs, or file contents via stdin for safe read-only review
    - Let Claude inspect the working tree when the task requires tool use
-3. Assemble the command with the appropriate options:
+4. Assemble the command with the appropriate options:
    - `-p, --print` for non-interactive output
    - `--output-format <text|json|stream-json>`
    - `--model <MODEL>`
@@ -52,12 +56,12 @@ Choose the permission mode based on what Claude Code needs to do:
    - `--add-dir <DIR>` when Claude must read outside the current working directory
    - `--name <NAME>` when you want a stable, human-readable session
    - `"your prompt here"` as the final positional argument
-4. Prefer `--output-format text` for human-readable summaries and `--output-format json` for automation or machine parsing.
-5. In headless automation, prefer explicit permissions:
+5. Prefer `--output-format text` for human-readable summaries and `--output-format json` for automation or machine parsing.
+6. In headless automation, prefer explicit permissions:
    - `plan` for provided artifacts
    - `acceptEdits` for edit-capable runs
    - `default` only when prompts are acceptable or when permissions are constrained with `--allowedTools`
-6. Run the command, capture stdout/stderr, and summarize the outcome for the user.
+7. Run the command, capture stdout/stderr, and summarize the outcome for the user.
 
 ## Codex Execution
 
