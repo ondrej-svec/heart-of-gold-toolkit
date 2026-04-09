@@ -79,6 +79,14 @@ Headless Claude Code handoff for second opinions, code review, targeted analysis
 
 Use it when you want another agent harness to invoke Claude Code non-interactively, capture the result, and summarize it back. The skill ships with a small wrapper script that standardizes `claude -p` / resume usage across installs.
 
+### /guide:codex
+
+Headless OpenAI Codex CLI handoff for code analysis, refactoring, or automated editing. Use when you want to invoke `codex exec` / `codex resume` non-interactively and bring the result back.
+
+### /guide:gemini
+
+Headless Google Gemini CLI handoff for code analysis, refactoring, or automated editing. Use when you want to invoke `gemini` / `gemini resume` non-interactively and bring the result back.
+
 ## How the Pipeline Works
 
 ```

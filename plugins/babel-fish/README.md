@@ -3,7 +3,7 @@
 > "The Babel fish is small, yellow, leathery, and probably the oddest thing in the universe."
 > It also translates your words into audio and your ideas into images.
 
-A media generation plugin for Claude Code. Turns text into audio content and generates images from prompts.
+A media generation plugin for Claude Code. Turns text into audio, ideas into images, and structured content into terminal mind maps.
 
 ## Security & Trust
 
@@ -32,6 +32,9 @@ AI image generation and editing:
 - Logo generation with text
 
 Supports Gemini and FLUX models via OpenRouter API.
+
+### `/babel-fish:visualize`
+Render mind maps and tree visualizations directly in the terminal using Unicode box-drawing characters and ANSI colors. Works over SSH — no browser needed. Use it on brainstorm docs, plan docs, markdown files, or any structured content.
 
 ## Requirements
 

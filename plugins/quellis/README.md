@@ -8,8 +8,9 @@ Install the Heart of Gold toolkit, then enable the Quellis plugin:
 
 ```bash
 # In your Claude Code settings
-/quellis:coach     # Start a coaching conversation
-/quellis:reflect   # Guided reflection using FLOW/REVIEW
+/quellis:coach         # Start a coaching conversation
+/quellis:reflect       # Guided reflection using FLOW/REVIEW
+/quellis:goal-setting  # SMART+V goal-setting with obstacle pre-mortem
 /quellis:goal-checkin  # Check in on your goals and commitments
 ```
 
@@ -32,6 +33,14 @@ experiences, exploring emotions, and finding patterns.
 
 ```
 /quellis:reflect
+```
+
+### Goal Setting
+
+SMART+V goal-setting with an obstacle pre-mortem. Turns fuzzy intentions into concrete, values-aligned commitments you can actually check in on.
+
+```
+/quellis:goal-setting
 ```
 
 ### Goal Check-in

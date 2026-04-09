@@ -2,7 +2,7 @@
 
 > **Don't Panic.**
 
-29 skills for AI coding agents. Five plugins. Works with **Claude Code, Codex, OpenCode, Pi**, and any tool supporting the [agentskills.io](https://agentskills.io) standard. Named after *The Hitchhiker's Guide to the Galaxy* because the universe is absurd and your tools should at least have personality.
+30 skills for AI coding agents. Five plugins. Works with **Claude Code, Codex, OpenCode, Pi**, and any tool supporting the [agentskills.io](https://agentskills.io) standard. Named after *The Hitchhiker's Guide to the Galaxy* because the universe is absurd and your tools should at least have personality.
 
 ## Installation
 
@@ -90,7 +90,7 @@ The unglamorous work that compounds.
 
 Execute plans task by task with tests after every change. Quick-review code with an emphasis on simplicity — catch YAGNI violations, premature abstractions, and code that solves problems that don't exist yet. Document solutions so the next person doesn't waste time re-discovering what you already figured out.
 
-6 skills · 2 agents · 3 knowledge files
+7 skills · 2 agents · 3 knowledge files
 
 ```
 /marvin:work         # execute plans — implement, test, commit, ship
@@ -99,6 +99,7 @@ Execute plans task by task with tests after every change. Quick-review code with
 /marvin:redteam      # adversarial review — find weaknesses, expose with failing tests
 /marvin:scaffold     # prepare project structure, configs, dependencies
 /marvin:test-writer  # write failing tests from user stories
+/marvin:copy-editor  # two-layer copy editor (typography audit + LLM judgment)
 ```
 
 ### [Guide](plugins/guide/) — The Hitchhiker's Guide

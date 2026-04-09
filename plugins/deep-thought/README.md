@@ -3,7 +3,7 @@
 > "The Answer to the Great Question... Of Life, the Universe and Everything... Is... Forty-two."
 > But the question matters more. That's what this plugin is for.
 
-A reasoning plugin for Claude Code. Eight skills for thinking clearly about hard problems — from early-stage brainstorming through architectural review and strategic CTO decisions.
+A reasoning plugin for Claude Code. Nine skills for thinking clearly about hard problems — from early-stage brainstorming through architectural review and strategic CTO decisions.
 
 ## Skills
 
@@ -26,6 +26,9 @@ Works on code, performance, architecture, data, and systems.
 
 ### `/deep-thought:review`
 Focused code review — one deep pass with evidence-based findings and clear verdict. Auto-detects what you're reviewing: branch diff, PR, file path, plan, or spec.
+
+### `/deep-thought:architect`
+Turn brainstorm decisions into user stories, an architecture doc, and ADRs. Use after brainstorming to define WHAT to build and HOW it fits together. Standalone or pipeline-aware.
 
 ### `/deep-thought:architecture-review`
 Deep architectural review of a platform or product. Cross-references code against claims, maps failure modes, evaluates scaling bottlenecks, and produces a decision-grade handoff document with ADRs.
