@@ -9,6 +9,8 @@ Use this skill to hand a bounded task to Claude Code from the current harness, c
 
 This skill is task-based, not review-only. Use `plan` for safe read-only analysis, but use other permission modes when the task requires command execution or edits.
 
+The canonical execution path is direct `claude` CLI usage, mirroring the `codex` skill's direct `codex exec` pattern. The bundled wrapper is optional and must not replace the direct path unless the user explicitly asks for it or you are debugging Claude Code invocation behavior itself.
+
 ## Available Models
 
 | Model | Best for |
@@ -62,11 +64,13 @@ Choose the permission mode based on what Claude Code needs to do:
    - `acceptEdits` for edit-capable runs
    - `default` only when prompts are acceptable or when permissions are constrained with `--allowedTools`
 7. Run the command, capture stdout/stderr, and summarize the outcome for the user.
+8. If Claude Code does not actually return output, stop and report that failure. Do not substitute your own review or analysis and present it as if it came from Claude Code.
 
 ## Codex Execution
 
 When this skill is used from Codex, the skill cannot bypass Codex sandbox policy on its own. Instead, instruct Codex to choose the correct execution path:
 
+- Prefer the direct `claude` command patterns in this skill. Do not silently substitute the bundled wrapper for the normal path just because it exists.
 - Run inside the sandbox first when the task is clearly local and read-only.
 - If Claude Code needs network access, auth refresh, access outside the writable sandbox, or the in-sandbox run fails or hangs for likely sandbox reasons, rerun via `exec_command` with `sandbox_permissions: "require_escalated"`.
 - Use a concise justification that tells the reviewer why Claude Code needs elevation, for example:
@@ -168,8 +172,15 @@ Use it as a thin helper around the documented CLI patterns above. It supports:
 - `--name`
 - `--no-session-persistence`
 - `--verbose`
+- `--timeout-seconds`
 
-Prefer the direct `claude` commands in this document when debugging or when you need to reason about permissions precisely.
+Do not treat the wrapper as the default execution path for this skill. Use it only when:
+
+- the user explicitly asks to use the wrapper
+- you are debugging Claude Code hangs or invocation edge cases
+- you need its optional timeout helper for diagnosis
+
+Otherwise, use the direct `claude` commands in this document.
 
 ## Following Up
 
@@ -203,8 +214,9 @@ claude -r latest -p \
 ## Error Handling
 
 - Stop and report failures whenever `claude --version` or a `claude -p` command exits non-zero.
+- If Claude Code hangs or times out, report that Claude did not complete in this environment. Do not continue with a self-authored substitute while implying it came from Claude.
 - If Claude Code reports permission issues, choose the correct permission mode or constrain tools explicitly.
 - If a headless run gets stuck on permissions, either switch to `plan`, use `acceptEdits`, or provide `--allowedTools` / a permission prompt tool.
 - In Codex, if the likely cause is sandboxing or network denial, rerun with reviewer-approved `require_escalated` execution instead of repeatedly retrying the same sandboxed command.
 - Do not use `bypassPermissions` unless the user explicitly approves it.
-- If debugging a failing wrapper invocation, fall back to the direct `claude` command first.
+- If the direct `claude` path fails, report that failure directly. Do not route around it by pretending a wrapper run or a self-authored review is equivalent to Claude output.

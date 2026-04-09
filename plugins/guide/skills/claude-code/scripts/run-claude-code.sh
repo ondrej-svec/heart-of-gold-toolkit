@@ -25,6 +25,7 @@ Options:
   --permission-prompt-tool CMD  External permission handler for headless runs
   --no-session-persistence      Do not persist the session on disk
   --verbose                     Enable verbose Claude Code output
+  --timeout-seconds N           Kill Claude Code if it does not finish within N seconds
   --help                        Show this help text
 EOF
 }
@@ -43,6 +44,7 @@ name=""
 verbose=0
 no_session_persistence=0
 permission_prompt_tool=""
+timeout_seconds=""
 declare -a add_dirs=()
 declare -a allowed_tools=()
 declare -a disallowed_tools=()
@@ -129,6 +131,11 @@ while [[ $# -gt 0 ]]; do
     --verbose)
       verbose=1
       shift
+      ;;
+    --timeout-seconds)
+      [[ $# -ge 2 ]] || { echo "Missing value for --timeout-seconds" >&2; exit 2; }
+      timeout_seconds="$2"
+      shift 2
       ;;
     --help|-h)
       usage
@@ -218,4 +225,24 @@ if [[ -n "$cwd" ]]; then
   cd "$cwd"
 fi
 
-exec "${cmd[@]}"
+if [[ -n "$timeout_seconds" ]]; then
+  python3 -c '
+import os, signal, subprocess, sys
+timeout = float(sys.argv[1])
+cmd = sys.argv[2:]
+proc = subprocess.Popen(cmd)
+try:
+    rc = proc.wait(timeout=timeout)
+    sys.exit(rc)
+except subprocess.TimeoutExpired:
+    proc.kill()
+    try:
+        proc.wait(timeout=5)
+    except subprocess.TimeoutExpired:
+        pass
+    print(f"Claude Code timed out after {timeout:g} seconds", file=sys.stderr)
+    sys.exit(124)
+' "$timeout_seconds" "${cmd[@]}"
+else
+  exec "${cmd[@]}"
+fi
