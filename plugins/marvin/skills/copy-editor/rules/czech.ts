@@ -61,6 +61,7 @@ const R1: Rule = {
       const spaceIndex = prepIndex + 1;
       const { line, column } = locateInChunk(chunk, prepIndex);
       if (chunk.ignoreLines?.has(line)) continue;
+      const spacePos = locateInChunk(chunk, spaceIndex);
       findings.push({
         ruleId: R1.id,
         severity: R1.severity,
@@ -69,6 +70,12 @@ const R1: Rule = {
         column,
         snippet: chunk.text.slice(prepIndex, prepIndex + 3),
         message: `Replace regular space after \`${match[2]}\` with non-breaking space (\\u00A0).`,
+        fix: {
+          line: spacePos.line,
+          column: spacePos.column,
+          length: 1,
+          replacement: NBSP,
+        },
       });
       // Advance to avoid overlapping match on the same space.
       R1_SINGLE_LETTER_PREPS.lastIndex = spaceIndex + 1;
@@ -89,8 +96,10 @@ const R1b: Rule = {
     let match: RegExpExecArray | null;
     while ((match = R1B_SHORT_CONJUNCTIONS.exec(chunk.text)) !== null) {
       const conjIndex = match.index + match[1].length;
+      const spaceIndex = conjIndex + 1;
       const { line, column } = locateInChunk(chunk, conjIndex);
       if (chunk.ignoreLines?.has(line)) continue;
+      const spacePos = locateInChunk(chunk, spaceIndex);
       findings.push({
         ruleId: R1b.id,
         severity: R1b.severity,
@@ -99,6 +108,12 @@ const R1b: Rule = {
         column,
         snippet: chunk.text.slice(conjIndex, conjIndex + 3),
         message: `Consider a non-breaking space after \`${match[2]}\` if it is a conjunction.`,
+        fix: {
+          line: spacePos.line,
+          column: spacePos.column,
+          length: 1,
+          replacement: NBSP,
+        },
       });
       R1B_SHORT_CONJUNCTIONS.lastIndex = conjIndex + 2;
     }
@@ -172,6 +187,7 @@ const R3: Rule = {
         column,
         snippet: "...",
         message: "Replace `...` with `…` (U+2026).",
+        fix: { line, column, length: 3, replacement: "…" },
       });
     }
     return findings;

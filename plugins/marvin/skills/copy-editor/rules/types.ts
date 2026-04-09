@@ -19,6 +19,23 @@ export interface Finding {
   column: number; // 1-indexed absolute column
   snippet: string; // the matching text (trimmed)
   message: string; // short human-readable reason
+  /**
+   * Optional mechanical fix descriptor. When present, `--fix` mode can
+   * apply it safely. Rules that produce fixable findings should set
+   * this to describe a byte-exact text replacement in the original
+   * file. Rules that are judgment-level or have ambiguous fixes leave
+   * it undefined; those findings remain report-only.
+   */
+  fix?: {
+    /** 1-indexed absolute line where the replacement starts */
+    line: number;
+    /** 1-indexed absolute column where the replacement starts */
+    column: number;
+    /** Number of UTF-16 code units to replace at that position */
+    length: number;
+    /** Replacement text */
+    replacement: string;
+  };
 }
 
 /**

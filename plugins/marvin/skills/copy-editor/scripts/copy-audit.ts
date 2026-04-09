@@ -23,7 +23,13 @@
  *   - Understanding file semantics beyond text extraction
  */
 
-import { readFileSync, existsSync, statSync, readdirSync } from "node:fs";
+import {
+  readFileSync,
+  writeFileSync,
+  existsSync,
+  statSync,
+  readdirSync,
+} from "node:fs";
 import { dirname, extname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import yaml from "js-yaml";
@@ -45,6 +51,7 @@ interface CliOptions {
   json: boolean;
   verbose: boolean;
   selfTest: boolean;
+  fix: boolean;
   help: boolean;
 }
 
@@ -53,6 +60,7 @@ function parseArgs(argv: string[]): CliOptions {
     json: false,
     verbose: false,
     selfTest: false,
+    fix: false,
     help: false,
   };
   for (let i = 0; i < argv.length; i++) {
@@ -79,6 +87,9 @@ function parseArgs(argv: string[]): CliOptions {
         break;
       case "--self-test":
         options.selfTest = true;
+        break;
+      case "--fix":
+        options.fix = true;
         break;
       case "--help":
       case "-h":
@@ -108,6 +119,9 @@ Options:
   --json              Emit structured JSON instead of human-readable text.
   --verbose           Print per-file progress.
   --self-test         Run fixture-based self tests. Ignores other options.
+  --fix               Apply mechanical fixes in place for rules that
+                      provide a safe fix descriptor (R1, R1b, R3).
+                      Other findings still report but are not mutated.
   -h, --help          Show this help.
 
 Known language profiles: ${listProfiles().join(", ")}
@@ -450,6 +464,62 @@ function extractChunks(
 }
 
 // ────────────────────────────────────────────────────────────────────
+// Fix application
+// ────────────────────────────────────────────────────────────────────
+
+/**
+ * Convert a 1-indexed (line, column) position to a UTF-16 offset in
+ * the file text. Used by fix mode to locate where to apply a
+ * replacement.
+ */
+function offsetFromLineCol(text: string, line: number, column: number): number {
+  let currentLine = 1;
+  let currentCol = 1;
+  for (let i = 0; i < text.length; i++) {
+    if (currentLine === line && currentCol === column) return i;
+    if (text[i] === "\n") {
+      currentLine += 1;
+      currentCol = 1;
+    } else {
+      currentCol += 1;
+    }
+  }
+  // End of text
+  if (currentLine === line && currentCol === column) return text.length;
+  return -1;
+}
+
+/**
+ * Apply fixable findings to a single file's text. Returns the new text
+ * and the count of fixes applied. Fixes are applied back-to-front so
+ * earlier offsets remain valid.
+ */
+function applyFixes(
+  text: string,
+  findings: Finding[],
+): { text: string; applied: number } {
+  const fixable = findings
+    .filter((f) => f.fix)
+    .map((f) => {
+      const offset = offsetFromLineCol(text, f.fix!.line, f.fix!.column);
+      return { finding: f, offset };
+    })
+    .filter((entry) => entry.offset >= 0)
+    .sort((a, b) => b.offset - a.offset);
+
+  let out = text;
+  let applied = 0;
+  for (const { finding, offset } of fixable) {
+    const fix = finding.fix!;
+    const before = out.slice(0, offset);
+    const after = out.slice(offset + fix.length);
+    out = before + fix.replacement + after;
+    applied += 1;
+  }
+  return { text: out, applied };
+}
+
+// ────────────────────────────────────────────────────────────────────
 // Rule execution
 // ────────────────────────────────────────────────────────────────────
 
@@ -641,6 +711,9 @@ async function main(): Promise<void> {
   }
 
   const allFindings: Finding[] = [];
+  let totalFixesApplied = 0;
+  const filesModified: string[] = [];
+
   for (const file of files) {
     let text: string;
     try {
@@ -652,6 +725,24 @@ async function main(): Promise<void> {
     if (!statSync(file).isFile()) continue;
     const chunks = extractChunks(file, text, ignoreMarker);
     const findings = runProfile(profile, chunks);
+
+    if (opts.fix && findings.some((f) => f.fix)) {
+      const { text: fixed, applied } = applyFixes(text, findings);
+      if (applied > 0 && fixed !== text) {
+        writeFileSync(file, fixed, "utf8");
+        totalFixesApplied += applied;
+        filesModified.push(file);
+        if (opts.verbose) {
+          console.error(`  ${relative(configDir, file)}: ${applied} fix(es)`);
+        }
+        // Re-run rules against the fixed text to get accurate residual findings.
+        const newChunks = extractChunks(file, fixed, ignoreMarker);
+        const residualFindings = runProfile(profile, newChunks);
+        allFindings.push(...residualFindings);
+        continue;
+      }
+    }
+
     if (opts.verbose && findings.length > 0) {
       console.error(`  ${relative(configDir, file)}: ${findings.length}`);
     }
@@ -664,6 +755,12 @@ async function main(): Promise<void> {
     console.log(JSON.stringify(report, null, 2));
   } else {
     printHumanReport(report, configDir);
+    if (opts.fix) {
+      console.log("");
+      console.log(
+        `Applied ${totalFixesApplied} fix(es) to ${filesModified.length} file(s).`,
+      );
+    }
   }
 
   process.exit(report.errorFindings > 0 ? 1 : 0);
