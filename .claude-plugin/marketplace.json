@@ -33,7 +33,7 @@
       "name": "quellis",
       "source": "./plugins/quellis",
       "description": "AI Coaching Companion — ICF methodology, powerful questions, goal-setting, and reflection",
-      "version": "0.1.0"
+      "version": "0.3.0"
     }
   ]
 }
