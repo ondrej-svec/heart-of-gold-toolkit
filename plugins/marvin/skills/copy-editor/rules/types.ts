@@ -48,6 +48,12 @@ export interface Finding {
  * can compute accurate file locations by adding line offsets from
  * within the chunk text.
  */
+/**
+ * Closed vocabulary for chunk content kinds. The engine skips typography
+ * rules entirely on `code` and `data` chunks regardless of their language.
+ */
+export type ChunkKind = "prose" | "code" | "quote" | "data";
+
 export interface TextChunk {
   text: string;
   filePath: string;
@@ -59,6 +65,20 @@ export interface TextChunk {
    * them in the source file.
    */
   ignoreLines?: Set<number>;
+  /**
+   * Optional ISO 639-1 lowercase language tag (e.g. "cs", "en", or
+   * "unknown") set by the segmentation phase. When present, the engine
+   * uses it to filter rules whose `languages` allowlist does not include
+   * this value. When absent, all rules apply (legacy single-profile
+   * behaviour).
+   */
+  language?: string;
+  /**
+   * Optional content kind set by the segmentation phase. When `code` or
+   * `data`, the engine skips all typography rules on this chunk
+   * regardless of language. When absent, defaults to `prose` semantics.
+   */
+  kind?: ChunkKind;
 }
 
 export interface Rule {
@@ -70,6 +90,15 @@ export interface Rule {
    * as id but friendlier.
    */
   label?: string;
+  /**
+   * Optional ISO 639-1 lowercase language allowlist. When defined, the
+   * engine skips this rule on chunks whose `language` is not in the
+   * list. When undefined, the rule applies to every chunk regardless of
+   * language (legacy behaviour). Use this to scope language-specific
+   * typography rules so they do not fire on prose in another language
+   * inside the same file.
+   */
+  languages?: string[];
   check(chunk: TextChunk): Finding[];
 }
 

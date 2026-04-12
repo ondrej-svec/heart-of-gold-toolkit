@@ -305,10 +305,10 @@ Dependency-ordered. Each task is self-contained and landable as one commit to `m
 
 ### Phase 1 — Type and engine foundation
 
-- [ ] Add `language?: string` and `kind?: "prose" | "code" | "quote" | "data"` to `TextChunk` in `rules/types.ts`.
-- [ ] Add `languages?: string[]` to `Rule` in `rules/types.ts`.
-- [ ] Update `runProfile` in `scripts/copy-audit.ts` to skip rules whose `languages` does not include `chunk.language` (when both are defined).
-- [ ] Run existing `self-test.ts`. Must pass unchanged.
+- [x] Add `language?: string` and `kind?: ChunkKind` to `TextChunk` in `rules/types.ts`. New `ChunkKind` type exported.
+- [x] Add `languages?: string[]` to `Rule` in `rules/types.ts`.
+- [x] Update `runProfile` to skip `code`/`data` chunks entirely and to skip rules whose `languages` does not include `chunk.language` (when both are defined). Both conditions guarded so legacy chunks (no `language`, no `kind`) keep current behaviour.
+- [x] `bun scripts/self-test.ts` → 10/10 pass. Harness-lab baseline unchanged (645 findings, same rule distribution).
 
 ### Phase 2 — Lockfile format
 

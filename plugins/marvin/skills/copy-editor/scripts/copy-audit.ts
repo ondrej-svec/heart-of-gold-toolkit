@@ -526,7 +526,15 @@ function applyFixes(
 function runProfile(profile: LanguageProfile, chunks: TextChunk[]): Finding[] {
   const findings: Finding[] = [];
   for (const chunk of chunks) {
+    if (chunk.kind === "code" || chunk.kind === "data") continue;
     for (const rule of profile.rules) {
+      if (
+        rule.languages &&
+        chunk.language &&
+        !rule.languages.includes(chunk.language)
+      ) {
+        continue;
+      }
       try {
         const ruleFindings = rule.check(chunk);
         findings.push(...ruleFindings);
