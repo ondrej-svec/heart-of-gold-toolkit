@@ -93,8 +93,8 @@ ignore_marker: "copy-editor: ignore"
 
 | Field | Type | Required | Default | Description |
 |---|---|---|---|---|
-| `extends` | `string[]` | No | `[]` | Language profile names to inherit (e.g. `czech`, `english`). Currently used for discoverability only; the engine resolves the profile from `language`. |
-| `language` | `string` | Yes | — | ISO code of the primary language profile (`cs`, `en`). Overrideable with `--lang` CLI flag. |
+| `extends` | `string[]` | No | `[]` | Language profile names or ISO codes the segmenter should declare to the host agent (e.g. `["cs", "en"]` or `["czech", "english"]`). Names are resolved to ISO codes via the profile registry at runtime. Currently used by `copy-audit segment` to populate `declaredProfiles` in the handoff payload. The engine still picks the audit's primary profile from `language`. |
+| `language` | `string` | Yes | — | ISO code of the primary language profile (`cs`, `en`). Overrideable with `--lang` CLI flag. Acts as the default for spans that fall in lockfile gaps. |
 | `rules.style_guide` | `string` | No | — | Path to the repo-local style guide markdown. Injected into Layer 2 context pack. |
 | `rules.reject_list` | `string` | No | — | Path to the repo-local reject list markdown. Used by Pass A. |
 | `rules.examples` | `string` | No | — | Path to repo-local before/after examples. Injected into Layer 2 context pack. |
@@ -102,10 +102,23 @@ ignore_marker: "copy-editor: ignore"
 | `voice_doctrine` | `string` | No | — | Short directive voice guidance. Injected into Pass D. |
 | `paths.include` | `string[]` | Yes | — | Glob patterns relative to the config dir. At least one required. |
 | `paths.exclude` | `string[]` | No | `[]` | Glob patterns to exclude from the scope. |
-| `paths.surface_profile` | `Record<string, "participant" \| "presenter" \| "hybrid">` | No | `{}` | Per-path surface profile classification. Keys are glob patterns, values are profiles. Paths not matching any key default to `hybrid`. |
+| `paths.surface_profile` | `Record<string, "participant" \| "presenter" \| "hybrid">` | No | `{}` | Per-path surface profile classification for Layer 2's clarity pass. Keys are glob patterns, values are profiles. Paths not matching any key default to `hybrid`. |
+| `paths.locale` | `Record<string, string>` | No | `{}` | _Reserved._ Per-path locale hint that the (deferred) `StructuralSegmenter` may consume when running `--offline`. Has no effect on the agent-driven segmentation path — that path uses content analysis, not glob hints. |
+| `segment.cache_path` | `string` | No | `.copy-editor.lock.json` | Path to the lockfile relative to the config dir. The script reads spans from here on every audit run and writes to it via the `lockfile` subcommands. |
 | `output.review_notes_dir` | `string` | No | — | Where Phase 3 writes the review note draft. If unset, the draft goes to stdout. |
 | `output.structured_findings_dir` | `string` | No | — | Where Phase 3 writes the structured JSON. If unset, JSON goes to stdout. |
 | `ignore_marker` | `string` | No | `"copy-editor: ignore"` | String the engine searches for to suppress findings on the same line or the line immediately below. |
+
+### Fields that are deliberately not in the schema
+
+The script never calls a model. The following fields you might expect from a typical AI-tooling config are **not present and will never be added**:
+
+- `segment.backend.llm.model` — the script does not select or invoke a model. The host agent that runs the skill is the LLM.
+- `segment.backend.llm.api_key` / `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` — no network calls from the script.
+- `segment.backend.llm.endpoint` — no model endpoint configuration.
+- Any retry/timeout/concurrency knob related to LLM calls — no LLM calls.
+
+If you find yourself wanting one of these, the architecture is wrong. The agent should be doing that work via the CLI contract (`copy-audit segment` → produce JSON → `copy-audit lockfile add`). See `knowledge/segmentation.md` for the full contract.
 
 ## Glob patterns
 
@@ -135,7 +148,7 @@ The marker on a line suppresses findings on that line and the one immediately be
 
 The schema is versioned implicitly through this document. Breaking changes (rename, removal, semantic change) require a version bump and a migration note. Additive changes (new optional field) do not.
 
-Current version: **v0.1** (initial).
+Current version: **v0.2** — added `segment.cache_path`, activated `extends` for the segmentation handoff, reserved `paths.locale` for the structural fallback, added the lockfile schema (v1) at `knowledge/lockfile-schema.md`.
 
 ## Validation
 

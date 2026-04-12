@@ -62,9 +62,47 @@ This clause is non-negotiable. If a repo's doctrine relaxes it, stop and ask bef
 
 **Exit:** Scope, config, rule sources, and per-path surface profile resolved.
 
+## Phase 1a: Segment (agent-side)
+
+**Entry:** Phase 0 complete. Cache state may be partial or stale.
+
+The audit script never calls a model. When the cache is incomplete, the **host agent** (you, running this skill) performs segmentation and writes the result to the lockfile. The script provides the CLI contract.
+
+1. **List files that need segmentation:**
+   ```bash
+   bun copy-audit.ts --config <yaml> --list-unsegmented --json
+   ```
+   Exit code is non-zero when any files lack a lockfile entry or have a stale `contentHash`. The JSON output lists each file with its `reason` (`missing` or `stale`).
+
+2. **For each unsegmented file, fetch the handoff payload:**
+   ```bash
+   bun copy-audit.ts segment <file-path> --config <yaml> --json
+   ```
+   This prints the file content, declared profiles, output schema reference, the next-step instruction, and the literal v2 segmentation prompt with `{{filePath}}`, `{{declaredProfiles}}`, and `{{fileBytes}}` interpolated.
+
+3. **Apply the prompt yourself.** The prompt is in `knowledge/segmentation-prompt-v2.md`. Output rules:
+   - Single JSON object, no preamble, no fence. First char `{`, last char `}`.
+   - Spans ordered by `(startLine, startColumn)`, **non-overlapping**.
+   - `language` from declared profiles or `"unknown"`. For `kind: code`/`data`, always `"unknown"`.
+   - Granularity rule: contiguous regions of one language and one kind produce **one** span, not many.
+   - Inline code inside prose: split into `[prose-before, code, prose-after]`. See worked example in the prompt doc.
+   - JSON files: emit spans only for leaf string values, not braces/keys/structural tokens.
+
+4. **Write the spans:**
+   ```bash
+   echo '{"spans":[...]}' | bun copy-audit.ts lockfile add <file-path> --spans - --config <yaml>
+   ```
+   The script computes the contentHash, sets `segmentedAt`, sets `reviewedBy: null`, and refuses to overwrite an existing entry without `--force`.
+
+5. **Loop** until `--list-unsegmented` returns clean (exit 0).
+
+**Exit:** Every file in scope has a fresh lockfile entry. Most are at `reviewedBy: null` and will be surfaced as pending in Phase 4.
+
+**Why the agent owns this:** Building an LLM transport inside the script would duplicate infrastructure that already lives in the agent runtime. The script stays a pure deterministic Bun process. The verification boundary (see below) holds because Layer 1 reads from the cache, not from a fresh model call.
+
 ## Phase 1: Lint (Layer 1, deterministic)
 
-**Entry:** Phase 0 complete.
+**Entry:** Phase 1a complete (lockfile populated). Or no lockfile, in which case the script falls through to legacy single-profile behaviour for files without entries.
 
 Invoke the engine:
 
@@ -73,6 +111,8 @@ bun plugins/marvin/skills/copy-editor/scripts/copy-audit.ts \
   --config <path-to-.copy-editor.yaml> \
   --json
 ```
+
+For CI, add `--require-reviewed` to fail the run when any included file has an unreviewed (`reviewedBy: null`) or missing lockfile entry. This is the gate that enforces the segmentation workflow once a project is ready for it. Opt-in.
 
 From a repo that already has the skill installed via HoG installer, the path resolves relative to the installed skill location; use the host agent's standard skill-script invocation if available.
 
@@ -217,23 +257,44 @@ Then wait. The skill does not apply fixes on its own. If the user wants fixes ap
 
 Before reporting, verify:
 
+- [ ] Phase 1a (segment) loop terminated cleanly: `--list-unsegmented` returned 0 or the run was a fall-through legacy audit on uncached files
 - [ ] Layer 1 actually ran (script output JSON has `totalFiles > 0`)
 - [ ] Layer 2 passes ran in the documented order
 - [ ] Every Layer 2 suggestion has a rationale citing its source rule or guide section
 - [ ] The review note leaves the human signoff line `_pending_`
 - [ ] `gate_2` is not set anywhere in the output
 - [ ] No suggestion contradicts the verification boundary clause
+- [ ] No agent-produced lockfile entry was marked `reviewedBy: <self>` without surfacing the entry to a human first
+
+## CLI quick reference
+
+| Command | Purpose |
+|---|---|
+| `copy-audit --config <yaml>` | Run the audit. Reads cached spans if a lockfile exists. |
+| `copy-audit --config <yaml> --list-unsegmented` | List files with no entry or stale hash. Exit 1 if any. JSON via `--json`. |
+| `copy-audit --config <yaml> --require-reviewed` | Audit + CI gate. Exit 1 if any included file has `reviewedBy: null` or no entry. |
+| `copy-audit segment <path> --config <yaml>` | Print the segmentation handoff payload for the host agent. |
+| `copy-audit lockfile add <path> --spans -` | Write a new entry from span JSON on stdin. |
+| `copy-audit lockfile add <path> --spans <file>` | Write a new entry from a JSON file. |
+| `copy-audit lockfile mark-reviewed <path> --by <id>` | Set `reviewedBy` on an existing entry. Errors on stale hash. |
+| `copy-audit lockfile invalidate <glob>` | Remove entries matching the glob. |
+| `copy-audit lockfile list` | Inspect entries (human or `--json`). |
+| `copy-audit --self-test` | Run the engine's fixture-based self-test. |
 
 ## What Makes This Heart of Gold
 
 - **Two layers, clear contracts:** Deterministic gate closeable by the script, judgment gate always human-closed. No blurring.
 - **Composable rules:** Baked-in language profile + repo-local content rules, joined by one config file.
+- **Agent-native segmentation:** The script never calls a model. The host agent performs segmentation through a CLI contract; results land in a committed lockfile that any future audit reads deterministically. No API keys, no transports, no infrastructure duplication.
 - **Agent-agnostic:** Shell-invocable script is the portable contract. Any agent with Bash can run it.
 - **Respects human judgment:** The skill surfaces, the human decides. The boundary is written into the skill and cannot be weakened by a future revision without breaking loudly.
 
 ## Knowledge References
 
-- `knowledge/ROLE.md` — deeper contract: loop, inputs, outputs, verification boundary, extension points
+- `knowledge/ROLE.md` — deeper contract: loop, inputs, outputs, verification boundary, extension points, segmentation phase
+- `knowledge/segmentation.md` — script ↔ agent contract, prompt versioning, structural fallback, merge rules
+- `knowledge/segmentation-prompt-v2.md` — the canonical segmentation prompt template (current version)
+- `knowledge/lockfile-schema.md` — `.copy-editor.lock.json` field contract, invariants, worked examples
 - `knowledge/config-schema.md` — `.copy-editor.yaml` schema reference with full example
 - `knowledge/language-profiles.md` — how to add a new language profile
 - `knowledge/output-contract.md` — structured findings JSON schema and review note template
