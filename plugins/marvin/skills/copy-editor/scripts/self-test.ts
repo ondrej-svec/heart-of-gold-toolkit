@@ -201,9 +201,8 @@ function runLockfileTests(): LockfileTestResult[] {
   const synthetic: Lockfile = {
     schemaVersion: 1,
     segmenter: {
-      backend: "llm",
-      model: "claude-haiku-4-5-20251001",
-      promptVersion: 1,
+      backend: "agent",
+      promptVersion: 2,
     },
     files: {
       "workshop-content/agenda.json": {
@@ -297,8 +296,32 @@ function runLockfileTests(): LockfileTestResult[] {
     if (!threw) throw new Error("expected throw on schemaVersion mismatch");
   });
 
-  record("llm backend without model throws", () => {
-    const path = join(tmp, "no-model.lock.json");
+  record("agent backend without promptVersion throws", () => {
+    const path = join(tmp, "no-prompt-version.lock.json");
+    const bad = {
+      schemaVersion: 1,
+      segmenter: { backend: "agent" },
+      files: {},
+    };
+    writeLockfileRaw(path, bad);
+    let threw = false;
+    try {
+      readLockfile(path);
+    } catch (err) {
+      threw = true;
+      if (!(err as Error).message.includes("promptVersion")) {
+        throw new Error(
+          `expected promptVersion error, got: ${(err as Error).message}`,
+        );
+      }
+    }
+    if (!threw) {
+      throw new Error("expected throw on agent backend without promptVersion");
+    }
+  });
+
+  record("unknown backend value throws", () => {
+    const path = join(tmp, "bad-backend.lock.json");
     const bad = {
       schemaVersion: 1,
       segmenter: { backend: "llm" },
@@ -308,10 +331,15 @@ function runLockfileTests(): LockfileTestResult[] {
     let threw = false;
     try {
       readLockfile(path);
-    } catch {
+    } catch (err) {
       threw = true;
+      if (!(err as Error).message.includes("backend")) {
+        throw new Error(
+          `expected backend error, got: ${(err as Error).message}`,
+        );
+      }
     }
-    if (!threw) throw new Error("expected throw on llm backend without model");
+    if (!threw) throw new Error("expected throw on unknown backend");
   });
 
   record("invalid contentHash format throws", () => {
@@ -319,9 +347,8 @@ function runLockfileTests(): LockfileTestResult[] {
     const bad = {
       schemaVersion: 1,
       segmenter: {
-        backend: "llm",
-        model: "test",
-        promptVersion: 1,
+        backend: "agent",
+        promptVersion: 2,
       },
       files: {
         "x.md": {
@@ -352,9 +379,8 @@ function runLockfileTests(): LockfileTestResult[] {
     const bad = {
       schemaVersion: 1,
       segmenter: {
-        backend: "llm",
-        model: "test",
-        promptVersion: 1,
+        backend: "agent",
+        promptVersion: 2,
       },
       files: {
         "x.md": {
@@ -401,7 +427,7 @@ function runLockfileTests(): LockfileTestResult[] {
     const path = join(tmp, "empty-spans.lock.json");
     const ok: Lockfile = {
       schemaVersion: 1,
-      segmenter: { backend: "llm", model: "test", promptVersion: 1 },
+      segmenter: { backend: "agent", promptVersion: 2 },
       files: {
         "uniform.md": {
           contentHash: hashFileBytes("uniform content"),
@@ -423,7 +449,7 @@ function runLockfileTests(): LockfileTestResult[] {
     const path = join(tmp, "sorted.lock.json");
     const unsorted: Lockfile = {
       schemaVersion: 1,
-      segmenter: { backend: "llm", model: "test", promptVersion: 1 },
+      segmenter: { backend: "agent", promptVersion: 2 },
       files: {
         "z.md": {
           contentHash: hashFileBytes("z"),

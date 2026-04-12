@@ -18,13 +18,28 @@ import type { ChunkKind } from "../rules/types.ts";
 
 export const LOCKFILE_SCHEMA_VERSION = 1;
 
-export type SegmenterBackend = "llm" | "structural" | "manual";
+/**
+ * Which segmenter produced the entries in the lockfile.
+ *
+ * - "agent": the host agent running the copy-editor skill (Claude Code or
+ *   any other LLM runtime that drives the skill loop). This is the primary
+ *   path. The script itself never calls a model.
+ * - "structural": a deterministic, no-agent fallback that walks JSON key
+ *   paths, markdown front-matter, and markdown info-strings. Used when
+ *   `--offline` is passed or when no agent is in the loop. Strictly less
+ *   powerful than the agent path.
+ * - "manual": the lockfile was hand-authored from the start. No backend
+ *   in the traditional sense.
+ */
+export type SegmenterBackend = "agent" | "structural" | "manual";
 
 export interface LockfileSegmenter {
   backend: SegmenterBackend;
-  /** Required when backend is "llm". Omitted otherwise. */
-  model?: string;
-  /** Required when backend is "llm". Bumping invalidates unreviewed entries. */
+  /**
+   * Prompt template version. Required when backend is "agent". Bumping
+   * invalidates only entries where reviewedBy is null — reviewed entries
+   * keep their human signoff until a content change forces a refresh.
+   */
   promptVersion?: number;
 }
 
@@ -151,21 +166,17 @@ function validateLockfile(value: unknown, source: string): Lockfile {
   if (!isObject(segmenter)) {
     throw new Error(`Lockfile at ${source} is missing segmenter object.`);
   }
-  const { backend, model, promptVersion } = segmenter as Record<string, unknown>;
-  if (backend !== "llm" && backend !== "structural" && backend !== "manual") {
+  const { backend, promptVersion } = segmenter as Record<string, unknown>;
+  if (backend !== "agent" && backend !== "structural" && backend !== "manual") {
     throw new Error(
-      `Lockfile at ${source} has invalid segmenter.backend: ${String(backend)}`,
+      `Lockfile at ${source} has invalid segmenter.backend: ${String(backend)}. ` +
+        `Expected "agent", "structural", or "manual".`,
     );
   }
-  if (backend === "llm") {
-    if (typeof model !== "string" || model.length === 0) {
-      throw new Error(
-        `Lockfile at ${source}: segmenter.backend "llm" requires a non-empty model string.`,
-      );
-    }
+  if (backend === "agent") {
     if (typeof promptVersion !== "number" || !Number.isInteger(promptVersion)) {
       throw new Error(
-        `Lockfile at ${source}: segmenter.backend "llm" requires an integer promptVersion.`,
+        `Lockfile at ${source}: segmenter.backend "agent" requires an integer promptVersion.`,
       );
     }
   }
@@ -183,7 +194,9 @@ function validateLockfile(value: unknown, source: string): Lockfile {
     schemaVersion: LOCKFILE_SCHEMA_VERSION,
     segmenter: {
       backend,
-      ...(backend === "llm" ? { model: model as string, promptVersion: promptVersion as number } : {}),
+      ...(backend === "agent"
+        ? { promptVersion: promptVersion as number }
+        : {}),
     },
     files: validatedFiles,
   };

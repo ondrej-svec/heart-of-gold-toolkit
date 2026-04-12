@@ -10,9 +10,8 @@ The lockfile is committed to the repo. It is reviewed on PR the same way `packag
 {
   "schemaVersion": 1,
   "segmenter": {
-    "backend": "llm",
-    "model": "claude-haiku-4-5-20251001",
-    "promptVersion": 1
+    "backend": "agent",
+    "promptVersion": 2
   },
   "files": {
     "<repo-relative path>": {
@@ -50,9 +49,8 @@ The lockfile is committed to the repo. It is reviewed on PR the same way `packag
 
 | Field | Type | Required | Meaning |
 |---|---|:-:|---|
-| `backend` | `"llm" \| "structural" \| "manual"` | ✓ | Which segmenter produced the spans. `manual` means hand-authored from the start. |
-| `model` | string | llm only | Model identifier (e.g. `"claude-haiku-4-5-20251001"`). Required when `backend == "llm"`, omitted otherwise. |
-| `promptVersion` | int | llm only | Version of the segmentation prompt template. A bump invalidates only entries where `reviewedBy == null`. Reviewed entries keep their human signoff until a content change forces a refresh. |
+| `backend` | `"agent" \| "structural" \| "manual"` | ✓ | Which segmenter produced the spans. `agent` = the host agent running the copy-editor skill (the primary path). `structural` = deterministic no-agent fallback used for `--offline` runs. `manual` = hand-authored from the start. The script itself never calls a model, so there is no `llm` backend — segmentation by the host agent happens in the agent runtime, not in the script process. |
+| `promptVersion` | int | agent only | Version of the segmentation prompt template the agent used. A bump invalidates only entries where `reviewedBy == null`. Reviewed entries keep their human signoff until a content change forces a refresh. Required when `backend == "agent"`. |
 
 ### `files[<path>]`
 
