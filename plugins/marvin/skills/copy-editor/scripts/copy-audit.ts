@@ -36,6 +36,16 @@ import yaml from "js-yaml";
 
 import type { Finding, LanguageProfile, TextChunk } from "../rules/types.ts";
 import { getProfile, listProfiles } from "../rules/index.ts";
+import {
+  hashFileBytes,
+  readLockfile,
+  writeLockfile,
+  type Lockfile,
+  type LockfileEntry,
+  type LockfileSpan,
+} from "./lockfile.ts";
+
+const DEFAULT_LOCKFILE_NAME = ".copy-editor.lock.json";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -868,23 +878,303 @@ The script never calls a model. Segmentation is agent-side work.
 }
 
 // ────────────────────────────────────────────────────────────────────
-// Lockfile subcommands (implemented in the next step)
+// Lockfile subcommands
 // ────────────────────────────────────────────────────────────────────
+
+interface LockfileContext {
+  configDir: string;
+  lockfilePath: string;
+  lockfile: Lockfile;
+}
+
+/**
+ * Load the lockfile referenced by --config (or the current directory).
+ * Creates a fresh in-memory lockfile with the agent backend when none
+ * exists on disk — the first `lockfile add` will write it.
+ */
+function loadLockfileContext(configPath: string | undefined): LockfileContext {
+  let configDir = process.cwd();
+  let cachePath: string | undefined;
+  if (configPath || existsSync(join(process.cwd(), ".copy-editor.yaml"))) {
+    const path = configPath || join(process.cwd(), ".copy-editor.yaml");
+    const { config, configDir: dir } = loadConfig(path);
+    configDir = dir;
+    cachePath = (config as unknown as { segment?: { cache_path?: string } })
+      .segment?.cache_path;
+  }
+  const lockfilePath = join(configDir, cachePath || DEFAULT_LOCKFILE_NAME);
+
+  let lockfile: Lockfile;
+  const existing = readLockfile(lockfilePath);
+  if (existing) {
+    lockfile = existing;
+  } else {
+    lockfile = {
+      schemaVersion: 1,
+      segmenter: { backend: "agent", promptVersion: CURRENT_PROMPT_VERSION },
+      files: {},
+    };
+  }
+  return { configDir, lockfilePath, lockfile };
+}
 
 async function runLockfileSubcommand(argv: string[]): Promise<number> {
   const sub = argv[0];
   if (!sub || sub === "-h" || sub === "--help") {
-    console.log(`copy-audit lockfile <add|mark-reviewed|invalidate> ...
+    console.log(`copy-audit lockfile <subcommand> [args]
 
 Subcommands:
   add <path> --spans <json-file-or-->    Write a new entry from span JSON.
+                                          Use - to read JSON from stdin.
+                                          --force to overwrite an existing entry.
   mark-reviewed <path> --by <reviewer>   Set reviewedBy on an existing entry.
-  invalidate <glob>                      Remove matching entries.
+                                          Errors if the entry's hash is stale.
+  invalidate <glob>                      Remove entries whose relative path
+                                          matches the glob. Supports * and ?.
+  list [--json]                          List entries in the lockfile.
+
+Common options:
+  --config <yaml>   Path to .copy-editor.yaml (determines configDir and
+                    lockfile location).
 `);
     return 0;
   }
-  console.error(`lockfile ${sub}: not yet implemented`);
-  return 2;
+  const args = argv.slice(1);
+  switch (sub) {
+    case "add":
+      return runLockfileAdd(args);
+    case "mark-reviewed":
+      return runLockfileMarkReviewed(args);
+    case "invalidate":
+      return runLockfileInvalidate(args);
+    case "list":
+      return runLockfileList(args);
+    default:
+      console.error(`lockfile: unknown subcommand: ${sub}`);
+      return 2;
+  }
+}
+
+function extractCommonLockfileFlags(args: string[]): {
+  configPath: string | undefined;
+  positional: string[];
+  flags: Record<string, string | boolean>;
+} {
+  let configPath: string | undefined;
+  const positional: string[] = [];
+  const flags: Record<string, string | boolean> = {};
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i];
+    if (arg === "--config") {
+      configPath = args[++i];
+    } else if (arg === "--spans") {
+      flags.spans = args[++i];
+    } else if (arg === "--by") {
+      flags.by = args[++i];
+    } else if (arg === "--force") {
+      flags.force = true;
+    } else if (arg === "--json") {
+      flags.json = true;
+    } else if (arg.startsWith("--")) {
+      console.error(`lockfile: unknown option: ${arg}`);
+      flags.error = true;
+    } else {
+      positional.push(arg);
+    }
+  }
+  return { configPath, positional, flags };
+}
+
+async function runLockfileAdd(args: string[]): Promise<number> {
+  const { configPath, positional, flags } = extractCommonLockfileFlags(args);
+  if (flags.error) return 2;
+  const target = positional[0];
+  if (!target) {
+    console.error("lockfile add: expected a file path argument");
+    return 2;
+  }
+  if (!flags.spans || typeof flags.spans !== "string") {
+    console.error("lockfile add: --spans <json-file-or--> is required");
+    return 2;
+  }
+  const { configDir, lockfilePath, lockfile } = loadLockfileContext(configPath);
+  const absPath = resolve(configDir, target);
+  const relPath = relative(configDir, absPath);
+  if (!existsSync(absPath)) {
+    console.error(`lockfile add: file not found: ${absPath}`);
+    return 2;
+  }
+
+  let spansJson: string;
+  if (flags.spans === "-") {
+    spansJson = readFileSync(0, "utf8"); // stdin
+  } else {
+    const spansPath = resolve(configDir, flags.spans);
+    if (!existsSync(spansPath)) {
+      console.error(`lockfile add: spans file not found: ${spansPath}`);
+      return 2;
+    }
+    spansJson = readFileSync(spansPath, "utf8");
+  }
+
+  let parsed: { spans?: unknown };
+  try {
+    parsed = JSON.parse(spansJson);
+  } catch (err) {
+    console.error(`lockfile add: invalid spans JSON: ${(err as Error).message}`);
+    return 2;
+  }
+  if (!parsed || !Array.isArray(parsed.spans)) {
+    console.error(
+      `lockfile add: spans JSON must be an object with a "spans" array.`,
+    );
+    return 2;
+  }
+
+  const fileBytes = readFileSync(absPath, "utf8");
+  const entry: LockfileEntry = {
+    contentHash: hashFileBytes(fileBytes),
+    segmentedAt: new Date().toISOString(),
+    reviewedBy: null,
+    spans: parsed.spans as LockfileSpan[],
+  };
+
+  if (lockfile.files[relPath] && !flags.force) {
+    console.error(
+      `lockfile add: entry already exists for ${relPath}. Use --force to overwrite.`,
+    );
+    return 2;
+  }
+
+  lockfile.files[relPath] = entry;
+
+  try {
+    writeLockfile(lockfilePath, lockfile);
+  } catch (err) {
+    console.error(`lockfile add: write failed: ${(err as Error).message}`);
+    return 2;
+  }
+  console.log(
+    `✓ wrote ${entry.spans.length} span(s) for ${relPath} (reviewedBy: null)`,
+  );
+  return 0;
+}
+
+async function runLockfileMarkReviewed(args: string[]): Promise<number> {
+  const { configPath, positional, flags } = extractCommonLockfileFlags(args);
+  if (flags.error) return 2;
+  const target = positional[0];
+  if (!target) {
+    console.error("lockfile mark-reviewed: expected a file path argument");
+    return 2;
+  }
+  if (!flags.by || typeof flags.by !== "string") {
+    console.error("lockfile mark-reviewed: --by <reviewer-id> is required");
+    return 2;
+  }
+  const { configDir, lockfilePath, lockfile } = loadLockfileContext(configPath);
+  const absPath = resolve(configDir, target);
+  const relPath = relative(configDir, absPath);
+  const entry = lockfile.files[relPath];
+  if (!entry) {
+    console.error(`lockfile mark-reviewed: no entry for ${relPath}`);
+    return 2;
+  }
+  if (!existsSync(absPath)) {
+    console.error(`lockfile mark-reviewed: file not found: ${absPath}`);
+    return 2;
+  }
+  const currentHash = hashFileBytes(readFileSync(absPath, "utf8"));
+  if (currentHash !== entry.contentHash) {
+    console.error(
+      `lockfile mark-reviewed: stale entry for ${relPath}. ` +
+        `File has changed since segmentation. Re-segment before marking reviewed.`,
+    );
+    return 2;
+  }
+  entry.reviewedBy = flags.by;
+  try {
+    writeLockfile(lockfilePath, lockfile);
+  } catch (err) {
+    console.error(`lockfile mark-reviewed: write failed: ${(err as Error).message}`);
+    return 2;
+  }
+  console.log(`✓ marked ${relPath} reviewed by ${flags.by}`);
+  return 0;
+}
+
+async function runLockfileInvalidate(args: string[]): Promise<number> {
+  const { configPath, positional, flags } = extractCommonLockfileFlags(args);
+  if (flags.error) return 2;
+  const pattern = positional[0];
+  if (!pattern) {
+    console.error("lockfile invalidate: expected a glob argument");
+    return 2;
+  }
+  const { lockfilePath, lockfile } = loadLockfileContext(configPath);
+  const regex = globToRegExp(pattern);
+  const removed: string[] = [];
+  for (const path of Object.keys(lockfile.files)) {
+    if (regex.test(path)) {
+      delete lockfile.files[path];
+      removed.push(path);
+    }
+  }
+  if (removed.length === 0) {
+    console.log(`no entries match ${pattern}`);
+    return 0;
+  }
+  try {
+    writeLockfile(lockfilePath, lockfile);
+  } catch (err) {
+    console.error(`lockfile invalidate: write failed: ${(err as Error).message}`);
+    return 2;
+  }
+  console.log(`✓ removed ${removed.length} entry/entries:`);
+  for (const path of removed) console.log(`  ${path}`);
+  return 0;
+}
+
+async function runLockfileList(args: string[]): Promise<number> {
+  const { configPath, flags } = extractCommonLockfileFlags(args);
+  if (flags.error) return 2;
+  const { lockfile } = loadLockfileContext(configPath);
+  if (flags.json) {
+    console.log(
+      JSON.stringify(
+        {
+          schemaVersion: lockfile.schemaVersion,
+          segmenter: lockfile.segmenter,
+          files: Object.entries(lockfile.files).map(([path, entry]) => ({
+            path,
+            contentHash: entry.contentHash,
+            segmentedAt: entry.segmentedAt,
+            reviewedBy: entry.reviewedBy,
+            spanCount: entry.spans.length,
+          })),
+        },
+        null,
+        2,
+      ),
+    );
+    return 0;
+  }
+  console.log(
+    `lockfile — ${lockfile.segmenter.backend} backend, prompt v${lockfile.segmenter.promptVersion ?? "-"}`,
+  );
+  const paths = Object.keys(lockfile.files).sort();
+  if (paths.length === 0) {
+    console.log("  (empty)");
+    return 0;
+  }
+  for (const path of paths) {
+    const entry = lockfile.files[path];
+    const review = entry.reviewedBy || "(pending)";
+    console.log(
+      `  ${path}  spans=${entry.spans.length}  reviewed=${review}`,
+    );
+  }
+  return 0;
 }
 
 // ────────────────────────────────────────────────────────────────────
