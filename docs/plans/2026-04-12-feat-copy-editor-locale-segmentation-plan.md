@@ -384,10 +384,10 @@ Dependency-ordered. Each task is self-contained and landable as one commit to `m
 
 ### Phase 5 — CLI flags and review workflow
 
-- [ ] Add `--list-unsegmented` to the main `copy-audit` run. Lists files with no lockfile entry or with a stale hash. JSON output via `--json`. Exit code non-zero if any are listed (so the skill loop knows to iterate).
-- [ ] Add `--require-reviewed` — fail the run if any included file has an unreviewed cache entry. Opt-in CI posture.
-- [ ] (`--offline` and the `lockfile` subcommands shipped in Phase 3.)
-- [ ] Document all flags and subcommands in `SKILL.md` and `config-schema.md`. SKILL.md Phase 1a explicitly describes the agent loop: `--list-unsegmented` → for each file, `segment` → produce JSON → `lockfile add` → repeat until clean.
+- [x] Added `--list-unsegmented`. Lists files with no lockfile entry or stale hash, exits 1 if any need segmentation. Human and JSON output. Verified against harness-lab: 23/24 files reported as unsegmented (SKILL-facilitator.md correctly excluded).
+- [x] Added `--require-reviewed`. Combines with the normal audit run; exits 1 if any included file has an unreviewed entry OR no entry at all OR error-severity findings. Surfaces both unreviewed and unsegmented lists in human output, with a `reviewStatus` block in JSON.
+- [x] (`--offline` and `lockfile` subcommands shipped in Phase 3 — `--offline` deferred with StructuralSegmenter.)
+- [ ] (Documentation: deferred to Phase 7 as planned.)
 
 ### Phase 6 — Rule tagging and bilingual self-tests
 

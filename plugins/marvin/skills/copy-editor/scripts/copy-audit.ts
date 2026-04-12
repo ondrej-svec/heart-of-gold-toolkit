@@ -64,6 +64,8 @@ interface CliOptions {
   selfTest: boolean;
   fix: boolean;
   help: boolean;
+  listUnsegmented: boolean;
+  requireReviewed: boolean;
 }
 
 function parseArgs(argv: string[]): CliOptions {
@@ -73,6 +75,8 @@ function parseArgs(argv: string[]): CliOptions {
     selfTest: false,
     fix: false,
     help: false,
+    listUnsegmented: false,
+    requireReviewed: false,
   };
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
@@ -101,6 +105,12 @@ function parseArgs(argv: string[]): CliOptions {
         break;
       case "--fix":
         options.fix = true;
+        break;
+      case "--list-unsegmented":
+        options.listUnsegmented = true;
+        break;
+      case "--require-reviewed":
+        options.requireReviewed = true;
         break;
       case "--help":
       case "-h":
@@ -133,6 +143,15 @@ Options:
   --fix               Apply mechanical fixes in place for rules that
                       provide a safe fix descriptor (R1, R1b, R3).
                       Other findings still report but are not mutated.
+  --list-unsegmented  Skip the audit. Print the list of files that
+                      have no lockfile entry or whose entry is stale
+                      (file changed since segmentation). Exit non-zero
+                      if any files need segmentation. The skill loop
+                      uses this to drive agent-side segmentation.
+  --require-reviewed  Fail the audit (exit non-zero) if any included
+                      file has a lockfile entry with reviewedBy: null.
+                      Opt-in CI gate. Files without any lockfile entry
+                      are reported separately and also fail the gate.
   -h, --help          Show this help.
 
 Known language profiles: ${listProfiles().join(", ")}
@@ -1180,6 +1199,115 @@ async function runLockfileList(args: string[]): Promise<number> {
 }
 
 // ────────────────────────────────────────────────────────────────────
+// Cache status helpers
+// ────────────────────────────────────────────────────────────────────
+
+interface UnsegmentedEntry {
+  path: string;
+  reason: "missing" | "stale";
+  expectedHash?: string;
+  actualHash?: string;
+}
+
+function findUnsegmentedFiles(
+  files: string[],
+  configDir: string,
+  lockfile: Lockfile | null,
+): UnsegmentedEntry[] {
+  const out: UnsegmentedEntry[] = [];
+  for (const file of files) {
+    if (!statSync(file).isFile()) continue;
+    const relPath = relative(configDir, file);
+    const entry = lockfile?.files[relPath];
+    let bytes: string;
+    try {
+      bytes = readFileSync(file, "utf8");
+    } catch {
+      continue;
+    }
+    if (!entry) {
+      out.push({ path: relPath, reason: "missing" });
+      continue;
+    }
+    const currentHash = hashFileBytes(bytes);
+    if (entry.contentHash !== currentHash) {
+      out.push({
+        path: relPath,
+        reason: "stale",
+        expectedHash: entry.contentHash,
+        actualHash: currentHash,
+      });
+    }
+  }
+  return out;
+}
+
+function runListUnsegmented(
+  files: string[],
+  configDir: string,
+  lockfile: Lockfile | null,
+  json: boolean,
+): number {
+  const unsegmented = findUnsegmentedFiles(files, configDir, lockfile);
+  if (json) {
+    console.log(
+      JSON.stringify(
+        {
+          totalFiles: files.length,
+          unsegmentedCount: unsegmented.length,
+          unsegmented,
+        },
+        null,
+        2,
+      ),
+    );
+  } else {
+    if (unsegmented.length === 0) {
+      console.log(`✓ all ${files.length} file(s) have lockfile entries.`);
+    } else {
+      console.log(
+        `${unsegmented.length} of ${files.length} file(s) need segmentation:`,
+      );
+      for (const entry of unsegmented) {
+        console.log(`  ${entry.reason.padEnd(8)} ${entry.path}`);
+      }
+      console.log("");
+      console.log(
+        "Hand each file to the host agent via `copy-audit segment <path>`.",
+      );
+    }
+  }
+  return unsegmented.length === 0 ? 0 : 1;
+}
+
+interface ReviewStatus {
+  unreviewed: string[];
+  unsegmented: string[];
+}
+
+function checkReviewStatus(
+  files: string[],
+  configDir: string,
+  lockfile: Lockfile | null,
+): ReviewStatus {
+  const unreviewed: string[] = [];
+  const unsegmented: string[] = [];
+  for (const file of files) {
+    if (!statSync(file).isFile()) continue;
+    const relPath = relative(configDir, file);
+    const entry = lockfile?.files[relPath];
+    if (!entry) {
+      unsegmented.push(relPath);
+      continue;
+    }
+    if (entry.reviewedBy === null) {
+      unreviewed.push(relPath);
+    }
+  }
+  return { unreviewed, unsegmented };
+}
+
+// ────────────────────────────────────────────────────────────────────
 // Self-test harness
 // ────────────────────────────────────────────────────────────────────
 
@@ -1272,6 +1400,14 @@ async function main(): Promise<void> {
   const lockfilePath = join(configDir, DEFAULT_LOCKFILE_NAME);
   const lockfile = readLockfile(lockfilePath);
 
+  // --list-unsegmented short-circuits the audit. List files that have no
+  // entry or whose entry is stale, then exit. The skill loop uses this
+  // to know which files to hand to the host agent for segmentation.
+  if (opts.listUnsegmented) {
+    const code = runListUnsegmented(files, configDir, lockfile, opts.json);
+    process.exit(code);
+  }
+
   const allFindings: Finding[] = [];
   let totalFixesApplied = 0;
   const filesModified: string[] = [];
@@ -1333,8 +1469,17 @@ async function main(): Promise<void> {
 
   const report = buildReport(files, allFindings);
 
+  // --require-reviewed gate. Computed before printing so the report can
+  // surface review status, and used to decide the exit code below.
+  const reviewStatus = opts.requireReviewed
+    ? checkReviewStatus(files, configDir, lockfile)
+    : null;
+
   if (opts.json) {
-    console.log(JSON.stringify(report, null, 2));
+    const out = reviewStatus
+      ? { ...report, reviewStatus }
+      : report;
+    console.log(JSON.stringify(out, null, 2));
   } else {
     printHumanReport(report, configDir);
     if (opts.fix) {
@@ -1343,9 +1488,37 @@ async function main(): Promise<void> {
         `Applied ${totalFixesApplied} fix(es) to ${filesModified.length} file(s).`,
       );
     }
+    if (reviewStatus) {
+      console.log("");
+      if (
+        reviewStatus.unreviewed.length === 0 &&
+        reviewStatus.unsegmented.length === 0
+      ) {
+        console.log("✓ all included files have a reviewed lockfile entry.");
+      } else {
+        if (reviewStatus.unsegmented.length > 0) {
+          console.log(
+            `${reviewStatus.unsegmented.length} file(s) have no lockfile entry:`,
+          );
+          for (const p of reviewStatus.unsegmented) console.log(`  ${p}`);
+        }
+        if (reviewStatus.unreviewed.length > 0) {
+          console.log(
+            `${reviewStatus.unreviewed.length} file(s) pending review:`,
+          );
+          for (const p of reviewStatus.unreviewed) console.log(`  ${p}`);
+        }
+      }
+    }
   }
 
-  process.exit(report.errorFindings > 0 ? 1 : 0);
+  const reviewFailed =
+    reviewStatus !== null &&
+    (reviewStatus.unreviewed.length > 0 ||
+      reviewStatus.unsegmented.length > 0);
+  const exitCode =
+    report.errorFindings > 0 || reviewFailed ? 1 : 0;
+  process.exit(exitCode);
 }
 
 main().catch((err) => {
