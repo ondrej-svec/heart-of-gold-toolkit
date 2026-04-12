@@ -312,10 +312,9 @@ Dependency-ordered. Each task is self-contained and landable as one commit to `m
 
 ### Phase 2 — Lockfile format
 
-- [ ] Write `knowledge/lockfile-schema.md` documenting `.copy-editor.lock.json` v1: top-level shape, per-file entries, span shape, invariants, examples.
-- [ ] Implement `readLockfile(path)` and `writeLockfile(path, data)` in `scripts/copy-audit.ts` (or a new `scripts/lockfile.ts`). Validate `schemaVersion`. Halt on malformed lockfile with a clear error.
-- [ ] Implement `hashFileBytes(bytes): "sha256:..."`.
-- [ ] Write round-trip test fixture in `self-test.ts`: synthesise a lockfile, write, read, assert equality.
+- [x] Write `knowledge/lockfile-schema.md` — full v1 contract with worked examples, merge rules, CLI behaviour, diff-reading guide.
+- [x] Implement `scripts/lockfile.ts` with `readLockfile`, `writeLockfile`, `hashFileBytes`. Validates `schemaVersion`, contentHash format, span shape, non-overlap. Sorts files and spans on write for deterministic diffs.
+- [x] 10 lockfile self-tests added — round-trip, missing-file null, schemaVersion throw, llm-without-model throw, bad hash format throw, overlap throw, empty-spans legal, sort on write. All pass. Total self-test now 20/20.
 
 ### Phase 3 — Segmentation backend
 
