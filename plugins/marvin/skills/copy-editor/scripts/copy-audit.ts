@@ -645,6 +645,249 @@ function printHumanReport(report: Report, baseDir: string): void {
 }
 
 // ────────────────────────────────────────────────────────────────────
+// Segmentation handoff (script ↔ agent contract)
+// ────────────────────────────────────────────────────────────────────
+
+/**
+ * The `segment` subcommand prints a structured handoff payload to
+ * stdout. The host agent reads this, produces span JSON, and writes
+ * it back via `copy-audit lockfile add`. The script itself never
+ * calls a model — segmentation is performed by the agent that runs
+ * the skill.
+ */
+const PROMPT_V2_FILENAME = "segmentation-prompt-v2.md";
+const CURRENT_PROMPT_VERSION = 2;
+
+/**
+ * Resolve a profile reference (ISO code or human name) to the ISO code
+ * used by the profile registry. Returns the input unchanged if no
+ * registered profile matches either by key or by name.
+ */
+function resolveProfileRef(ref: string): string {
+  const lower = ref.toLowerCase();
+  // Direct ISO code match.
+  const direct = getProfile(lower);
+  if (direct) return direct.language;
+  // Name-style match: look up any profile whose display name matches.
+  for (const code of listProfiles()) {
+    const profile = getProfile(code);
+    if (profile && profile.name.toLowerCase() === lower) {
+      return profile.language;
+    }
+  }
+  return lower;
+}
+
+function loadPromptTemplate(): { version: number; template: string } {
+  const promptPath = join(
+    __dirname,
+    "..",
+    "knowledge",
+    PROMPT_V2_FILENAME,
+  );
+  if (!existsSync(promptPath)) {
+    throw new Error(
+      `Segmentation prompt file not found: ${promptPath}. ` +
+        `Expected ${PROMPT_V2_FILENAME} in the knowledge/ directory.`,
+    );
+  }
+  const raw = readFileSync(promptPath, "utf8");
+  const marker = "## The literal prompt template";
+  const markerIdx = raw.indexOf(marker);
+  if (markerIdx === -1) {
+    throw new Error(
+      `Could not find "${marker}" in ${promptPath}. ` +
+        `The prompt file must contain this section followed by a fenced code block with the template.`,
+    );
+  }
+  const afterMarker = raw.slice(markerIdx + marker.length);
+  const fenceStart = afterMarker.indexOf("```");
+  if (fenceStart === -1) {
+    throw new Error(`No opening fence after "${marker}" in ${promptPath}.`);
+  }
+  const contentStart = afterMarker.indexOf("\n", fenceStart) + 1;
+  const fenceEnd = afterMarker.indexOf("```", contentStart);
+  if (fenceEnd === -1) {
+    throw new Error(`No closing fence after prompt template in ${promptPath}.`);
+  }
+  const template = afterMarker.slice(contentStart, fenceEnd).replace(/\s+$/, "");
+  return { version: CURRENT_PROMPT_VERSION, template };
+}
+
+function fillPromptTemplate(
+  template: string,
+  filePath: string,
+  declaredProfiles: string[],
+  fileBytes: string,
+): string {
+  return template
+    .replaceAll("{{filePath}}", filePath)
+    .replaceAll("{{declaredProfiles}}", JSON.stringify(declaredProfiles))
+    .replaceAll("{{fileBytes}}", fileBytes);
+}
+
+interface SegmentHandoff {
+  filePath: string;
+  relativePath: string;
+  declaredProfiles: string[];
+  promptVersion: number;
+  outputSchema: {
+    /** Relative path to lockfile-schema.md for reference. */
+    reference: string;
+    /** One-line description of the expected JSON shape. */
+    shape: string;
+  };
+  nextStep: string;
+  prompt: string;
+}
+
+function buildSegmentHandoff(
+  absFilePath: string,
+  configDir: string,
+  declaredProfiles: string[],
+): SegmentHandoff {
+  const relativePath = relative(configDir, absFilePath);
+  const fileBytes = readFileSync(absFilePath, "utf8");
+  const { version, template } = loadPromptTemplate();
+  const prompt = fillPromptTemplate(
+    template,
+    relativePath,
+    declaredProfiles,
+    fileBytes,
+  );
+  return {
+    filePath: absFilePath,
+    relativePath,
+    declaredProfiles,
+    promptVersion: version,
+    outputSchema: {
+      reference: "plugins/marvin/skills/copy-editor/knowledge/lockfile-schema.md",
+      shape: '{ "spans": [ { startLine, startColumn, endLine, endColumn, language, kind, pathHint?, note? } ] }',
+    },
+    nextStep: `Produce span JSON following the prompt below, then pipe it to: copy-audit lockfile add "${relativePath}" --spans -`,
+    prompt,
+  };
+}
+
+function printSegmentHandoffHuman(handoff: SegmentHandoff): void {
+  const line = "═".repeat(72);
+  console.log(line);
+  console.log(`SEGMENTATION HANDOFF — ${handoff.relativePath}`);
+  console.log(line);
+  console.log("");
+  console.log(`Declared profiles: ${JSON.stringify(handoff.declaredProfiles)}`);
+  console.log(`Prompt version:    ${handoff.promptVersion}`);
+  console.log("");
+  console.log("Output schema:");
+  console.log(`  ${handoff.outputSchema.shape}`);
+  console.log(`  (reference: ${handoff.outputSchema.reference})`);
+  console.log("");
+  console.log("Next step (agent):");
+  console.log(`  ${handoff.nextStep}`);
+  console.log("");
+  console.log("─".repeat(72));
+  console.log("PROMPT");
+  console.log("─".repeat(72));
+  console.log(handoff.prompt);
+  console.log("─".repeat(72));
+}
+
+async function runSegmentSubcommand(
+  argv: string[],
+): Promise<number> {
+  let configPath: string | undefined;
+  let targetPath: string | undefined;
+  let json = false;
+  for (let i = 0; i < argv.length; i++) {
+    const arg = argv[i];
+    if (arg === "--config") {
+      configPath = argv[++i];
+    } else if (arg === "--json") {
+      json = true;
+    } else if (arg === "-h" || arg === "--help") {
+      console.log(`copy-audit segment <path> [--config <yaml>] [--json]
+
+Print a segmentation handoff payload for the host agent. The agent
+reads the prompt + file content, produces span JSON, and writes it
+back via \`copy-audit lockfile add\`.
+
+The script never calls a model. Segmentation is agent-side work.
+`);
+      return 0;
+    } else if (!arg.startsWith("-") && !targetPath) {
+      targetPath = arg;
+    } else if (arg.startsWith("-")) {
+      console.error(`segment: unknown option: ${arg}`);
+      return 2;
+    }
+  }
+
+  if (!targetPath) {
+    console.error("segment: expected a file path argument");
+    console.error("usage: copy-audit segment <path> [--config <yaml>] [--json]");
+    return 2;
+  }
+
+  // Load config to discover declared profiles. Resolve any name-style
+  // references (e.g. "czech") to their ISO codes via PROFILES lookup.
+  let configDir = process.cwd();
+  let declaredProfiles: string[] = [];
+  if (configPath || existsSync(join(process.cwd(), ".copy-editor.yaml"))) {
+    const path = configPath || join(process.cwd(), ".copy-editor.yaml");
+    const { config, configDir: dir } = loadConfig(path);
+    configDir = dir;
+    if (config.extends && config.extends.length > 0) {
+      declaredProfiles = config.extends.map(resolveProfileRef).filter(Boolean);
+    } else if (config.language) {
+      declaredProfiles = [config.language];
+    }
+  }
+  if (declaredProfiles.length === 0) {
+    // Fall back to every registered profile.
+    declaredProfiles = listProfiles();
+  }
+
+  const absPath = resolve(configDir, targetPath);
+  if (!existsSync(absPath)) {
+    console.error(`segment: file not found: ${absPath}`);
+    return 2;
+  }
+  if (!statSync(absPath).isFile()) {
+    console.error(`segment: not a regular file: ${absPath}`);
+    return 2;
+  }
+
+  const handoff = buildSegmentHandoff(absPath, configDir, declaredProfiles);
+
+  if (json) {
+    console.log(JSON.stringify(handoff, null, 2));
+  } else {
+    printSegmentHandoffHuman(handoff);
+  }
+  return 0;
+}
+
+// ────────────────────────────────────────────────────────────────────
+// Lockfile subcommands (implemented in the next step)
+// ────────────────────────────────────────────────────────────────────
+
+async function runLockfileSubcommand(argv: string[]): Promise<number> {
+  const sub = argv[0];
+  if (!sub || sub === "-h" || sub === "--help") {
+    console.log(`copy-audit lockfile <add|mark-reviewed|invalidate> ...
+
+Subcommands:
+  add <path> --spans <json-file-or-->    Write a new entry from span JSON.
+  mark-reviewed <path> --by <reviewer>   Set reviewedBy on an existing entry.
+  invalidate <glob>                      Remove matching entries.
+`);
+    return 0;
+  }
+  console.error(`lockfile ${sub}: not yet implemented`);
+  return 2;
+}
+
+// ────────────────────────────────────────────────────────────────────
 // Self-test harness
 // ────────────────────────────────────────────────────────────────────
 
@@ -660,7 +903,21 @@ async function runSelfTest(): Promise<number> {
 // ────────────────────────────────────────────────────────────────────
 
 async function main(): Promise<void> {
-  const opts = parseArgs(process.argv.slice(2));
+  const argv = process.argv.slice(2);
+
+  // Subcommand dispatch. The first non-flag argument is treated as a
+  // subcommand if it matches a known name. Otherwise the arguments are
+  // parsed as flags for the default audit run.
+  if (argv[0] === "segment") {
+    const code = await runSegmentSubcommand(argv.slice(1));
+    process.exit(code);
+  }
+  if (argv[0] === "lockfile") {
+    const code = await runLockfileSubcommand(argv.slice(1));
+    process.exit(code);
+  }
+
+  const opts = parseArgs(argv);
 
   if (opts.help) {
     printHelp();
