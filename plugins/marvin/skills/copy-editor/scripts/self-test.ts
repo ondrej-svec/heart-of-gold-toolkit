@@ -23,14 +23,17 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import type { LanguageProfile } from "../rules/types.ts";
+import type { Finding, LanguageProfile, Rule } from "../rules/types.ts";
 import { PROFILES } from "../rules/index.ts";
 import {
   hashFileBytes,
+  lookupSpanAt,
   readLockfile,
   writeLockfile,
   type Lockfile,
+  type LockfileSpan,
 } from "./lockfile.ts";
+import { filterFindingsBySpans } from "./finding-filter.ts";
 
 interface RuleTest {
   ruleId: string;
@@ -490,6 +493,216 @@ function writeLockfileRaw(path: string, data: unknown): void {
   fs.writeFileSync(path, `${JSON.stringify(data, null, 2)}\n`, "utf8");
 }
 
+interface SpanFilterTestResult {
+  name: string;
+  passed: boolean;
+  reason?: string;
+}
+
+function runSpanFilterTests(): SpanFilterTestResult[] {
+  const results: SpanFilterTestResult[] = [];
+  const record = (name: string, fn: () => void) => {
+    try {
+      fn();
+      results.push({ name, passed: true });
+    } catch (err) {
+      results.push({
+        name,
+        passed: false,
+        reason: (err as Error).message,
+      });
+    }
+  };
+
+  // Synthesise a profile with two rules: one cs-only, one with no
+  // language restriction. Each rule's check() is a stub — we feed
+  // findings directly to the filter.
+  const csRule: Rule = {
+    id: "test-cs-only",
+    description: "test cs-only rule",
+    severity: "error",
+    languages: ["cs"],
+    check: () => [],
+  };
+  const anyRule: Rule = {
+    id: "test-any-language",
+    description: "test rule with no language restriction",
+    severity: "warning",
+    check: () => [],
+  };
+  const profile: LanguageProfile = {
+    language: "cs",
+    name: "Test Profile",
+    rules: [csRule, anyRule],
+  };
+
+  const mkFinding = (ruleId: string, line: number, column: number): Finding => ({
+    ruleId,
+    severity: "error",
+    filePath: "<test>",
+    line,
+    column,
+    snippet: "",
+    message: "",
+  });
+
+  // ── lookupSpanAt ────────────────────────────────────────────────
+
+  record("lookupSpanAt finds single-line span containing position", () => {
+    const spans: LockfileSpan[] = [
+      { startLine: 1, startColumn: 1, endLine: 1, endColumn: 10, language: "en", kind: "prose" },
+    ];
+    const found = lookupSpanAt(spans, 1, 5);
+    if (!found || found.language !== "en") {
+      throw new Error("expected en span at (1,5)");
+    }
+  });
+
+  record("lookupSpanAt finds multi-line span containing position", () => {
+    const spans: LockfileSpan[] = [
+      { startLine: 1, startColumn: 1, endLine: 5, endColumn: 20, language: "cs", kind: "prose" },
+    ];
+    if (!lookupSpanAt(spans, 3, 100)) throw new Error("expected hit on inner line");
+    if (!lookupSpanAt(spans, 1, 1)) throw new Error("expected hit at start");
+    if (!lookupSpanAt(spans, 5, 20)) throw new Error("expected hit at end");
+  });
+
+  record("lookupSpanAt returns undefined outside any span", () => {
+    const spans: LockfileSpan[] = [
+      { startLine: 1, startColumn: 1, endLine: 1, endColumn: 10, language: "en", kind: "prose" },
+    ];
+    if (lookupSpanAt(spans, 2, 1) !== undefined) throw new Error("unexpected hit on line 2");
+    if (lookupSpanAt(spans, 1, 11) !== undefined) throw new Error("unexpected hit at column 11");
+  });
+
+  record("lookupSpanAt respects start/end column on edge lines", () => {
+    const spans: LockfileSpan[] = [
+      { startLine: 1, startColumn: 5, endLine: 3, endColumn: 8, language: "cs", kind: "prose" },
+    ];
+    if (lookupSpanAt(spans, 1, 4) !== undefined) throw new Error("should miss before startColumn");
+    if (!lookupSpanAt(spans, 1, 5)) throw new Error("should hit at startColumn");
+    if (!lookupSpanAt(spans, 2, 1)) throw new Error("should hit on inner line at column 1");
+    if (!lookupSpanAt(spans, 3, 8)) throw new Error("should hit at endColumn");
+    if (lookupSpanAt(spans, 3, 9) !== undefined) throw new Error("should miss after endColumn");
+  });
+
+  // ── filterFindingsBySpans ───────────────────────────────────────
+
+  record("filterFindingsBySpans returns input unchanged when spans empty", () => {
+    const findings = [mkFinding("test-cs-only", 1, 1)];
+    const result = filterFindingsBySpans(findings, [], profile, "cs");
+    if (result.length !== 1) throw new Error("expected pass-through with empty spans");
+  });
+
+  record("filterFindingsBySpans drops cs-only finding inside en span", () => {
+    const spans: LockfileSpan[] = [
+      { startLine: 1, startColumn: 1, endLine: 10, endColumn: 80, language: "en", kind: "prose" },
+    ];
+    const findings = [mkFinding("test-cs-only", 5, 10)];
+    const result = filterFindingsBySpans(findings, spans, profile, "cs");
+    if (result.length !== 0) throw new Error("expected cs finding dropped inside en span");
+  });
+
+  record("filterFindingsBySpans keeps cs-only finding inside cs span", () => {
+    const spans: LockfileSpan[] = [
+      { startLine: 1, startColumn: 1, endLine: 10, endColumn: 80, language: "cs", kind: "prose" },
+    ];
+    const findings = [mkFinding("test-cs-only", 5, 10)];
+    const result = filterFindingsBySpans(findings, spans, profile, "cs");
+    if (result.length !== 1) throw new Error("expected cs finding kept inside cs span");
+  });
+
+  record("filterFindingsBySpans drops cs-only finding inside unknown span", () => {
+    const spans: LockfileSpan[] = [
+      { startLine: 1, startColumn: 1, endLine: 10, endColumn: 80, language: "unknown", kind: "prose" },
+    ];
+    const findings = [mkFinding("test-cs-only", 5, 10)];
+    const result = filterFindingsBySpans(findings, spans, profile, "cs");
+    if (result.length !== 0) throw new Error("expected cs finding dropped inside unknown span");
+  });
+
+  record("filterFindingsBySpans drops any finding inside code span", () => {
+    const spans: LockfileSpan[] = [
+      { startLine: 1, startColumn: 1, endLine: 10, endColumn: 80, language: "cs", kind: "code" },
+    ];
+    const findings = [
+      mkFinding("test-cs-only", 5, 10),
+      mkFinding("test-any-language", 5, 20),
+    ];
+    const result = filterFindingsBySpans(findings, spans, profile, "cs");
+    if (result.length !== 0) throw new Error("expected all findings dropped inside code span");
+  });
+
+  record("filterFindingsBySpans drops any finding inside data span", () => {
+    const spans: LockfileSpan[] = [
+      { startLine: 1, startColumn: 1, endLine: 10, endColumn: 80, language: "unknown", kind: "data" },
+    ];
+    const findings = [mkFinding("test-any-language", 5, 10)];
+    const result = filterFindingsBySpans(findings, spans, profile, "cs");
+    if (result.length !== 0) throw new Error("expected finding dropped inside data span");
+  });
+
+  record("filterFindingsBySpans keeps unrestricted rule inside any prose span", () => {
+    const spans: LockfileSpan[] = [
+      { startLine: 1, startColumn: 1, endLine: 10, endColumn: 80, language: "en", kind: "prose" },
+    ];
+    const findings = [mkFinding("test-any-language", 5, 10)];
+    const result = filterFindingsBySpans(findings, spans, profile, "cs");
+    if (result.length !== 1) {
+      throw new Error("expected unrestricted finding kept inside en prose span");
+    }
+  });
+
+  record("filterFindingsBySpans falls back to default language in gaps", () => {
+    const spans: LockfileSpan[] = [
+      { startLine: 1, startColumn: 1, endLine: 5, endColumn: 80, language: "en", kind: "prose" },
+    ];
+    // Finding at line 10 is in a gap (no span). Default language is cs.
+    // cs-only rule applies because cs matches default. Finding kept.
+    const findings = [mkFinding("test-cs-only", 10, 1)];
+    const result = filterFindingsBySpans(findings, spans, profile, "cs");
+    if (result.length !== 1) {
+      throw new Error("expected cs-only finding kept in gap when default is cs");
+    }
+  });
+
+  record("filterFindingsBySpans drops gap finding when default does not match rule", () => {
+    const spans: LockfileSpan[] = [
+      { startLine: 1, startColumn: 1, endLine: 5, endColumn: 80, language: "cs", kind: "prose" },
+    ];
+    const findings = [mkFinding("test-cs-only", 10, 1)];
+    // Default is en here; cs-only rule does not match.
+    const result = filterFindingsBySpans(findings, spans, profile, "en");
+    if (result.length !== 0) {
+      throw new Error("expected cs-only finding dropped in gap when default is en");
+    }
+  });
+
+  record("filterFindingsBySpans handles mixed findings across spans and gaps", () => {
+    const spans: LockfileSpan[] = [
+      { startLine: 1, startColumn: 1, endLine: 5, endColumn: 80, language: "en", kind: "prose" },
+      { startLine: 10, startColumn: 1, endLine: 15, endColumn: 80, language: "cs", kind: "prose" },
+      { startLine: 20, startColumn: 1, endLine: 25, endColumn: 80, language: "unknown", kind: "code" },
+    ];
+    const findings = [
+      mkFinding("test-cs-only", 3, 1),     // inside en span → drop
+      mkFinding("test-cs-only", 7, 1),     // gap, default cs → keep
+      mkFinding("test-cs-only", 12, 1),    // inside cs span → keep
+      mkFinding("test-cs-only", 22, 1),    // inside code span → drop
+      mkFinding("test-any-language", 22, 1), // inside code span → drop
+      mkFinding("test-any-language", 30, 1), // gap, no language restriction → keep
+    ];
+    const result = filterFindingsBySpans(findings, spans, profile, "cs");
+    if (result.length !== 3) {
+      throw new Error(
+        `expected 3 survivors, got ${result.length}: ${JSON.stringify(result.map((f) => `${f.ruleId}@${f.line}`))}`,
+      );
+    }
+  });
+
+  return results;
+}
+
 export function runAllSelfTests(): number {
   const allResults: TestResult[] = [];
   for (const [lang, tests] of Object.entries(TESTS)) {
@@ -508,6 +721,7 @@ export function runAllSelfTests(): number {
   }
 
   const lockfileResults = runLockfileTests();
+  const spanFilterResults = runSpanFilterTests();
 
   let passed = 0;
   let failed = 0;
@@ -528,6 +742,19 @@ export function runAllSelfTests(): number {
   console.log("lockfile");
   console.log("────────");
   for (const r of lockfileResults) {
+    if (r.passed) {
+      console.log(`  ✓  ${r.name}`);
+      passed += 1;
+    } else {
+      console.log(`  ✗  ${r.name}`);
+      if (r.reason) console.log(`       ${r.reason}`);
+      failed += 1;
+    }
+  }
+  console.log("");
+  console.log("span filter");
+  console.log("───────────");
+  for (const r of spanFilterResults) {
     if (r.passed) {
       console.log(`  ✓  ${r.name}`);
       passed += 1;

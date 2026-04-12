@@ -375,11 +375,12 @@ Dependency-ordered. Each task is self-contained and landable as one commit to `m
 
 ### Phase 4 — Engine wiring
 
-- [ ] Add cache-aware file processing in `scripts/copy-audit.ts`. For each file: read lockfile entry, check hash. On hit use cached spans. On miss, mark the file as unsegmented and surface it in the report (do **not** call any segmenter from inside the audit loop — that's Phase 1a in the skill, not Phase 1 in the script).
-- [ ] After chunks are extracted, overlay cached spans: split each chunk by span byte ranges, attach `language` and `kind` to each resulting sub-chunk. Unmapped ranges inherit `config.language` and `kind: "prose"`.
-- [ ] Tag R1, R1b, R3, R4, R5, R6 in `rules/czech.ts` with `languages: ["cs"]`. Leave R2/R7/R8 alone (they already self-gate; tagging is belt-and-braces and can be a follow-up).
-- [ ] (Already done in Phase 1: engine skips `code`/`data` chunks. Verify the integration still holds end-to-end.)
-- [ ] End-to-end run on `harness-lab/workshop-skill/SKILL-facilitator.md` with a hand-authored lockfile entry marking the whole file as `en`. Expect zero findings.
+- [x] Add cache-aware file processing in `scripts/copy-audit.ts`. Lockfile loaded once at audit start. For each file, look up entry by relative path; on hash match, post-filter findings using `filterFindingsBySpans`; on mismatch or missing, fall through to legacy single-profile behaviour.
+- [x] **Architecture choice:** instead of splitting chunks by span byte ranges (would require text slicing and column math), implemented a **post-filter** that drops findings whose source position falls inside disqualifying spans. Equivalent result, far simpler engine. Extracted as `scripts/finding-filter.ts` for testability.
+- [x] Tag R1, R1b, R3, R4, R5, R6 in `rules/czech.ts` with `languages: ["cs"]`. R2/R7/R8 left alone (already self-gate on diacritics).
+- [x] (Phase 1 already wired the chunk-level skip for `code`/`data` chunks. The new finding-level filter handles the same cases via spans, plus handles span-region splitting that the chunk-level filter cannot.)
+- [x] **End-to-end run on harness-lab:** with the Phase 3 lockfile entry for `SKILL-facilitator.md`, the audit drops from 645 → 619 findings. SKILL-facilitator.md drops from 26 (3E + 23W) → 0. The other 7 files unchanged (no lockfile entries). Phase 4 acceptance criterion met.
+- [x] **14 new span-filter self-tests** covering lookupSpanAt edge cases, code/data drop, language match/mismatch, gap fallback to default, and mixed-span scenarios. Self-test 35/35 pass.
 
 ### Phase 5 — CLI flags and review workflow
 

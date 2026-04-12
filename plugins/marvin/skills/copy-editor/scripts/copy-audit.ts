@@ -44,6 +44,7 @@ import {
   type LockfileEntry,
   type LockfileSpan,
 } from "./lockfile.ts";
+import { filterFindingsBySpans } from "./finding-filter.ts";
 
 const DEFAULT_LOCKFILE_NAME = ".copy-editor.lock.json";
 
@@ -557,6 +558,7 @@ function runProfile(profile: LanguageProfile, chunks: TextChunk[]): Finding[] {
   }
   return findings;
 }
+
 
 // ────────────────────────────────────────────────────────────────────
 // Report formatting
@@ -1265,6 +1267,11 @@ async function main(): Promise<void> {
     console.error(`Resolved ${files.length} file(s) under ${configDir}`);
   }
 
+  // Read the lockfile once. Each file is looked up by its repo-relative
+  // path. A missing lockfile is the legal initial state.
+  const lockfilePath = join(configDir, DEFAULT_LOCKFILE_NAME);
+  const lockfile = readLockfile(lockfilePath);
+
   const allFindings: Finding[] = [];
   let totalFixesApplied = 0;
   const filesModified: string[] = [];
@@ -1279,7 +1286,25 @@ async function main(): Promise<void> {
     }
     if (!statSync(file).isFile()) continue;
     const chunks = extractChunks(file, text, ignoreMarker);
-    const findings = runProfile(profile, chunks);
+    const rawFindings = runProfile(profile, chunks);
+
+    // Look up the lockfile entry for this file. On hash match, post-filter
+    // findings using the cached spans. On mismatch or missing entry, the
+    // findings flow through unchanged (legacy single-profile behaviour).
+    const relPath = relative(configDir, file);
+    const entry = lockfile?.files[relPath];
+    const currentHash = hashFileBytes(text);
+    let findings: Finding[];
+    if (entry && entry.contentHash === currentHash) {
+      findings = filterFindingsBySpans(
+        rawFindings,
+        entry.spans,
+        profile,
+        language,
+      );
+    } else {
+      findings = rawFindings;
+    }
 
     if (opts.fix && findings.some((f) => f.fix)) {
       const { text: fixed, applied } = applyFixes(text, findings);
@@ -1290,7 +1315,9 @@ async function main(): Promise<void> {
         if (opts.verbose) {
           console.error(`  ${relative(configDir, file)}: ${applied} fix(es)`);
         }
-        // Re-run rules against the fixed text to get accurate residual findings.
+        // Re-run rules against the fixed text. Note: --fix invalidates the
+        // lockfile entry's contentHash for this file, so the next run will
+        // see it as stale and need re-segmentation. That's correct.
         const newChunks = extractChunks(file, fixed, ignoreMarker);
         const residualFindings = runProfile(profile, newChunks);
         allFindings.push(...residualFindings);

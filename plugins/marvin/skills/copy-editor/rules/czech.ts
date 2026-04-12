@@ -50,6 +50,7 @@ const R1: Rule = {
   id: "cs-R1-nbsp-prep",
   label: "Non-breaking space after single-letter preposition",
   severity: "error",
+  languages: ["cs"],
   description:
     "In Czech typography, single-letter prepositions (k, s, v, z, o, u) must be followed by a non-breaking space (U+00A0) rather than a regular space, so the word never dangles at the end of a line.",
   check(chunk: TextChunk): Finding[] {
@@ -88,6 +89,7 @@ const R1b: Rule = {
   id: "cs-R1b-nbsp-conjunction",
   label: "Non-breaking space after single-letter conjunction (a/i)",
   severity: "warning",
+  languages: ["cs"],
   description:
     "Czech typography also prefers a non-breaking space after `a` and `i` when used as conjunctions. Lower severity because these letters appear in many non-conjunction contexts; treat matches as hints to review.",
   check(chunk: TextChunk): Finding[] {
@@ -170,6 +172,7 @@ const R3: Rule = {
   id: "cs-R3-ellipsis",
   label: "Use ellipsis character …",
   severity: "error",
+  languages: ["cs"],
   description:
     "Replace three ASCII dots `...` with the single ellipsis character `…` (U+2026).",
   check(chunk: TextChunk): Finding[] {
@@ -210,6 +213,7 @@ const R4: Rule = {
   id: "cs-R4-number-unit",
   label: "Space between number and unit",
   severity: "error",
+  languages: ["cs"],
   description:
     "In Czech prose, a number and its unit are separated by a space (ideally non-breaking): `50 Kč`, `99 %`, `5 MB`. Adjectival usage (`99%` directly followed by a noun) is an exception this v1 rule does not distinguish — use the ignore marker for intentional adjective use.",
   check(chunk: TextChunk): Finding[] {
@@ -245,6 +249,7 @@ const R5: Rule = {
   id: "cs-R5-ordinal-space",
   label: "Ordinal number needs space after period",
   severity: "error",
+  languages: ["cs"],
   description:
     "Czech ordinals are written with a period and a following space: `1. dubna`, `3. místo`. Never `1.dubna` without the space.",
   check(chunk: TextChunk): Finding[] {
@@ -298,6 +303,7 @@ const R6: Rule = {
   id: "cs-R6-dash",
   label: "Use en-dash for ranges and parentheticals",
   severity: "warning",
+  languages: ["cs"],
   description:
     "Czech uses `–` (en-dash, U+2013) as its standard pomlčka: with spaces for parenthetical clauses (`text – vložení – text`) and without spaces for ranges (`23–26`). A hyphen `-` is reserved for compound tokens.",
   check(chunk: TextChunk): Finding[] {

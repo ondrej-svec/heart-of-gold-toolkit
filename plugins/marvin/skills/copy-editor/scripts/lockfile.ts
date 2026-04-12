@@ -336,3 +336,28 @@ function assertNonOverlapping(
 function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
+
+/**
+ * Find the span (if any) that contains the given 1-based (line, column)
+ * position. Spans are inclusive on both endpoints. Returns undefined when
+ * no span covers the position — callers should fall back to the config
+ * default in that case.
+ *
+ * Assumes spans are non-overlapping (validated at lockfile read time),
+ * so at most one span can match. Iterates linearly because span lists
+ * are short (tens of entries per file at most); a binary search would
+ * not pay for itself.
+ */
+export function lookupSpanAt(
+  spans: LockfileSpan[],
+  line: number,
+  column: number,
+): LockfileSpan | undefined {
+  for (const span of spans) {
+    if (line < span.startLine || line > span.endLine) continue;
+    if (line === span.startLine && column < span.startColumn) continue;
+    if (line === span.endLine && column > span.endColumn) continue;
+    return span;
+  }
+  return undefined;
+}
