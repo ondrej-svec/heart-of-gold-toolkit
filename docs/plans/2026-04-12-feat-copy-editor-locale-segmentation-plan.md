@@ -358,17 +358,20 @@ Dependency-ordered. Each task is self-contained and landable as one commit to `m
 
 ### Phase 3 — Segmentation handoff (script ↔ agent contract)
 
-- [ ] Write `knowledge/segmentation-prompt-v2.md` — apply the three critical fixes from the Phase 0 memo (inline-code overlap worked example, JSON structural-token skip rule, heading-as-code anti-rule) plus the three soft fixes (column convention, granularity rule, language-on-code-spans). Bump `promptVersion` to 2.
-- [ ] Migrate `scripts/lockfile.ts` `segmenter.backend` enum from `"llm"` → `"agent"`. Drop the `model` field validation. Keep `promptVersion`. Update self-test fixtures.
-- [ ] Add `copy-audit segment <path>` subcommand. Output: a structured payload (JSON or formatted text) with the file content, declared profiles, output schema, and an inlined copy of the v2 prompt. The agent reads this and produces span JSON.
-- [ ] Add `copy-audit lockfile add <path> --spans <json-file-or-stdin>` subcommand. Reads the spans JSON, computes contentHash from the file's current bytes, validates against the schema, sets `segmentedAt` to now, sets `reviewedBy: null`, writes to the lockfile. Refuses to overwrite an existing entry without `--force`.
-- [ ] Add `copy-audit lockfile mark-reviewed <path> --by <reviewer-id>` — sets `reviewedBy` on an existing entry. Errors if the entry does not exist or if its hash is stale.
-- [ ] Add `copy-audit lockfile invalidate <glob>` — removes matching entries.
-- [ ] Implement `StructuralSegmenter` in `scripts/structural-segmenter.ts`: JSON key-path tagging, markdown fenced code blocks by info-string, front-matter `lang:` tagging. Deterministic, no LLM, no agent.
-- [ ] Add `copy-audit --offline` flag that uses the structural backend to populate the lockfile in one shot for any unsegmented files.
-- [ ] Self-test the lockfile subcommands: synthesise spans, run `lockfile add`, read back, assert. Run `lockfile mark-reviewed`, read back, assert. Run `lockfile invalidate`, read back, assert.
-- [ ] Self-test the structural segmenter on a synthetic bilingual JSON fixture and a synthetic markdown fixture with a fenced code block. Assert correct span tags.
-- [ ] **End-to-end validation by the host agent:** the agent (this Claude session) runs `segment` → produces spans for one of the three Phase 0 files → calls `lockfile add` → reads the lockfile back and confirms the entry is well-formed. This is the proof that the script/agent contract works in practice.
+- [x] Write `knowledge/segmentation-prompt-v2.md` — applied three critical fixes (inline-code overlap worked example, JSON structural-token skip rule, heading-as-code anti-rule) and three soft fixes (column convention, granularity rule, language-on-code-spans). `promptVersion` bumped to 2.
+- [x] Migrate `scripts/lockfile.ts` `segmenter.backend` enum from `"llm"` → `"agent"`. Dropped `model` field. Kept `promptVersion`. Self-test fixtures updated; 21/21 pass.
+- [x] Add `copy-audit segment <path>` subcommand. Loads the v2 prompt template at runtime from the knowledge dir (single source of truth) and substitutes `{{filePath}}`, `{{declaredProfiles}}`, `{{fileBytes}}`. Resolves profile names from `extends` to ISO codes. JSON and human-readable output.
+- [x] Add `copy-audit lockfile add <path> --spans <json-file-or-->` — reads spans JSON, computes contentHash, sets reviewedBy null, refuses overwrite without `--force`.
+- [x] Add `copy-audit lockfile mark-reviewed <path> --by <id>` — sets reviewedBy, errors on stale hash.
+- [x] Add `copy-audit lockfile invalidate <glob>` — removes matching entries.
+- [x] Add `copy-audit lockfile list` — bonus subcommand for inspection.
+- [x] **End-to-end validation by the host agent (this Claude session):** ran `segment workshop-skill/SKILL-facilitator.md` → produced span JSON → piped to `lockfile add` → ran `mark-reviewed` → confirmed the resulting `harness-lab/.copy-editor.lock.json` is well-formed and matches the schema. The script never called any model. The contract works end-to-end.
+- [ ] Implement `StructuralSegmenter` in `scripts/structural-segmenter.ts` — **deferred to follow-up**, not blocking. Optional convenience for offline / CI environments without an agent in the loop.
+- [ ] Add `copy-audit --offline` flag — **deferred**, depends on StructuralSegmenter.
+- [ ] Self-test the structural segmenter — **deferred**, depends on StructuralSegmenter.
+- [ ] Programmatic self-tests for the lockfile subcommands — **deferred**, currently covered by smoke tests during development.
+
+**Phase 3 status: complete on the load-bearing critical path.** The script ↔ agent contract works. The deferred items are convenience infrastructure; they do not block Phase 4 (engine wiring), which is what makes the cached spans actually affect audit output.
 
 ### Phase 4 — Engine wiring
 
