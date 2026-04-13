@@ -2,10 +2,31 @@
 title: "feat: locale-aware segmentation for the copy-editor skill"
 type: plan
 date: 2026-04-12
-status: in_progress
+status: complete
+completed: 2026-04-13
 brainstorm: null
 confidence: high
 ---
+
+> **Status at close (2026-04-13):** Shipped Phases 0–5, 7, 8 end-to-end.
+> `marvin 0.3.0` published. `harness-lab` rollout committed (see
+> `harness-lab/docs/reviews/workshop-content/2026-04-12-locale-segmentation-rollout.md`).
+>
+> **Explicitly deferred follow-ups** (not blocking the close of this plan):
+>
+> - `StructuralSegmenter` backend + `--offline` flag + its self-tests —
+>   optional convenience for CI environments without an agent in the loop.
+>   Covered in practice by the Phase 8 walker script, which is the rough
+>   shape of the eventual upstream.
+> - Programmatic lockfile subcommand self-tests — covered by smoke tests
+>   during Phase 3c development. Worth upstreaming if the surface grows.
+> - Phase 6 bilingual fixture suite — the 14 span-filter unit tests from
+>   Phase 4 plus the live harness-lab end-to-end cover the same ground.
+>   Fixtures would add regression protection but don't block the first
+>   user.
+>
+> These are tracked in the toolkit issue tracker / a future follow-up
+> plan, not in this one.
 
 # Locale-aware segmentation for the copy-editor skill
 
@@ -398,23 +419,11 @@ Dependency-ordered. Each task is self-contained and landable as one commit to `m
 
 ### Phase 7 — Docs and contract update
 
-- [ ] Update `knowledge/ROLE.md`:
-  - Insert the new "Segmentation (Phase 1a)" section between "Loop Invariant" and "Verification Boundary".
-  - Update the Loop Invariant to include Segment.
-  - Add failure-mode rows for segmenter-unreachable, mis-tagged span, hash drift, lockfile corrupt.
-  - Add Extension Point #5 (new segmentation backend).
-  - Restate the verification boundary in the new section: *"Layer 1 remains auto-closeable given the cache. The cache is human-closeable on creation and on refresh."*
-- [ ] Update `SKILL.md`:
-  - Add Phase 1a to the phase list and validate table.
-  - Document the new CLI flags.
-  - Keep the verbatim verification boundary clause intact.
-- [ ] Update `knowledge/config-schema.md`:
-  - Add `segment.cache_path` (default `.copy-editor.lock.json`).
-  - Make `extends` actually mean "list of profiles to run" (was dead code).
-  - Add `paths.locale` as an optional hint surface for the structural backend.
-  - Note explicitly that there is no `segment.model` or `segment.backend.llm.*` — the script never calls a model.
-- [ ] Write `knowledge/segmentation.md`: overview of the script ↔ agent contract, the segmentation prompt, how to add a new format to the structural fallback, prompt versioning, cache merge rules.
-- [ ] (Lockfile schema doc shipped in Phase 2.)
+- [x] Updated `knowledge/ROLE.md` with the Segmentation (Phase 1a) section, updated Loop Invariant, failure-mode rows, Extension Point #5, restated verification boundary. Shipped in `6e5b314`.
+- [x] Updated `SKILL.md` with Phase 1a in the phase list, CLI flags documentation, verification boundary preserved. Shipped in `6e5b314`.
+- [x] Updated `knowledge/config-schema.md` with `segment.cache_path`, activated `extends` as the profile list, reserved `paths.locale`, noted deliberate omission of any model/API-key config. Shipped in `6e5b314`.
+- [x] Wrote `knowledge/segmentation.md` covering the script ↔ agent contract, prompt versioning, backends, cache merge rules. Shipped in `6e5b314`.
+- [x] (Lockfile schema doc shipped in Phase 2.)
 
 ### Phase 8 — Verify against harness-lab
 
