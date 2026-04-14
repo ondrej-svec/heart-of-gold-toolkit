@@ -1,6 +1,6 @@
 {
   "name": "babel-fish",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Universal Translator — media generation tools for audio, image, video, and visualization",
   "author": {
     "name": "ondrej-svec",
