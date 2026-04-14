@@ -157,19 +157,22 @@ They are the highest-value flagship workflows, already have Pi launcher commands
 - [x] Inject collected answers back as normal user messages using `pi.sendUserMessage(...)`
 - [x] Integrate the enhancer with existing Pi commands without breaking current simple launch behavior
 - [x] Update `README.md` to explain that Pi package installs include guided workflow UX for supported skills
-- [x] Add follow-up notes for future candidates such as `architect`, model-backed extraction, and custom TUI polish
+- [x] Extend the guided workflow enhancer to `architect`
+- [x] Replace or augment heuristic parsing with a small-model extractor inspired by `/answer`, while keeping a safe fallback path
+- [x] Add custom Pi TUI components for guided selection and focused free-text answering
+- [x] Add follow-up notes for future candidates such as extraction fixtures and additional workflow polish
 
 ### Deferred follow-up work
 
-- [ ] Replace or augment heuristic parsing with a small-model extractor inspired by `/answer` once the prompt schema stabilizes
-- [ ] Add custom Pi TUI components for richer multi-step question flows beyond built-in `select`/`editor`
 - [ ] Add dedicated extraction fixtures or automated tests once the extension code is factored into separately testable helpers
+- [ ] Consider richer multi-step guided prompts if real-world usage shows repeated compound question flows
+- [ ] Consider optional debug tooling to explain why a given assistant turn was or was not enhanced
 
 ## Acceptance Criteria
 
 - [x] Pi package installs continue to expose working HoG extension commands
 - [x] `brainstorm` and `plan` remain usable in plain text without any Pi enhancement dependency
-- [x] in Pi interactive mode, explicit structured questions in `brainstorm` and `plan` can open Pi interactive UI and return the answer back into the same workflow
+- [x] in Pi interactive mode, explicit structured questions in `brainstorm`, `plan`, and `architect` can open Pi interactive UI and return the answer back into the same workflow
 - [x] ambiguous assistant messages do not trigger forced UI
 - [x] all new code is isolated to Pi extension paths and documentation
 - [x] shared skill files remain harness-neutral
@@ -211,7 +214,8 @@ Prefer lightweight session state persisted through Pi session entries or reconst
 ### Phase 4: Polish + docs
 - Validate edge cases and fallback behavior
 - Update README and architectural docs
-- Record future extension points such as `architect`
+- Extend support to `architect`
+- Replace the first-pass heuristic-only behavior with model-backed extraction plus safe fallback
 
 **Exit criteria:** Feature is documented, constrained, and ready for real use.
 

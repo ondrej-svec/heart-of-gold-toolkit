@@ -9,6 +9,7 @@ Heart of Gold shared skills remain portable and usable in plain text. Pi may add
 The first guided workflows are:
 - `brainstorm`
 - `plan`
+- `architect`
 
 ## Canonical Boundary
 
@@ -43,6 +44,10 @@ Currently supported:
 - `/plan`
 - `/deep-thought:plan`
 - `/deep-thought-plan`
+- `/skill:architect`
+- `/architect`
+- `/deep-thought:architect`
+- `/deep-thought-architect`
 
 Guided enhancement resets when the user enters a different slash command outside the supported set.
 
@@ -59,7 +64,8 @@ Used when the assistant clearly presents 2-4 explicit options, for example:
 - next-step handoff menus
 
 Pi realization:
-- `ctx.ui.select(...)`
+- model-backed extraction when available, with heuristic fallback
+- custom TUI selector rendered with `ctx.ui.custom(...)`
 
 Fallback:
 - shared skill already remains usable in plain text
@@ -69,21 +75,23 @@ Fallback:
 Used when the assistant asks one clearly scoped question and expects a short text answer.
 
 Pi realization:
-- `ctx.ui.editor(...)`
+- model-backed extraction when available, with heuristic fallback
+- custom TUI editor rendered with `ctx.ui.custom(...)`
 
 Fallback:
 - user can answer in ordinary text
 
 ## Extraction Strategy
 
-The current implementation uses conservative parsing heuristics rather than a model-backed extractor.
+The implementation now prefers a small-model extraction pass inspired by Mitsuhiko's `/answer` extension, with conservative heuristics as fallback.
 
-This keeps the first version simple and predictable:
-- explicit option lists become `single_choice`
-- the last focused question becomes `text`
-- ambiguous responses are ignored
+Current behavior:
+- try to extract one prompt from the latest assistant message using a fast model
+- accept only non-ambiguous prompts with medium/high confidence
+- fall back to heuristics for explicit option lists and focused single questions
+- ignore ambiguous responses
 
-Future versions may adopt a small-model extraction pass inspired by Mitsuhiko's `/answer` extension once the prompt schema stabilizes.
+This keeps the enhancement useful without making the shared skill depend on model extraction.
 
 ## Delivery Strategy
 
