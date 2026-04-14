@@ -6,6 +6,7 @@ This note defines the next evolution of the shared `visualize` capability.
 
 `visualize` means:
 - choose the best visual artifact for the user's intent
+- let the coding agent make the final visualization choice from context
 - generate one derived HTML artifact as the primary result
 - prefer browser-viewable HTML for substantial structured workflow docs and visual concepts when sharing is configured
 - preserve terminal/plain-text fallback where useful
@@ -13,6 +14,7 @@ This note defines the next evolution of the shared `visualize` capability.
 It does **not** mean:
 - always generate a mind map
 - only handle document diagrams
+- hardcode one rigid visualization choice per file type
 
 ## Why This Change Exists
 
@@ -112,26 +114,31 @@ Best for polished narrative summary pages and stakeholder-facing views.
 
 ## Mode Selection Strategy
 
-Mode selection should be deterministic and inspectable.
+Mode selection should be agent-led, with toolkit guidance rather than rigid hardcoded rules.
 
-### Inputs to classification
+### Inputs to selection
 - user wording and intent cues
 - file path
 - frontmatter (`type`, `title`, etc.)
 - heading names
 - list/task density
 - section names like `Implementation Tasks`, `Acceptance Criteria`, `Risk Analysis`, `Dependencies`, `ADRs`
+- surrounding workflow context
 
-### Recommended v1 defaults
-- explicit UI/product concept request → `mockup`
-- explicit stakeholder/share/explain request → `explainer`
-- `docs/brainstorms/*.md` → `mindmap` when concise/branchy, otherwise `outline`
-- `docs/plans/*.md` → `roadmap`
-- `*.architecture.md` or architect outputs → `architecture`
-- review docs/findings → `outline`
-- unknown markdown → `outline`
+### Recommended v1 guidance
+- explicit UI/product concept request → strongly consider `mockup`
+- explicit stakeholder/share/explain request → strongly consider `explainer`
+- brainstorms may fit `mindmap`, `outline`, or `explainer` depending on shape and purpose
+- plans often fit `roadmap` or `outline`
+- architecture docs often fit `architecture` or `outline`
+- review docs/findings often fit `outline`
+- unknown markdown should bias toward `outline`
 
-If classification confidence is weak, default to `outline`.
+If the agent is materially uncertain which visual form will help most, it should ask the user.
+- Use the harness's structured choice UI when available
+- Otherwise present concise plain-text options
+
+The toolkit may provide lightweight heuristics and defaults, but those are advisory, not canonical.
 
 ## Design Rules Baseline
 
@@ -153,6 +160,8 @@ The visualization output is one derived HTML artifact that may then be:
 - published through `share-html`
 - returned as a local file path if publishing is unavailable
 - accompanied by terminal/plain fallback where needed
+
+If the agent asked the user to clarify the desired visual direction, the chosen HTML artifact should reflect that answer.
 
 ## Portability
 

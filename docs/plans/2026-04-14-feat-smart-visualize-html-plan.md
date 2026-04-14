@@ -29,8 +29,10 @@ A better skill contract is: visualize the artifact in the best form for comprehe
 
 - `visualize` becomes a smart visualization entrypoint rather than a mind-map-only wrapper
 - the skill classifies both the source artifact and the visualization intent
+- the coding agent makes the final visualization choice from context, guided by toolkit recommendations rather than rigid hardcoded defaults
 - the skill generates one polished HTML artifact as the primary output
 - that HTML artifact can be published via `share-html` when sharing is configured
+- when the agent is genuinely uncertain, it can ask the user which direction would help most using the harness's structured question UI when available, otherwise concise plain-text options
 - modes are chosen by content type, document shape, and user intent, with a terminal/plain fallback when needed
 - markdown remains canonical; HTML remains a derived view layer
 - the skill stays portable across Claude Code, Codex, Pi, OpenCode, and manual shell usage
@@ -55,15 +57,15 @@ A better skill contract is: visualize the artifact in the best form for comprehe
 
 Refactor `visualize` into a four-part system:
 
-1. **Intent classifier**
-   - determine whether the user needs a structure visualization, a product/UI mock, or an explainer artifact
+1. **Intent guidance**
+   - define how the coding agent should reason about whether the user needs a structure visualization, a product/UI mock, or an explainer artifact
    - inspect the user request, source path, frontmatter, headings, and document shape
 
-2. **Artifact classifier**
-   - determine whether the source is most likely a brainstorm, plan, architecture doc, review, generic markdown, or product concept
+2. **Artifact guidance**
+   - define how the coding agent should reason about whether the source is most likely a brainstorm, plan, architecture doc, review, generic markdown, or product concept
 
-3. **Renderer selector**
-   - choose the visualization mode best suited for the intent + artifact
+3. **Renderer guidance + uncertainty handling**
+   - recommend the visualization mode best suited for the intent + artifact
    - initial structure modes:
      - `mindmap` — best for concise branching brainstorms
      - `outline` — best for long, section-heavy docs
@@ -72,7 +74,8 @@ Refactor `visualize` into a four-part system:
    - future renderer families:
      - `mockup` — static HTML UI/product concepts
      - `explainer` — polished narrative/stakeholder pages
-   - if uncertain, default to `outline`, not `mindmap`
+   - the coding agent makes the final call from context
+   - if uncertainty remains material, ask the user which direction would help most using the harness's structured choice UI if available; otherwise present concise plain-text options
 
 4. **HTML generator + publisher**
    - generate one polished HTML artifact for the selected mode
@@ -88,7 +91,7 @@ Because diagram type should follow information type. Mind maps are good for idea
 
 ### Why should the agent choose the mode?
 
-Because asking the user to manually pick a diagram type for every artifact is too much friction for everyday workflow handoffs. The tool should make a strong default choice and let the user override it when desired.
+Because the same file type can reasonably need different visual forms depending on context. A brainstorm may want a mind map, a decision dashboard, or an explainer. A plan may want a roadmap, an outline, or a product mock if the point is to visualize the resulting UI. The toolkit should guide the decision, but the coding agent should make the final contextual call.
 
 ### Why classify intent, not just file type?
 
@@ -192,25 +195,26 @@ Generated HTML should follow a shared visual doctrine:
 ## Acceptance Criteria
 
 - `visualize` no longer assumes mind map as the universal default
-- there is a documented intent-classification and renderer-selection strategy
+- there is a documented intent-guidance and renderer-guidance strategy
+- the coding agent is responsible for the final visualization choice, with toolkit guidance rather than rigid hardcoded defaults
+- the skill defines an uncertainty path: if not confident, ask the user using structured UI when available and plain-text options otherwise
 - there is a documented default design doctrine for generated HTML artifacts
 - `visualize` is defined as producing one HTML artifact as its primary result
 - there is at least one non-mindmap HTML mode implemented in the first follow-up phase
-- plans default to a non-mindmap representation
-- architecture docs default to a non-mindmap representation
-- brainstorms still support mind maps, but only when they fit the content
+- plans and architecture docs are not forced into mind maps by default code paths
 - mockup and explainer intents are explicitly accounted for in the architecture even if not fully implemented in the first follow-up phase
 - all shared wording remains portable across harnesses
 - HTML publish/share still works through the existing share infrastructure
 
 ## Implementation Tasks
 
-- [ ] Write an architecture note for smart visualization mode selection and intent families
+- [ ] Write an architecture note for smart visualization guidance and intent families
 - [ ] Write a shared design-rules note for generated HTML artifacts
 - [ ] Define a small internal visualization mode schema (`mindmap`, `outline`, `roadmap`, `architecture`, later `mockup`, `explainer`)
-- [ ] Define intent classification rules (`structure`, `mockup`, `explainer`)
-- [ ] Define artifact classification rules using path + frontmatter + heading patterns
-- [ ] Refactor `visualize` documentation to describe intent + mode selection rather than generic mind maps
+- [ ] Define intent guidance (`structure`, `mockup`, `explainer`)
+- [ ] Define artifact guidance using path + frontmatter + heading patterns
+- [ ] Add an uncertainty interaction rule with structured-question fallback when available and concise plain-text fallback otherwise
+- [ ] Refactor `visualize` documentation to describe intent + mode guidance rather than generic mind maps
 - [ ] Implement a shared polished HTML foundation (layout, tokens, typography, cards, section chrome)
 - [ ] Implement a first non-mindmap HTML renderer for plans (`roadmap` or `plan dashboard`)
 - [ ] Implement a generic outline HTML renderer for section-heavy markdown
@@ -222,8 +226,8 @@ Generated HTML should follow a shared visual doctrine:
 
 ## Risks
 
-### Risk 1: Over-smart mode selection picks the wrong renderer
-Mitigation: keep heuristics simple, deterministic, and inspectable. Prefer safe defaults like `outline` over flashy but brittle choices.
+### Risk 1: Over-rigid mode selection picks the wrong renderer
+Mitigation: keep code-level defaults lightweight and advisory. Let the coding agent make the final contextual call, and ask the user when confidence is materially low.
 
 ### Risk 2: HTML renderers become too bespoke per skill
 Mitigation: build a small reusable renderer set driven by document structure, not one-off templates for every workflow.
