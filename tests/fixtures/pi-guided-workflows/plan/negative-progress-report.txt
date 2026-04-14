@@ -1,0 +1,6 @@
+Research complete.
+
+>> Known pattern: docs/solutions/auth/jwt-refresh-fix.md (high match)
+>> Existing code: services/scoring-engine/composite.py (similar pattern)
+
+This is a standard plan — bounded scope, strong local precedent, and low migration risk. I'll write it now.

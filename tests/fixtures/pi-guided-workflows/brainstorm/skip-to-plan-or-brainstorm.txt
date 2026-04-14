@@ -1,0 +1,4 @@
+Requirements seem fairly clear. Should we skip directly to planning or brainstorm first?
+
+1. Go to /plan (Recommended) — Requirements are clear; skip brainstorming and start planning
+2. Brainstorm first — Explore the problem space before committing to an approach

@@ -1,0 +1,5 @@
+Stories and architecture are ready. What next?
+
+1. Start implementation (Recommended) — Proceed to scaffold or test writing
+2. Review and refine — Adjust stories or architecture based on feedback
+3. Done for now — Return later

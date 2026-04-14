@@ -1,0 +1,12 @@
+{
+  "workflow": "architect",
+  "expected": {
+    "kind": "single_choice",
+    "question": "Stories and architecture are ready. What next?",
+    "optionLabels": [
+      "Start implementation (Recommended)",
+      "Review and refine",
+      "Done for now"
+    ]
+  }
+}

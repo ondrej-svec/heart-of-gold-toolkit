@@ -1,0 +1,12 @@
+{
+  "workflow": "plan",
+  "expected": {
+    "kind": "single_choice",
+    "question": "I found multiple related brainstorms. Which one should I use as context for planning?",
+    "optionLabels": [
+      "docs/brainstorms/2026-04-10-notifications-brainstorm.md",
+      "docs/brainstorms/2026-04-03-delivery-reliability-brainstorm.md",
+      "None"
+    ]
+  }
+}

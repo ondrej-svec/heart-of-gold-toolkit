@@ -1,0 +1,12 @@
+{
+  "workflow": "brainstorm",
+  "expected": {
+    "kind": "single_choice",
+    "question": "We have enough context to compare approaches. Which direction feels right for this project?",
+    "optionLabels": [
+      "Extend the existing notification service",
+      "Introduce a dedicated orchestration layer",
+      "Keep investigating before choosing"
+    ]
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "workflow": "architect",
+  "expected": {
+    "kind": "single_choice",
+    "question": "Found brainstorm: notifications revamp. Use this as input?",
+    "optionLabels": [
+      "Yes, use it",
+      "Different input"
+    ]
+  }
+}

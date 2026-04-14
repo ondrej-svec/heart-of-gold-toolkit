@@ -1,0 +1,5 @@
+We have enough context to compare approaches. Which direction feels right for this project?
+
+1. Extend the existing notification service — Faster to ship, lower implementation risk
+2. Introduce a dedicated orchestration layer — More flexible, but adds architectural overhead
+3. Keep investigating before choosing — We still have important unknowns

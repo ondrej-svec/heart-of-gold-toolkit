@@ -1,0 +1,11 @@
+{
+  "workflow": "brainstorm",
+  "expected": {
+    "kind": "single_choice",
+    "question": "Requirements seem fairly clear. Should we skip directly to planning or brainstorm first?",
+    "optionLabels": [
+      "Go to /plan (Recommended)",
+      "Brainstorm first"
+    ]
+  }
+}

@@ -1,0 +1,11 @@
+```json
+{
+  "kind": "single_choice",
+  "question": "Pick one",
+  "options": [
+    { "label": "A" },
+    { "label": "B", "description": "Second" }
+  ],
+  "confidence": "high"
+}
+```

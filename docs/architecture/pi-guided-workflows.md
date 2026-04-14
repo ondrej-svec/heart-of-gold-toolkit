@@ -114,12 +114,16 @@ This is Pi-only observability for iteration and does not change the shared skill
 
 The core workflow-detection and heuristic extraction logic is factored into a small shared helper module so it can be validated with Node tests.
 
-Current automated coverage includes fixtures for:
+Current automated coverage includes fixture-driven examples for realistic assistant turns from shared Heart of Gold workflows:
+- `brainstorm` option lists and negative non-interactive cases
+- `plan` brainstorm-selection and negative progress-report cases
+- `architect` context-selection and handoff choices
 - workflow entrypoint detection
 - unrelated command reset behavior
-- explicit option-list extraction for `brainstorm` and `architect`
 - markdown-wrapped JSON parsing for model output
 - rejection of low-confidence prompts
+
+These fixtures validate Pi-only interpretation behavior. They do not change the shared skill contract for Claude Code, Codex, OpenCode, or other harnesses.
 
 ## Why This Exists
 

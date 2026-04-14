@@ -1,0 +1,7 @@
+{
+  "expected": {
+    "kind": "single_choice",
+    "question": "Pick one",
+    "optionLabels": ["A", "B"]
+  }
+}

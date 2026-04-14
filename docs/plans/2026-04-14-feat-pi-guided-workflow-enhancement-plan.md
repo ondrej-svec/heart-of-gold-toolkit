@@ -167,7 +167,8 @@ They are the highest-value flagship workflows, already have Pi launcher commands
 
 ### Deferred follow-up work
 
-- [ ] Add richer extraction fixtures for full model-response scenarios and real conversation transcripts
+- [x] Add richer extraction fixtures for realistic shared-skill assistant turns across `brainstorm`, `plan`, and `architect`
+- [ ] Add fuller model-response fixtures for more varied JSON edge cases and ambiguous outputs
 - [ ] Consider richer multi-step guided prompts if real-world usage shows repeated compound question flows
 - [ ] Persist debug state across session reloads if that proves useful in practice
 

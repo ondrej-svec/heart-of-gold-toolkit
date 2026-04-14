@@ -1,0 +1,5 @@
+I found multiple related brainstorms. Which one should I use as context for planning?
+
+1. docs/brainstorms/2026-04-10-notifications-brainstorm.md — Closest match to the current feature
+2. docs/brainstorms/2026-04-03-delivery-reliability-brainstorm.md — Similar domain but broader scope
+3. None — proceed without brainstorm context

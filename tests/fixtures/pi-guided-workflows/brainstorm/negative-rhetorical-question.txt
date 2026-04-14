@@ -1,0 +1,3 @@
+We should also check how this compares with the old experiment from February. Why does that matter? Because the previous brainstorm already ruled out polling, and we do not want to repeat work.
+
+I'll look through docs/brainstorms/, docs/plans/, and the existing notifier implementation next.
