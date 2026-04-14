@@ -5,23 +5,26 @@ This note defines the next evolution of the shared `visualize` capability.
 ## Canonical Rule
 
 `visualize` means:
-- choose the best visualization form for the artifact
-- generate a derived view layer
-- prefer browser-viewable HTML for substantial structured workflow docs when sharing is configured
-- preserve terminal/plain-text fallback
+- choose the best visual artifact for the user's intent
+- generate one derived HTML artifact as the primary result
+- prefer browser-viewable HTML for substantial structured workflow docs and visual concepts when sharing is configured
+- preserve terminal/plain-text fallback where useful
 
 It does **not** mean:
 - always generate a mind map
+- only handle document diagrams
 
 ## Why This Change Exists
 
 The first generation of shareable visualization proved the publish/share path works across coding agents. The next problem is representation quality.
 
-Mind maps are one good representation for branching exploratory content. They are not the best representation for every document. Plans, architecture docs, and review artifacts often benefit more from:
+Mind maps are one good representation for branching exploratory content. They are not the best representation for every document. Plans, architecture docs, review artifacts, and product concepts often benefit more from:
 - collapsible structured outlines
 - phased plan boards
 - decision dashboards
 - architecture overviews
+- polished explainer pages
+- static HTML mockups
 
 ## Shared Contract
 
@@ -29,11 +32,43 @@ Shared skills may say:
 - “visualize this artifact”
 - “generate a shareable visualization”
 - “prefer browser-viewable HTML when configured”
+- “show what this could look like”
 
 Shared skills should not assume:
 - mind map specifically
 - a Pi-only or Claude-only visualization primitive
 - browser access is mandatory
+
+## Intent Families
+
+The visualization system should classify the request by intent before choosing a renderer.
+
+### `structure`
+For understanding hierarchy, sequence, dependencies, and system shape.
+
+Typical fit:
+- brainstorms
+- plans
+- architecture docs
+- reviews
+
+### `mockup`
+For showing what a UI, product surface, or experience could look like.
+
+Typical fit:
+- new web app concepts
+- dashboards
+- settings/detail pages
+- static prototype-like previews
+
+### `explainer`
+For communicating an idea clearly to another person via a polished shareable page.
+
+Typical fit:
+- stakeholder summaries
+- comparison views
+- proposal walkthroughs
+- narrative artifact summaries
 
 ## Renderer Modes
 
@@ -69,11 +104,18 @@ Typical fit:
 - architect outputs
 - architecture docs
 
+### `mockup`
+Best for static HTML concept screens and product surface previews.
+
+### `explainer`
+Best for polished narrative summary pages and stakeholder-facing views.
+
 ## Mode Selection Strategy
 
 Mode selection should be deterministic and inspectable.
 
 ### Inputs to classification
+- user wording and intent cues
 - file path
 - frontmatter (`type`, `title`, etc.)
 - heading names
@@ -81,6 +123,8 @@ Mode selection should be deterministic and inspectable.
 - section names like `Implementation Tasks`, `Acceptance Criteria`, `Risk Analysis`, `Dependencies`, `ADRs`
 
 ### Recommended v1 defaults
+- explicit UI/product concept request → `mockup`
+- explicit stakeholder/share/explain request → `explainer`
 - `docs/brainstorms/*.md` → `mindmap` when concise/branchy, otherwise `outline`
 - `docs/plans/*.md` → `roadmap`
 - `*.architecture.md` or architect outputs → `architecture`
@@ -89,14 +133,26 @@ Mode selection should be deterministic and inspectable.
 
 If classification confidence is weak, default to `outline`.
 
+## Design Rules Baseline
+
+Generated HTML should follow a strong default visual doctrine:
+- consistent spacing grid
+- readable typography scale
+- clear hierarchy and restrained color usage
+- responsive layout and accessible contrast
+- progressive disclosure for dense material
+- avoid overly flashy or cluttered AI-generated styling
+
+The system should behave more like a good design system than a raw renderer.
+
 ## Output Model
 
 The source markdown stays canonical.
 
-The visualization output is a derived artifact that may be:
-- rendered locally in terminal
-- rendered to HTML
+The visualization output is one derived HTML artifact that may then be:
 - published through `share-html`
+- returned as a local file path if publishing is unavailable
+- accompanied by terminal/plain fallback where needed
 
 ## Portability
 
