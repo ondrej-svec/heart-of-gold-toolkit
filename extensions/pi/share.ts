@@ -19,7 +19,7 @@ function queueOrSend(
 }
 
 export default function shareExtension(pi: ExtensionAPI) {
-	pi.registerCommand("share", {
+	pi.registerCommand("share-html", {
 		description: "Publish an HTML file or static site directory via the share-html skill",
 		handler: async (args, ctx) => {
 			const source = args.trim() || (ctx.hasUI ? (await ctx.ui.editor?.("HTML file or static site directory", ""))?.trim() : undefined);

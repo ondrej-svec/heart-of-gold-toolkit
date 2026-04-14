@@ -39,7 +39,7 @@ When installed as a Pi package, Heart of Gold exposes Pi-native extension comman
 - `/deep-thought-brainstorm` — start a brainstorm (collaborative discovery)
 - `/deep-thought-plan` — start planning (research and produce a plan document)
 - `/deep-thought-architect` — turn brainstorm decisions into stories and architecture docs
-- `/share` — publish an HTML file or static site directory through the portable `share-html` skill
+- `/share-html` — publish an HTML file or static site directory through the portable `share-html` skill
 - `/share-server-setup` — set up or adopt the local share server through the portable `share-server-setup` skill
 - `/marvin-work` — start executing a plan (with always-on safety guardrails)
 
