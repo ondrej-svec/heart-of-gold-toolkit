@@ -22,13 +22,13 @@ The script prints JSON. Use the `url` field as the primary browser URL.
 
 ## Visualization usage example
 
-Generate a shareable HTML mind map from an existing brainstorm/plan/architecture doc:
+For markdown brainstorm/plan/architecture docs, use the shared `visualize` skill as the entrypoint. It can generate an HTML mind map and publish it through `share-html` when sharing is configured:
 
-```bash
-bash ../visualize/scripts/render-and-share.sh docs/brainstorms/2026-04-14-example-brainstorm.md
+```text
+/babel-fish:visualize docs/brainstorms/2026-04-14-example-brainstorm.md
 ```
 
-The script prints JSON from the share server publish API. Use the returned `url` as the primary browser URL.
+If you already have a generated `.html` file or static site directory, publish it directly with `share-html` using `scripts/publish.sh`.
 
 ## Cross-agent usage examples
 
