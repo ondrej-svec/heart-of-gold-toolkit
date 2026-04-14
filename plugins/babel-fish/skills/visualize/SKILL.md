@@ -21,6 +21,7 @@ Translating structured text into spatial understanding. The job is not to "turn 
 Create one clear, polished, shareable visual artifact that:
 - matches the user's actual need
 - feels intentionally designed, not markdown restyled in boxes
+- is authored deliberately by the coding agent whenever possible
 - summarizes before detailing
 - uses browser HTML as the primary medium for substantial artifacts
 - falls back to terminal rendering only when that is the better fit
@@ -34,12 +35,16 @@ Create one clear, polished, shareable visual artifact that:
 
 Do **not** mirror the source document structure one-to-one unless the user explicitly wants a document view.
 
+The coding agent should be the **author** of the visual artifact.
+The renderer is a **finisher/fallback**, not the brain.
+
 Instead:
 1. understand the source
 2. decide what the artifact is trying to communicate
 3. choose the visual form that best serves that goal
-4. compress and reshape the content into a stronger visual story
-5. keep raw/source detail secondary or collapsible when possible
+4. author the HTML artifact directly when practical
+5. use toolkit renderers only as helpers or fallback paths
+6. keep raw/source detail secondary or collapsible when possible
 
 HTML should feel like:
 - a dashboard
@@ -150,8 +155,9 @@ When invoked, behave like a visual editor, not a format converter.
    - UI/product visualization
 3. Choose the best artifact family.
 4. If uncertain, ask one concise question.
-5. Generate one HTML artifact first when browser rendering will help.
-6. Fall back to terminal rendering when browser/share is unavailable or explicitly not wanted.
+5. Prefer **agent-authored HTML** when browser rendering will help and the artifact needs real design judgment.
+6. Use toolkit renderers as a fallback when a quick structured artifact is sufficient.
+7. Fall back to terminal rendering when browser/share is unavailable or explicitly not wanted.
 
 If the user says "you decide," choose the clearest non-gimmicky artifact, not the fanciest one.
 
@@ -189,11 +195,14 @@ If the user does not care or says "you decide," choose the safest useful mode:
 - use `architecture` for clearly system-design-heavy docs
 - use `mindmap` only when the artifact is genuinely concise and branchy
 
-## Renderers
+## Authoring & Renderers
 
-Visualization has two implementation layers:
-- `scripts/smart-render.js` — renders one HTML artifact using the mode the coding agent chose, with a safe fallback
+Preferred implementation order:
+- **Agent-authored HTML** — primary path for high-quality shareable artifacts
+- `scripts/smart-render.js` — fallback renderer when the agent wants a quick scaffold or safe structured default
 - `scripts/render-mindmap/index.js` — specialized mind-map renderer for branchy content
+
+The key rule: if the artifact needs real design judgment, the coding agent should author the HTML directly instead of delegating the whole job to a parser.
 
 **Locations:**
 - `scripts/smart-render.js`
@@ -220,6 +229,31 @@ fi
 
 ## Usage
 
+### Preferred: agent-authored HTML
+
+When quality matters more than speed, author the HTML directly into a temp file, then publish it.
+
+```bash
+HTML_OUT="/tmp/hog-visualize-artifact.html"
+cat > "$HTML_OUT" <<'EOF'
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Artifact</title>
+</head>
+<body>
+  <!-- agent-authored artifact goes here -->
+</body>
+</html>
+EOF
+
+bash "$(dirname "$SCRIPT")/publish-authored-html.sh" --url-only "$HTML_OUT"
+```
+
+### Fallback: toolkit renderer
+
 ```bash
 # Generate a safe default HTML visualization for a markdown file
 node "$SCRIPT" path/to/file.md --out /tmp/view.html
@@ -236,7 +270,22 @@ node "$(dirname "$SCRIPT")/render-mindmap/index.js" --html /tmp/map.html path/to
 
 ## HTML Share Flow
 
-Use the helper script when the user wants a browser URL and the share server is already configured:
+### Preferred share flow: publish agent-authored HTML
+
+Use this when the artifact needs stronger design judgment than the fallback renderer can provide.
+
+1. Write the HTML artifact to a temp file.
+2. Run:
+   ```bash
+   bash "$(dirname "$SCRIPT")/publish-authored-html.sh" --url-only /tmp/your-artifact.html
+   ```
+3. Read the returned URL from stdout.
+4. Return that URL to the user as the primary result.
+5. Briefly explain what was published and why this visual form was chosen.
+
+### Fallback share flow: render then publish
+
+Use the helper script when the user wants a browser URL and the fallback renderer is sufficient:
 
 ```bash
 bash scripts/render-and-share.sh path/to/file.md
@@ -248,18 +297,6 @@ This script:
 3. locates `share-html/scripts/publish.sh`
 4. publishes the artifact to the configured local share server
 5. prints the publish result so you can return the URL
-
-### Recommended share flow
-
-1. Verify or assume the input markdown is ready.
-2. Choose the mode from context.
-3. Run:
-   ```bash
-   bash scripts/render-and-share.sh --mode <chosen-mode> --url-only [file]
-   ```
-4. Read the returned URL from stdout.
-5. Return that URL to the user as the primary result.
-6. Briefly explain what was published and why this mode was chosen.
 
 If publishing fails because the share server is not configured, say so clearly and fall back to terminal rendering unless the user wants to stop and run `share-server-setup` first.
 

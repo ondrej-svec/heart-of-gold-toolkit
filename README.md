@@ -26,12 +26,15 @@ bunx @heart-of-gold/toolkit install --to opencode
 
 ### Pi Coding Agent
 ```bash
-# Install shared skills into Pi's native skill directory
-bunx @heart-of-gold/toolkit install --to pi
-
-# Or install the package directly in Pi to get skills + pi-native extensions
+# Option A: install the package directly in Pi to get skills + pi-native extensions
 pi install npm:@heart-of-gold/toolkit
+
+# Option B: install shared skills only into Pi's native skill directory
+bunx @heart-of-gold/toolkit install --to pi
 ```
+
+**Important:** choose one Pi install path or the other.
+Do **not** use both the Pi package install and `install --to pi` at the same time, or Pi will report duplicate skill collisions on reload.
 
 Pi also discovers skills from the shared `~/.agents/skills/` location, so installs done with the OpenCode target are usable from Pi too.
 

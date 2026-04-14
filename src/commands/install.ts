@@ -1,7 +1,9 @@
 import { defineCommand } from "citty";
 import { loadAllPlugins, loadPlugin } from "../parsers/claude";
 import { targets } from "../targets/index";
-import { resolve } from "path";
+import { resolve, join } from "path";
+import { existsSync } from "fs";
+import { execSync } from "child_process";
 
 export const installCommand = defineCommand({
   meta: {
@@ -27,6 +29,20 @@ export const installCommand = defineCommand({
   },
   async run({ args }) {
     const targetName = args.to;
+
+    if (targetName === "pi") {
+      try {
+        const npmRoot = execSync("npm root -g", { encoding: "utf8" }).trim();
+        const packagePath = join(npmRoot, "@heart-of-gold", "toolkit", "package.json");
+        if (existsSync(packagePath)) {
+          console.warn("Warning: @heart-of-gold/toolkit is already installed as a Pi package.");
+          console.warn("Using 'install --to pi' as well will create duplicate Pi skill collisions on reload.");
+          console.warn("Prefer one Pi install path: either 'pi install npm:@heart-of-gold/toolkit' or 'bunx @heart-of-gold/toolkit install --to pi'.\n");
+        }
+      } catch {
+        // ignore detection failures and proceed normally
+      }
+    }
     const target = targets[targetName];
     if (!target) {
       const available = Object.keys(targets).join(", ");
