@@ -4,6 +4,7 @@ import architectExtension from "./architect";
 import brainstormExtension from "./brainstorm";
 import guidedWorkflowsExtension from "./guided-workflows";
 import planExtension from "./plan";
+import shareExtension from "./share";
 import workExtension from "./work";
 
 export default function heartOfGoldPiExtensions(pi: ExtensionAPI) {
@@ -11,5 +12,6 @@ export default function heartOfGoldPiExtensions(pi: ExtensionAPI) {
 	brainstormExtension(pi);
 	planExtension(pi);
 	architectExtension(pi);
+	shareExtension(pi);
 	workExtension(pi);
 }

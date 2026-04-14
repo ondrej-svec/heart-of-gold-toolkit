@@ -8,7 +8,7 @@ import { shareServerCommand } from "./commands/share-server";
 const main = defineCommand({
   meta: {
     name: "heart-of-gold",
-    version: "0.1.28",
+    version: "0.1.29",
     description:
       "Cross-platform installer for Heart of Gold skills — Codex, OpenCode, Pi, Claude Code, and more",
   },
