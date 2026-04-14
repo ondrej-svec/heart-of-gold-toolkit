@@ -113,16 +113,18 @@ Your personal content engine.
 
 Configurable sources (RSS, Gmail, HN, web search), narrative briefs, LinkedIn drafts, blog outlines, voice fidelity checking, iMessage delivery, and two-way captures.
 
-7 skills · 2 agents · 5 scripts
+9 skills · 2 agents · 5 scripts
 
 ```
-/guide:setup       # configure your sources, themes, and voice
-/guide:pipeline    # run the full content engine
-/guide:capture     # morning/evening thought capture
-/guide:write-post  # guided blog writing (7 phases)
-/guide:claude-code # Claude Code CLI guidance
-/guide:codex       # Codex CLI guidance
-/guide:gemini      # Gemini CLI guidance
+/guide:setup              # configure your sources, themes, and voice
+/guide:pipeline           # run the full content engine
+/guide:capture            # morning/evening thought capture
+/guide:write-post         # guided blog writing (7 phases)
+/guide:share-server-setup # set up local artifact sharing infrastructure
+/guide:share-html         # publish HTML/static output to a browser URL
+/guide:claude-code        # Claude Code CLI guidance
+/guide:codex              # Codex CLI guidance
+/guide:gemini             # Gemini CLI guidance
 ```
 
 ### [Babel Fish](plugins/babel-fish/) — Universal Translator
@@ -178,6 +180,10 @@ bunx @heart-of-gold/toolkit list deep-thought
 
 # Show supported targets
 bunx @heart-of-gold/toolkit targets
+
+# Manage the local share server reference implementation
+bunx @heart-of-gold/toolkit share-server health
+bunx @heart-of-gold/toolkit share-server install
 ```
 
 ## Release Safety
@@ -198,10 +204,11 @@ npm run check:compat
 
 - **Codex/OpenCode/Pi**: Bun runtime (for `bunx`)
 - **Claude Code**: No additional requirements
-- **Guide plugin**: Python 3.10+, `feedparser`, `pyyaml`, `jq`, `curl`
+- **Guide plugin**: Python 3.10+, `feedparser`, `pyyaml`, `jq`, `curl`, `zip`
 - **Babel Fish audio**: ElevenLabs API key
 - **Babel Fish image**: OpenRouter API key
 - **iMessage delivery**: macOS (optional)
+- **Private tailnet viewer exposure**: Tailscale CLI (optional)
 
 ## Acknowledgments
 

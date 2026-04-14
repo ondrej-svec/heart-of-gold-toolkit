@@ -1,0 +1,7 @@
+{
+  "name": "@heart-of-gold/share-server",
+  "private": true,
+  "type": "module",
+  "version": "0.1.0",
+  "description": "Reference localhost share server for Heart of Gold artifact publishing"
+}

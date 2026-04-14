@@ -65,6 +65,8 @@
       "./plugins/guide/skills/gemini",
       "./plugins/guide/skills/pipeline",
       "./plugins/guide/skills/setup",
+      "./plugins/guide/skills/share-html",
+      "./plugins/guide/skills/share-server-setup",
       "./plugins/guide/skills/write-post",
       "./plugins/marvin/skills/compound",
       "./plugins/marvin/skills/quick-review",
