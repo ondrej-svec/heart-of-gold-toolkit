@@ -2,7 +2,7 @@
 
 > "Here I am, brain the size of a planet, and they ask me to review your code. Call that job satisfaction? 'Cause I don't."
 
-A quality plugin for Claude Code. Nine skills for the unglamorous work that compounds: executing plans, reviewing code, documenting solutions, scaffolding projects, writing failing tests, adversarial review, keeping copy clean, and publishing browser-viewable artifacts.
+A quality plugin for Claude Code. Ten skills for the unglamorous work that compounds: executing plans, reviewing code, documenting solutions, scaffolding projects, writing failing tests, adversarial review, keeping copy clean, publishing browser-viewable artifacts, and controlling the local share server lifecycle.
 
 ## Skills
 
@@ -34,6 +34,9 @@ Set up or adopt a local share server for browser-viewable coding-agent artifacts
 
 ### `/marvin:share-html`
 Publish a local HTML file or static site directory to the configured share server and return a browser URL. Supports a single `.html` file or a directory containing `index.html`.
+
+### `/marvin:share-server-control`
+Control the local share server after setup. Use it to check status, start or stop the macOS LaunchAgent-backed reference server, restart it, or enable or disable private Tailscale viewer exposure.
 
 ## Agents
 

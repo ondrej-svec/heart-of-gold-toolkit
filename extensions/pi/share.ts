@@ -24,7 +24,7 @@ export default function shareExtension(pi: ExtensionAPI) {
 		handler: async (args, ctx) => {
 			const source = args.trim() || (ctx.hasUI ? (await ctx.ui.editor?.("HTML file or static site directory", ""))?.trim() : undefined);
 			if (!source) {
-				ctx.ui.notify("Usage: /share <html file or static site directory>", "info");
+				ctx.ui.notify("Usage: /share-html <html file or static site directory>", "info");
 				return;
 			}
 
@@ -37,6 +37,14 @@ export default function shareExtension(pi: ExtensionAPI) {
 		handler: async (args, ctx) => {
 			const prompt = args.trim() ? `/skill:share-server-setup ${args.trim()}` : "/skill:share-server-setup";
 			queueOrSend(pi, prompt, ctx, "Share server setup queued as follow-up");
+		},
+	});
+
+	pi.registerCommand("share-server-control", {
+		description: "Control the local share server lifecycle via the portable share-server-control skill",
+		handler: async (args, ctx) => {
+			const prompt = args.trim() ? `/skill:share-server-control ${args.trim()}` : "/skill:share-server-control";
+			queueOrSend(pi, prompt, ctx, "Share server control queued as follow-up");
 		},
 	});
 }

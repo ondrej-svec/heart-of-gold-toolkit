@@ -41,6 +41,7 @@ When installed as a Pi package, Heart of Gold exposes Pi-native extension comman
 - `/deep-thought-architect` — turn brainstorm decisions into stories and architecture docs
 - `/share-html` — publish an HTML file or static site directory through the portable `share-html` skill
 - `/share-server-setup` — set up or adopt the local share server through the portable `share-server-setup` skill
+- `/share-server-control` — control the local share server lifecycle through the portable `share-server-control` skill
 - `/marvin-work` — start executing a plan (with always-on safety guardrails)
 
 Pi package installs also include a Pi-only guided workflow enhancer for supported Heart of Gold skills. For `brainstorm`, `plan`, and `architect`, when the assistant asks a high-confidence structured question, Pi can upgrade it into a custom interactive TUI and feed the answer back into the same workflow. Shared skills remain plain-text portable in every other harness.
@@ -97,18 +98,19 @@ The unglamorous work that compounds.
 
 Execute plans task by task with tests after every change. Quick-review code with an emphasis on simplicity — catch YAGNI violations, premature abstractions, and code that solves problems that don't exist yet. Document solutions so the next person doesn't waste time re-discovering what you already figured out.
 
-9 skills · 2 agents · 3 knowledge files
+10 skills · 2 agents · 3 knowledge files
 
 ```
-/marvin:work               # execute plans — implement, test, commit, ship
-/marvin:quick-review       # fast opinionated quality pass (simplicity, tests, correctness)
-/marvin:compound           # document solved problems for future reference
-/marvin:redteam            # adversarial review — find weaknesses, expose with failing tests
-/marvin:scaffold           # prepare project structure, configs, dependencies
-/marvin:test-writer        # write failing tests from user stories
-/marvin:copy-editor        # two-layer copy editor (typography audit + LLM judgment)
-/marvin:share-server-setup # set up local artifact sharing infrastructure
-/marvin:share-html         # publish HTML/static output to a browser URL
+/marvin:work                 # execute plans — implement, test, commit, ship
+/marvin:quick-review         # fast opinionated quality pass (simplicity, tests, correctness)
+/marvin:compound             # document solved problems for future reference
+/marvin:redteam              # adversarial review — find weaknesses, expose with failing tests
+/marvin:scaffold             # prepare project structure, configs, dependencies
+/marvin:test-writer          # write failing tests from user stories
+/marvin:copy-editor          # two-layer copy editor (typography audit + LLM judgment)
+/marvin:share-server-setup   # set up local artifact sharing infrastructure
+/marvin:share-server-control # start, stop, and inspect local share server lifecycle
+/marvin:share-html           # publish HTML/static output to a browser URL
 ```
 
 ### [Guide](plugins/guide/) — The Hitchhiker's Guide
