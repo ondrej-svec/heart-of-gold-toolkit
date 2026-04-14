@@ -11,9 +11,15 @@ import {
 	visibleWidth,
 	wrapTextWithAnsi,
 } from "@mariozechner/pi-tui";
+import {
+	RESET_COMMAND_PATTERN,
+	coerceExtractedPrompt,
+	detectWorkflow,
+	heuristicExtractPrompt,
+	parseExtractionEnvelope,
+} from "./guided-workflows-core.js";
 
 type WorkflowName = "brainstorm" | "plan" | "architect";
-
 type PromptKind = "none" | "single_choice" | "text";
 
 type GuidedPrompt = {
@@ -36,15 +42,6 @@ type ExtractedPromptEnvelope =
 			answerInstruction?: string;
 			confidence?: "high" | "medium" | "low";
 	  };
-
-const WORKFLOW_PATTERNS: Array<{ workflow: WorkflowName; pattern: RegExp }> = [
-	{ workflow: "brainstorm", pattern: /^\/(?:skill:brainstorm|brainstorm|deep-thought:brainstorm|deep-thought-brainstorm)\b/i },
-	{ workflow: "plan", pattern: /^\/(?:skill:plan|plan|deep-thought:plan|deep-thought-plan)\b/i },
-	{ workflow: "architect", pattern: /^\/(?:skill:architect|architect|deep-thought:architect|deep-thought-architect)\b/i },
-];
-
-const RESET_COMMAND_PATTERN =
-	/^\/(?!(?:skill:brainstorm|brainstorm|deep-thought:brainstorm|deep-thought-brainstorm|skill:plan|plan|deep-thought:plan|deep-thought-plan|skill:architect|architect|deep-thought:architect|deep-thought-architect)\b)\S+/i;
 
 const CODEX_MODEL_ID = "gpt-5.1-codex-mini";
 const HAIKU_MODEL_ID = "claude-haiku-4-5";
@@ -77,22 +74,6 @@ Rules:
 - Keep question wording faithful to the message.
 `;
 
-const normalizeInline = (text: string): string =>
-	text
-		.replace(/\*\*(.*?)\*\*/g, "$1")
-		.replace(/__(.*?)__/g, "$1")
-		.replace(/`([^`]+)`/g, "$1")
-		.replace(/\s+/g, " ")
-		.trim();
-
-function detectWorkflow(text: string): WorkflowName | undefined {
-	const trimmed = text.trim();
-	for (const { workflow, pattern } of WORKFLOW_PATTERNS) {
-		if (pattern.test(trimmed)) return workflow;
-	}
-	return undefined;
-}
-
 async function selectExtractionModel(currentModel: Model<Api>, modelRegistry: ModelRegistry): Promise<Model<Api>> {
 	const codexModel = modelRegistry.find("openai-codex", CODEX_MODEL_ID);
 	if (codexModel) {
@@ -107,95 +88,6 @@ async function selectExtractionModel(currentModel: Model<Api>, modelRegistry: Mo
 	}
 
 	return currentModel;
-}
-
-function parseExtractionEnvelope(text: string): ExtractedPromptEnvelope | null {
-	try {
-		let json = text.trim();
-		const codeBlock = text.match(/```(?:json)?\s*([\s\S]*?)```/i);
-		if (codeBlock) json = codeBlock[1].trim();
-		const parsed = JSON.parse(json) as ExtractedPromptEnvelope;
-		if (!parsed || typeof parsed !== "object" || typeof parsed.kind !== "string") return null;
-		if (parsed.kind === "none") return parsed;
-		if (parsed.kind !== "single_choice" && parsed.kind !== "text") return null;
-		if (typeof parsed.question !== "string" || parsed.question.trim() === "") return null;
-		if (parsed.kind === "single_choice") {
-			if (!Array.isArray(parsed.options) || parsed.options.length < 2 || parsed.options.length > 5) return null;
-		}
-		return parsed;
-	} catch {
-		return null;
-	}
-}
-
-function splitQuestionAndContext(lines: string[], optionStartIndex: number): { question: string; context?: string } {
-	const prior = lines.slice(0, optionStartIndex).map((line) => normalizeInline(line)).filter(Boolean);
-	if (prior.length === 0) return { question: "Choose an option" };
-
-	let question = prior[prior.length - 1];
-	let contextLines = prior.slice(0, -1);
-
-	for (let i = prior.length - 1; i >= 0; i--) {
-		const line = prior[i];
-		if (line.endsWith("?") || line.endsWith(":")) {
-			question = line.replace(/:$/, "");
-			contextLines = prior.slice(Math.max(0, i - 2), i);
-			break;
-		}
-	}
-
-	return { question, context: contextLines.join(" ").trim() || undefined };
-}
-
-function heuristicExtractOptions(text: string): ExtractedPromptEnvelope | null {
-	const lines = text.split(/\r?\n/);
-	const options: { label: string; description?: string }[] = [];
-	let optionStartIndex = -1;
-
-	for (let i = 0; i < lines.length; i++) {
-		const line = lines[i].trim();
-		const match = line.match(/^(\d+\.|[-*])\s+(.*)$/);
-		if (!match) {
-			if (options.length > 0) break;
-			continue;
-		}
-		if (optionStartIndex === -1) optionStartIndex = i;
-		const body = normalizeInline(match[2]);
-		const parts = body.split(/\s+[—-]\s+/);
-		const label = parts[0]?.trim();
-		const description = parts.slice(1).join(" — ").trim() || undefined;
-		if (!label) break;
-		options.push({ label, description });
-	}
-
-	if (optionStartIndex === -1 || options.length < 2 || options.length > 5) return null;
-	const { question, context } = splitQuestionAndContext(lines, optionStartIndex);
-	return { kind: "single_choice", question, context, options, confidence: "medium" };
-}
-
-function heuristicExtractText(text: string): ExtractedPromptEnvelope | null {
-	const lines = text
-		.split(/\r?\n/)
-		.map((line) => normalizeInline(line))
-		.filter(Boolean);
-
-	for (let i = lines.length - 1; i >= 0; i--) {
-		const line = lines[i];
-		if (!line.endsWith("?")) continue;
-		if (/^(if|when|otherwise|for example)\b/i.test(line)) continue;
-		return {
-			kind: "text",
-			question: line,
-			context: lines.slice(Math.max(0, i - 2), i).join(" ").trim() || undefined,
-			confidence: "low",
-		};
-	}
-
-	return null;
-}
-
-function heuristicExtractPrompt(text: string): ExtractedPromptEnvelope {
-	return heuristicExtractOptions(text) ?? heuristicExtractText(text) ?? { kind: "none", reason: "no clear prompt", confidence: "low" };
 }
 
 function getLastAssistantText(
@@ -227,12 +119,7 @@ async function extractPromptWithModel(
 
 	const userMessage: UserMessage = {
 		role: "user",
-		content: [
-			{
-				type: "text",
-				text: `Workflow: ${workflow}\n\nAssistant message:\n${assistantText}`,
-			},
-		],
+		content: [{ type: "text", text: `Workflow: ${workflow}\n\nAssistant message:\n${assistantText}` }],
 		timestamp: Date.now(),
 	};
 
@@ -247,35 +134,7 @@ async function extractPromptWithModel(
 		.map((part) => part.text)
 		.join("\n")
 		.trim();
-	return parseExtractionEnvelope(responseText);
-}
-
-function coerceExtractedPrompt(workflow: WorkflowName, extracted: ExtractedPromptEnvelope | null): GuidedPrompt | null {
-	if (!extracted || extracted.kind === "none") return null;
-	if (extracted.confidence === "low") return null;
-	if (extracted.kind === "single_choice") {
-		const options = (extracted.options ?? [])
-			.filter((option) => option && typeof option.label === "string" && option.label.trim() !== "")
-			.map((option) => ({ label: normalizeInline(option.label), description: option.description ? normalizeInline(option.description) : undefined }));
-		if (options.length < 2 || options.length > 5) return null;
-		return {
-			kind: "single_choice",
-			workflow,
-			question: normalizeInline(extracted.question),
-			context: extracted.context ? normalizeInline(extracted.context) : undefined,
-			options,
-			answerInstruction: extracted.answerInstruction ? normalizeInline(extracted.answerInstruction) : undefined,
-			confidence: extracted.confidence,
-		};
-	}
-	return {
-		kind: "text",
-		workflow,
-		question: normalizeInline(extracted.question),
-		context: extracted.context ? normalizeInline(extracted.context) : undefined,
-		answerInstruction: extracted.answerInstruction ? normalizeInline(extracted.answerInstruction) : undefined,
-		confidence: extracted.confidence,
-	};
+	return parseExtractionEnvelope(responseText) as ExtractedPromptEnvelope | null;
 }
 
 class GuidedPromptComponent implements Component {
@@ -290,7 +149,6 @@ class GuidedPromptComponent implements Component {
 	private dim = (s: string) => `\x1b[2m${s}\x1b[0m`;
 	private bold = (s: string) => `\x1b[1m${s}\x1b[0m`;
 	private cyan = (s: string) => `\x1b[36m${s}\x1b[0m`;
-	private green = (s: string) => `\x1b[32m${s}\x1b[0m`;
 	private yellow = (s: string) => `\x1b[33m${s}\x1b[0m`;
 	private gray = (s: string) => `\x1b[90m${s}\x1b[0m`;
 
@@ -431,18 +289,14 @@ class GuidedPromptComponent implements Component {
 		if (this.prompt.kind === "single_choice") {
 			for (let i = 0; i < (this.prompt.options ?? []).length; i++) {
 				const option = this.prompt.options![i];
-				const isSelected = i === this.selectedIndex;
-				const marker = isSelected ? this.cyan("❯") : this.dim("•");
-				const label = isSelected ? this.bold(option.label) : option.label;
+				const marker = i === this.selectedIndex ? this.cyan("❯") : this.dim("•");
+				const label = i === this.selectedIndex ? this.bold(option.label) : option.label;
 				const line = option.description ? `${marker} ${label} ${this.gray(`— ${option.description}`)}` : `${marker} ${label}`;
-				for (const wrapped of wrapTextWithAnsi(line, contentWidth)) {
-					lines.push(padToWidth(boxLine(wrapped)));
-				}
+				for (const wrapped of wrapTextWithAnsi(line, contentWidth)) lines.push(padToWidth(boxLine(wrapped)));
 				if (i < (this.prompt.options?.length ?? 0) - 1) lines.push(padToWidth(emptyLine()));
 			}
 		} else {
-			const editorWidth = contentWidth - 4;
-			const editorLines = this.editor?.render(editorWidth) ?? [];
+			const editorLines = this.editor?.render(contentWidth - 4) ?? [];
 			for (let i = 1; i < editorLines.length - 1; i++) {
 				lines.push(padToWidth(boxLine(i === 1 ? `${this.bold("A:")} ${editorLines[i]}` : `   ${editorLines[i]}`)));
 			}
@@ -454,7 +308,7 @@ class GuidedPromptComponent implements Component {
 			this.prompt.kind === "single_choice"
 				? `${this.dim("↑/↓ or Tab")} move · ${this.dim("Enter")} choose · ${this.dim("Esc")} cancel`
 				: this.showingConfirmation
-					? `${this.yellow("Submit answer?")} ${this.dim("Enter/y confirm · n continue editing · Esc cancel")}`
+					? `${this.yellow("Submit answer?")} ${this.dim("Enter/y confirm · n keep editing · Esc cancel")}`
 					: `${this.dim("Enter")} submit · ${this.dim("Shift+Enter")} newline · ${this.dim("Esc")} cancel`;
 		lines.push(padToWidth(boxLine(truncateToWidth(footer, contentWidth))));
 		lines.push(padToWidth(this.dim("╰" + horizontalLine(boxWidth - 2) + "╯")));
@@ -466,47 +320,68 @@ class GuidedPromptComponent implements Component {
 }
 
 async function showExtractionLoaderAndPrompt(
-	pi: ExtensionAPI,
 	ctx: ExtensionContext,
 	workflow: WorkflowName,
 	assistantText: string,
-): Promise<GuidedPrompt | null> {
-	if (!ctx.hasUI) return null;
+	debugEnabled: boolean,
+): Promise<{ prompt: GuidedPrompt | null; source: string; reason?: string }> {
+	if (!ctx.hasUI) return { prompt: null, source: "disabled", reason: "ui unavailable" };
 
-	const extracted = await ctx.ui.custom<ExtractedPromptEnvelope | null>((tui, theme, _kb, done) => {
+	const extracted = await ctx.ui.custom<{ result: ExtractedPromptEnvelope | null; source: string } | null>((tui, theme, _kb, done) => {
 		const loader = new BorderedLoader(tui, theme, `Heart of Gold: extracting ${workflow} prompt...`);
 		loader.onAbort = () => done(null);
 
 		const run = async () => {
 			const modelResult = await extractPromptWithModel(ctx, workflow, assistantText);
-			if (modelResult && modelResult.kind !== "none" && modelResult.confidence !== "low") return modelResult;
-			return heuristicExtractPrompt(assistantText);
+			if (modelResult && modelResult.kind !== "none" && modelResult.confidence !== "low") {
+				return { result: modelResult, source: "model" };
+			}
+			return { result: heuristicExtractPrompt(assistantText) as ExtractedPromptEnvelope, source: "heuristic" };
 		};
 
-		run().then(done).catch(() => done(heuristicExtractPrompt(assistantText)));
+		run().then(done).catch(() => done({ result: heuristicExtractPrompt(assistantText) as ExtractedPromptEnvelope, source: "heuristic" }));
 		return loader;
 	});
 
-	return coerceExtractedPrompt(workflow, extracted);
+	if (!extracted) return { prompt: null, source: "cancelled", reason: "user cancelled extraction" };
+	const prompt = coerceExtractedPrompt(workflow, extracted.result) as GuidedPrompt | null;
+	if (!prompt && debugEnabled) {
+		const reason = extracted.result?.kind === "none" ? extracted.result.reason : extracted.result?.confidence === "low" ? "low confidence" : "invalid prompt";
+		return { prompt: null, source: extracted.source, reason };
+	}
+	return { prompt, source: extracted.source };
 }
 
-async function promptForAnswer(pi: ExtensionAPI, ctx: ExtensionContext, prompt: GuidedPrompt): Promise<void> {
-	if (!ctx.hasUI) return;
+async function promptForAnswer(pi: ExtensionAPI, ctx: ExtensionContext, prompt: GuidedPrompt): Promise<boolean> {
+	if (!ctx.hasUI) return false;
 	const answer = await ctx.ui.custom<string | null>((tui, _theme, _kb, done) => new GuidedPromptComponent(prompt, tui, done));
-	if (!answer) return;
+	if (!answer) return false;
 	if (ctx.isIdle()) {
 		pi.sendUserMessage(answer);
 	} else {
 		pi.sendUserMessage(answer, { deliverAs: "followUp" });
 	}
+	return true;
 }
 
 export default function guidedWorkflowsExtension(pi: ExtensionAPI) {
 	let activeWorkflow: WorkflowName | undefined;
 	let lastHandledAssistantText: string | undefined;
+	let debugEnabled = process.env.HOG_PI_GUIDED_DEBUG === "1";
+
+	pi.registerCommand("deep-thought-guided-debug", {
+		description: "Toggle debug notices for Pi guided workflows",
+		handler: async (args, ctx) => {
+			const value = args.trim().toLowerCase();
+			if (value === "on") debugEnabled = true;
+			else if (value === "off") debugEnabled = false;
+			else debugEnabled = !debugEnabled;
+			ctx.ui.notify(`Pi guided workflow debug ${debugEnabled ? "enabled" : "disabled"}`, "info");
+		},
+	});
 
 	pi.on("input", async (event) => {
-		const workflow = detectWorkflow(event.text);
+		const workflow = detectWorkflow(event.text) as WorkflowName | undefined;
 		if (workflow) {
 			activeWorkflow = workflow;
 			lastHandledAssistantText = undefined;
@@ -527,8 +402,19 @@ export default function guidedWorkflowsExtension(pi: ExtensionAPI) {
 		if (!assistantText || assistantText === lastHandledAssistantText) return;
 
 		lastHandledAssistantText = assistantText;
-		const prompt = await showExtractionLoaderAndPrompt(pi, ctx, activeWorkflow, assistantText);
-		if (!prompt) return;
-		await promptForAnswer(pi, ctx, prompt);
+		const { prompt, source, reason } = await showExtractionLoaderAndPrompt(ctx, activeWorkflow, assistantText, debugEnabled);
+		if (!prompt) {
+			if (debugEnabled && reason) ctx.ui.notify(`Guided workflow skipped (${source}): ${reason}`, "info");
+			return;
+		}
+		const answered = await promptForAnswer(pi, ctx, prompt);
+		if (debugEnabled) {
+			ctx.ui.notify(
+				answered
+					? `Guided workflow answered via ${source} extractor (${prompt.kind})`
+					: `Guided workflow prompt dismissed (${source}, ${prompt.kind})`,
+				"info",
+			);
+		}
 	});
 }

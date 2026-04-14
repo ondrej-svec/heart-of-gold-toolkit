@@ -161,12 +161,15 @@ They are the highest-value flagship workflows, already have Pi launcher commands
 - [x] Replace or augment heuristic parsing with a small-model extractor inspired by `/answer`, while keeping a safe fallback path
 - [x] Add custom Pi TUI components for guided selection and focused free-text answering
 - [x] Add follow-up notes for future candidates such as extraction fixtures and additional workflow polish
+- [x] Factor workflow detection and heuristic extraction into a testable helper module
+- [x] Add automated Node fixtures for guided workflow detection and extraction behavior
+- [x] Add Pi-only debug toggling to explain why a turn was or was not enhanced
 
 ### Deferred follow-up work
 
-- [ ] Add dedicated extraction fixtures or automated tests once the extension code is factored into separately testable helpers
+- [ ] Add richer extraction fixtures for full model-response scenarios and real conversation transcripts
 - [ ] Consider richer multi-step guided prompts if real-world usage shows repeated compound question flows
-- [ ] Consider optional debug tooling to explain why a given assistant turn was or was not enhanced
+- [ ] Persist debug state across session reloads if that proves useful in practice
 
 ## Acceptance Criteria
 

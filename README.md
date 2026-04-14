@@ -43,6 +43,8 @@ When installed as a Pi package, Heart of Gold exposes Pi-native extension comman
 
 Pi package installs also include a Pi-only guided workflow enhancer for supported Heart of Gold skills. For `brainstorm`, `plan`, and `architect`, when the assistant asks a high-confidence structured question, Pi can upgrade it into a custom interactive TUI and feed the answer back into the same workflow. Shared skills remain plain-text portable in every other harness.
 
+For extension debugging, Pi also exposes `/deep-thought-guided-debug` to toggle notices explaining when a guided prompt was extracted, skipped, dismissed, or answered.
+
 The skills themselves enforce their own boundaries (read-only for brainstorm/plan, safe commands for work) via `allowed-tools` and prompt constraints — no manual mode switching needed.
 
 The work extension also provides always-on guardrails that protect `.env`, `.git/`, and `node_modules/` from edits, block `git add .` and destructive `rm`, and require confirmation for `git push` / `npm publish`.

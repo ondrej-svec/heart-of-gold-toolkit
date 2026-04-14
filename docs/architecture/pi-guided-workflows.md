@@ -99,6 +99,28 @@ Collected answers are injected with `pi.sendUserMessage(...)` so the assistant s
 
 If the agent is still active, the message is queued as a follow-up.
 
+## Debug Mode
+
+Pi exposes `/deep-thought-guided-debug` to toggle lightweight notices for the guided workflow enhancer.
+
+When enabled, it reports:
+- whether extraction used the model-backed path or heuristic fallback
+- whether a prompt was skipped and why
+- whether the user answered or dismissed the guided prompt
+
+This is Pi-only observability for iteration and does not change the shared skill contract.
+
+## Validation Strategy
+
+The core workflow-detection and heuristic extraction logic is factored into a small shared helper module so it can be validated with Node tests.
+
+Current automated coverage includes fixtures for:
+- workflow entrypoint detection
+- unrelated command reset behavior
+- explicit option-list extraction for `brainstorm` and `architect`
+- markdown-wrapped JSON parsing for model output
+- rejection of low-confidence prompts
+
 ## Why This Exists
 
 This design preserves the multi-harness contract:
