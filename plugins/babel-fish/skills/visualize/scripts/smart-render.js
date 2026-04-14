@@ -177,9 +177,9 @@ main > nav, .rail {
 .section h3 { margin: 0 0 10px; font-size: 18px; }
 .section p, .section li, .section td, .section th { color: var(--muted); font-size: 15px; }
 .section ul { margin: 0; padding-left: 18px; }
-.summary-grid, .stats-grid, .aside-grid, .card-grid, .lane-grid { display: grid; gap: 16px; }
+.summary-grid, .stats-grid, .aside-grid, .card-grid, .lane-grid, .dependency-grid { display: grid; gap: 16px; }
 .summary-grid, .stats-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-.card-grid.cols-2, .aside-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.card-grid.cols-2, .aside-grid, .dependency-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .card, .stat, .task-card, .lane, .detail-card, .mini-card {
   padding: 18px; border-radius: var(--radius-md); background: var(--panel-soft); border: 1px solid var(--border);
 }
@@ -210,6 +210,12 @@ main > nav, .rail {
 .task-title { margin: 0; font-size: 16px; line-height: 1.35; }
 .task-body { color: var(--muted); font-size: 14px; }
 .chip-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.dependency-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+.dependency-pill {
+  display: inline-flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 14px;
+  background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); color: var(--text); font-size: 13px;
+}
+.dependency-pill .arrow { color: var(--accent-2); font-weight: 700; }
 .chip {
   display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 999px;
   background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.08); color: var(--muted-2); font-size: 12px;
@@ -321,6 +327,11 @@ function compactDetail(detail) {
     .trim();
 }
 
+function inferTaskIdFromDependency(value) {
+  const match = String(value).match(/([A-Z][A-Z0-9-]*)/);
+  return match ? match[1] : value;
+}
+
 function extractPlanModel(doc) {
   const byTitle = new Map(doc.sections.map((s) => [s.title.toLowerCase(), s]));
   const find = (name) => byTitle.get(name.toLowerCase());
@@ -332,7 +343,11 @@ function extractPlanModel(doc) {
   }));
 
   const tasks = workstreams.flatMap((lane) => lane.tasks.map((task) => ({ ...task, lane: lane.title })));
-  const dependencies = tasks.filter((t) => t.dependency);
+  const dependencies = tasks.filter((t) => t.dependency).map((t) => ({
+    from: inferTaskIdFromDependency(t.dependency),
+    to: t.id || t.title,
+    lane: t.lane,
+  }));
   const risksText = firstParagraph(find('Risk Analysis')?.lines || []);
   const acceptanceText = firstParagraph(find('Acceptance Criteria')?.lines || []);
   const constraintsText = firstParagraph(find('Constraints and Boundaries')?.lines || []);
@@ -352,6 +367,7 @@ function extractPlanModel(doc) {
     constraintsText,
     workstreams,
     tasks,
+    dependencies,
     dependencyCount: dependencies.length,
     parallelCount: tasks.filter((t) => t.parallel).length,
     deferredCount: tasks.filter((t) => t.deferred).length,
@@ -413,6 +429,9 @@ function renderRoadmap(doc, title, badge) {
   ];
 
   const topTasks = model.tasks.slice(0, 4).map(renderTaskCard).join('');
+  const dependencyHtml = model.dependencies.length
+    ? model.dependencies.slice(0, 10).map((dep) => `<div class="dependency-pill"><span>${escapeHtml(dep.from)}</span><span class="arrow">→</span><span>${escapeHtml(dep.to)}</span><span class="chip">${escapeHtml(dep.lane)}</span></div>`).join('')
+    : '<div class="card"><p>No explicit dependencies extracted.</p></div>';
   const laneHtml = model.workstreams.map((lane) => {
     const laneId = slugify(lane.title);
     const intro = lane.summary || `${lane.tasks.length} task${lane.tasks.length === 1 ? '' : 's'} in this lane.`;
@@ -430,7 +449,8 @@ function renderRoadmap(doc, title, badge) {
     return `<article class="detail-card">
       <div class="kicker">Source Section</div>
       <h3>${escapeHtml(section.title)}</h3>
-      <details class="details" ${i < 2 ? 'open' : ''}><summary>Show Source Detail</summary><div class="detail-body"><div class="raw">${escapeHtml(snippet || 'No detail captured.')}</div></div></details>
+      <p>${escapeHtml(firstParagraph(section.lines) || 'No summary captured.')}</p>
+      <details class="details"><summary>Show Source Detail</summary><div class="detail-body"><div class="raw">${escapeHtml(snippet || 'No detail captured.')}</div></div></details>
     </article>`;
   }).join('');
 
@@ -468,6 +488,13 @@ function renderRoadmap(doc, title, badge) {
       <div class="kicker">Immediate Scan</div>
       <h2>Representative Tasks</h2>
       <div class="card-grid cols-2">${topTasks || '<div class="card"><p>No tasks captured.</p></div>'}</div>
+    </article>
+
+    <article class="section">
+      <div class="kicker">Dependency Shape</div>
+      <h2>Key Sequencing</h2>
+      <p>Dependencies are surfaced explicitly here so the execution order is visible without reading task prose.</p>
+      <div class="dependency-row">${dependencyHtml}</div>
     </article>
 
     <article class="section" id="acceptance">

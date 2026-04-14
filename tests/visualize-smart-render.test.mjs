@@ -33,6 +33,7 @@ test('forced roadmap mode renders a plan dashboard instead of markdown-shaped ou
   assert.match(html, /Execution Summary/);
   assert.match(html, /Priority Lanes/);
   assert.match(html, /Workstreams & Tasks/);
+  assert.match(html, /Key Sequencing/);
   assert.match(html, /Source Appendix/);
   assert.doesNotMatch(html, /<h2>Implementation Tasks<\/h2>/);
 });
