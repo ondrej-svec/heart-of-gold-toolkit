@@ -158,6 +158,40 @@ The coding agent should choose the mode from context. Toolkit guidance:
 
 If uncertain, ask the user using the harness's structured choice UI when available; otherwise present concise plain-text options.
 
+### Uncertainty protocol
+
+When the best visualization is not clear, do **not** silently guess if the choice would materially affect usefulness.
+
+Ask **one concise question at a time**:
+- state the decision in plain language
+- offer 2-4 explicit options
+- include a recommended option when you have one
+- keep option labels outcome-focused, not renderer-jargon-first
+
+Good pattern:
+- "Which would help most here?"
+- `Roadmap` — show phases, sequencing, and implementation progress
+- `Outline` — show the document structure clearly
+- `Mind map` — show branching ideas and relationships
+- `Architecture view` — show components, boundaries, and decisions
+
+If the harness supports structured choices, use them.
+If not, use a short plain-text question such as:
+
+```text
+I can visualize this a few different ways. Which would be most useful?
+1. Roadmap — phases and tasks
+2. Outline — document structure
+3. Mind map — branching ideas
+4. Architecture view — components and boundaries
+```
+
+If the user does not care or says "you decide," choose the safest useful mode:
+- default to `outline`
+- use `roadmap` for clearly execution-heavy plans
+- use `architecture` for clearly system-design-heavy docs
+- use `mindmap` only when the artifact is genuinely concise and branchy
+
 1. Verify or assume the input markdown is ready
 2. Run:
    ```bash

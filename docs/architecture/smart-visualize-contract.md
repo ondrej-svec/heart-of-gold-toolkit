@@ -135,8 +135,11 @@ Mode selection should be agent-led, with toolkit guidance rather than rigid hard
 - unknown markdown should bias toward `outline`
 
 If the agent is materially uncertain which visual form will help most, it should ask the user.
+- Ask one concise question at a time
 - Use the harness's structured choice UI when available
 - Otherwise present concise plain-text options
+- Offer 2-4 explicit choices with outcome-focused labels
+- Include a recommendation when confidence is partial but not final
 
 The toolkit may provide lightweight heuristics and defaults, but those are advisory, not canonical.
 
