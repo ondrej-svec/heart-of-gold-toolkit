@@ -97,16 +97,18 @@ The unglamorous work that compounds.
 
 Execute plans task by task with tests after every change. Quick-review code with an emphasis on simplicity — catch YAGNI violations, premature abstractions, and code that solves problems that don't exist yet. Document solutions so the next person doesn't waste time re-discovering what you already figured out.
 
-7 skills · 2 agents · 3 knowledge files
+9 skills · 2 agents · 3 knowledge files
 
 ```
-/marvin:work         # execute plans — implement, test, commit, ship
-/marvin:quick-review # fast opinionated quality pass (simplicity, tests, correctness)
-/marvin:compound     # document solved problems for future reference
-/marvin:redteam      # adversarial review — find weaknesses, expose with failing tests
-/marvin:scaffold     # prepare project structure, configs, dependencies
-/marvin:test-writer  # write failing tests from user stories
-/marvin:copy-editor  # two-layer copy editor (typography audit + LLM judgment)
+/marvin:work               # execute plans — implement, test, commit, ship
+/marvin:quick-review       # fast opinionated quality pass (simplicity, tests, correctness)
+/marvin:compound           # document solved problems for future reference
+/marvin:redteam            # adversarial review — find weaknesses, expose with failing tests
+/marvin:scaffold           # prepare project structure, configs, dependencies
+/marvin:test-writer        # write failing tests from user stories
+/marvin:copy-editor        # two-layer copy editor (typography audit + LLM judgment)
+/marvin:share-server-setup # set up local artifact sharing infrastructure
+/marvin:share-html         # publish HTML/static output to a browser URL
 ```
 
 ### [Guide](plugins/guide/) — The Hitchhiker's Guide
@@ -115,18 +117,16 @@ Your personal content engine.
 
 Configurable sources (RSS, Gmail, HN, web search), narrative briefs, LinkedIn drafts, blog outlines, voice fidelity checking, iMessage delivery, and two-way captures.
 
-9 skills · 2 agents · 5 scripts
+7 skills · 2 agents · 5 scripts
 
 ```
-/guide:setup              # configure your sources, themes, and voice
-/guide:pipeline           # run the full content engine
-/guide:capture            # morning/evening thought capture
-/guide:write-post         # guided blog writing (7 phases)
-/guide:share-server-setup # set up local artifact sharing infrastructure
-/guide:share-html         # publish HTML/static output to a browser URL
-/guide:claude-code        # Claude Code CLI guidance
-/guide:codex              # Codex CLI guidance
-/guide:gemini             # Gemini CLI guidance
+/guide:setup       # configure your sources, themes, and voice
+/guide:pipeline    # run the full content engine
+/guide:capture     # morning/evening thought capture
+/guide:write-post  # guided blog writing (7 phases)
+/guide:claude-code # Claude Code CLI guidance
+/guide:codex       # Codex CLI guidance
+/guide:gemini      # Gemini CLI guidance
 ```
 
 ### [Babel Fish](plugins/babel-fish/) — Universal Translator

@@ -2,7 +2,7 @@
 
 > "Here I am, brain the size of a planet, and they ask me to review your code. Call that job satisfaction? 'Cause I don't."
 
-A quality plugin for Claude Code. Seven skills for the unglamorous work that compounds: executing plans, reviewing code, documenting solutions, scaffolding projects, writing failing tests, adversarial review, and keeping copy clean.
+A quality plugin for Claude Code. Nine skills for the unglamorous work that compounds: executing plans, reviewing code, documenting solutions, scaffolding projects, writing failing tests, adversarial review, keeping copy clean, and publishing browser-viewable artifacts.
 
 ## Skills
 
@@ -28,6 +28,12 @@ Write failing tests from user stories and architecture docs. Behavioral tests ve
 
 ### `/marvin:copy-editor`
 Two-layer copy editor. Layer 1 is a deterministic typography audit (regex-level, auto-closeable). Layer 2 is LLM judgment — reject-list hits, nominal-style detection, clarity/ambiguity pass for participant-facing content, voice/register check, and spoken-readability read. Loads repo-local `.copy-editor.yaml` to compose the baked-in language profile with the repo's style guide.
+
+### `/marvin:share-server-setup`
+Set up or adopt a local share server for browser-viewable coding-agent artifacts. Supports configuring an existing compatible server, installing the Heart of Gold reference share server, adding macOS LaunchAgent persistence, and optionally exposing only the viewer surface over `tailscale serve`.
+
+### `/marvin:share-html`
+Publish a local HTML file or static site directory to the configured share server and return a browser URL. Supports a single `.html` file or a directory containing `index.html`.
 
 ## Agents
 

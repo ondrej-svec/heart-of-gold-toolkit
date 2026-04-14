@@ -1,6 +1,6 @@
 {
   "name": "@heart-of-gold/toolkit",
-  "version": "0.1.29",
+  "version": "0.1.30",
   "type": "module",
   "description": "Cross-platform installer for Heart of Gold skills — works with Codex, OpenCode, Pi, Claude Code, and more",
   "bin": {
@@ -65,10 +65,10 @@
       "./plugins/guide/skills/gemini",
       "./plugins/guide/skills/pipeline",
       "./plugins/guide/skills/setup",
-      "./plugins/guide/skills/share-html",
-      "./plugins/guide/skills/share-server-setup",
       "./plugins/guide/skills/write-post",
       "./plugins/marvin/skills/compound",
+      "./plugins/marvin/skills/share-html",
+      "./plugins/marvin/skills/share-server-setup",
       "./plugins/marvin/skills/quick-review",
       "./plugins/marvin/skills/redteam",
       "./plugins/marvin/skills/scaffold",

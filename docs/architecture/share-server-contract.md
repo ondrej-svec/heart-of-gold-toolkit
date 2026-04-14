@@ -416,7 +416,7 @@ heart-of-gold-toolkit/
       publish.ts
       viewer.ts
       types.ts
-  plugins/guide/skills/
+  plugins/marvin/skills/
     share-server-setup/
       SKILL.md
       scripts/
