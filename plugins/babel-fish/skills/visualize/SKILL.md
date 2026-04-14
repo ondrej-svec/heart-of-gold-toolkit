@@ -231,26 +231,18 @@ fi
 
 ### Preferred: agent-authored HTML
 
-When quality matters more than speed, author the HTML directly into a temp file, then publish it.
+When quality matters more than speed, start from the shared authored-artifact template, write the HTML directly, then publish it.
 
 ```bash
-HTML_OUT="/tmp/hog-visualize-artifact.html"
-cat > "$HTML_OUT" <<'EOF'
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Artifact</title>
-</head>
-<body>
-  <!-- agent-authored artifact goes here -->
-</body>
-</html>
-EOF
-
+HTML_OUT="$(bash "$(dirname "$SCRIPT")/new-authored-artifact.sh")"
+# edit the generated template at $HTML_OUT
 bash "$(dirname "$SCRIPT")/publish-authored-html.sh" --url-only "$HTML_OUT"
 ```
+
+Template and helper files:
+- `scripts/agent-artifact-template.html`
+- `scripts/new-authored-artifact.sh`
+- `scripts/publish-authored-html.sh`
 
 ### Fallback: toolkit renderer
 
@@ -274,14 +266,18 @@ node "$(dirname "$SCRIPT")/render-mindmap/index.js" --html /tmp/map.html path/to
 
 Use this when the artifact needs stronger design judgment than the fallback renderer can provide.
 
-1. Write the HTML artifact to a temp file.
-2. Run:
+1. Create the scaffold:
    ```bash
-   bash "$(dirname "$SCRIPT")/publish-authored-html.sh" --url-only /tmp/your-artifact.html
+   HTML_OUT="$(bash "$(dirname "$SCRIPT")/new-authored-artifact.sh")"
    ```
-3. Read the returned URL from stdout.
-4. Return that URL to the user as the primary result.
-5. Briefly explain what was published and why this visual form was chosen.
+2. Author the HTML artifact directly into that file.
+3. Publish it:
+   ```bash
+   bash "$(dirname "$SCRIPT")/publish-authored-html.sh" --url-only "$HTML_OUT"
+   ```
+4. Read the returned URL from stdout.
+5. Return that URL to the user as the primary result.
+6. Briefly explain what was published and why this visual form was chosen.
 
 ### Fallback share flow: render then publish
 
@@ -325,6 +321,23 @@ Many harness bash panels truncate long output and wrap wide content, breaking al
    ```
 
 The default mode is vertical layout — boxes on main branches, compact leaves, about 40 chars wide.
+
+## Agent-Authored HTML Workflow
+
+When authoring HTML directly, follow this sequence:
+
+1. Read the source and decide the artifact family.
+2. Decide the audience and the first question the page should answer.
+3. Create the scaffold with `new-authored-artifact.sh`.
+4. Replace the template content with a real designed artifact.
+5. Keep source detail secondary.
+6. Publish with `publish-authored-html.sh`.
+
+For plans specifically:
+- do not dump the full task prose into the primary lanes
+- summarize workstreams into short cards or task tiles
+- show dependencies, risks, and acceptance separately
+- keep raw markdown only in an appendix or disclosure block
 
 ## Required Output Structure
 
