@@ -15,19 +15,19 @@
       "name": "deep-thought",
       "source": "./plugins/deep-thought",
       "description": "The Answer Computer — reasoning tools for brainstorming, planning, and deep thinking",
-      "version": "0.2.2"
+      "version": "0.2.3"
     },
     {
       "name": "marvin",
       "source": "./plugins/marvin",
       "description": "The Paranoid Android — quality tools for code review, knowledge compounding, and work execution",
-      "version": "0.3.2"
+      "version": "0.3.3"
     },
     {
       "name": "babel-fish",
       "source": "./plugins/babel-fish",
       "description": "Universal Translator — media generation tools for audio, image, and video content",
-      "version": "0.2.0"
+      "version": "0.2.1"
     },
     {
       "name": "quellis",
