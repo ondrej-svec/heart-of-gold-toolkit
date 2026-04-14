@@ -1,6 +1,6 @@
 {
   "name": "@heart-of-gold/toolkit",
-  "version": "0.1.35",
+  "version": "0.1.36",
   "type": "module",
   "description": "Cross-platform installer for Heart of Gold skills — works with Codex, OpenCode, Pi, Claude Code, and more",
   "bin": {
