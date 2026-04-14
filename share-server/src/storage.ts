@@ -39,9 +39,29 @@ export function artifactPath(dataRoot: string, slug: string): string {
   return join(artifactsDir(dataRoot), slug);
 }
 
+export function metadataFilePath(dataRoot: string): string {
+  return join(metadataDir(dataRoot), "shares.jsonl");
+}
+
 export function writeMetadata(dataRoot: string, record: ShareRecord): void {
-  const filePath = join(metadataDir(dataRoot), "shares.jsonl");
+  const filePath = metadataFilePath(dataRoot);
   writeFileSync(filePath, `${JSON.stringify(record)}\n`, { flag: "a" });
+}
+
+export function readMetadata(dataRoot: string): ShareRecord[] {
+  const filePath = metadataFilePath(dataRoot);
+  if (!existsSync(filePath)) return [];
+  return readFileSync(filePath, "utf-8")
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => JSON.parse(line) as ShareRecord);
+}
+
+export function rewriteMetadata(dataRoot: string, records: ShareRecord[]): void {
+  const filePath = metadataFilePath(dataRoot);
+  const content = records.map((record) => JSON.stringify(record)).join("\n");
+  writeFileSync(filePath, `${content}${content ? "\n" : ""}`, "utf-8");
 }
 
 export function writeAlias(dataRoot: string, alias: string, slug: string): void {
@@ -49,11 +69,49 @@ export function writeAlias(dataRoot: string, alias: string, slug: string): void 
   writeFileSync(aliasPath, `${JSON.stringify({ alias: slugify(alias), slug }, null, 2)}\n`, "utf-8");
 }
 
+export function aliasPath(dataRoot: string, alias: string): string {
+  return join(aliasesDir(dataRoot), `${slugify(alias)}.json`);
+}
+
 export function readAlias(dataRoot: string, alias: string): string | null {
-  const aliasPath = join(aliasesDir(dataRoot), `${slugify(alias)}.json`);
-  if (!existsSync(aliasPath)) return null;
-  const parsed = JSON.parse(readFileSync(aliasPath, "utf-8")) as { slug?: string };
+  const filePath = aliasPath(dataRoot, alias);
+  if (!existsSync(filePath)) return null;
+  const parsed = JSON.parse(readFileSync(filePath, "utf-8")) as { slug?: string };
   return parsed.slug ?? null;
+}
+
+export function deleteAlias(dataRoot: string, alias: string): boolean {
+  const filePath = aliasPath(dataRoot, alias);
+  if (!existsSync(filePath)) return false;
+  rmSync(filePath, { force: true });
+  return true;
+}
+
+export function removeAliasesForSlug(dataRoot: string, slug: string): string[] {
+  const removed: string[] = [];
+  const root = aliasesDir(dataRoot);
+  if (!existsSync(root)) return removed;
+  for (const entry of readdirSync(root)) {
+    if (!entry.endsWith('.json')) continue;
+    const filePath = join(root, entry);
+    try {
+      const parsed = JSON.parse(readFileSync(filePath, 'utf-8')) as { alias?: string; slug?: string };
+      if (parsed.slug === slug) {
+        rmSync(filePath, { force: true });
+        removed.push(parsed.alias ?? entry.replace(/\.json$/, ''));
+      }
+    } catch {
+      // ignore malformed alias records during cleanup
+    }
+  }
+  return removed;
+}
+
+export function deleteArtifact(dataRoot: string, slug: string): boolean {
+  const path = artifactPath(dataRoot, slug);
+  if (!existsSync(path)) return false;
+  rmSync(path, { recursive: true, force: true });
+  return true;
 }
 
 export function copyDirectoryContents(sourceDir: string, destinationDir: string): void {

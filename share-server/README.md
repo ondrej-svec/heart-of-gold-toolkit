@@ -59,6 +59,18 @@ bun share-server/src/index.ts init
 bun share-server/src/index.ts health
 ```
 
+### Delete a published share
+
+```bash
+heart-of-gold share-server delete <slug>
+```
+
+### Delete only an alias pointer
+
+```bash
+heart-of-gold share-server delete --alias <alias> --onlyAlias
+```
+
 ### Install stable local server files
 
 ```bash
@@ -92,6 +104,19 @@ curl -fsS -X POST \
   -F artifactType=static-site-zip \
   http://127.0.0.1:4815/publish
 ```
+
+## Cleanup model
+
+Artifacts are immutable when published, but the admin surface can remove them when cleanup is needed.
+
+Supported cleanup operations:
+- delete a share by slug
+- delete an alias pointer without deleting the underlying artifact
+
+Deleting a share removes:
+- the artifact directory
+- any aliases pointing at that slug
+- matching metadata entries in `metadata/shares.jsonl`
 
 ## Security model
 

@@ -2,6 +2,8 @@ import { defineCommand } from "citty";
 import { cpSync, existsSync, mkdirSync, rmSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { homedir } from "node:os";
+import { dataRootForConfig } from "../../share-server/src/config";
+import { deleteAlias, deleteArtifact, readAlias, readMetadata, removeAliasesForSlug, rewriteMetadata } from "../../share-server/src/storage";
 
 function packageRoot(): string {
   let dir = dirname(new URL(import.meta.url).pathname);
@@ -84,6 +86,48 @@ export const shareServerCommand = defineCommand({
         rmSync(targetDir, { recursive: true, force: true });
         cpSync(sourceDir, targetDir, { recursive: true });
         console.log(JSON.stringify({ ok: true, serverDir: targetDir }, null, 2));
+      },
+    }),
+    delete: defineCommand({
+      meta: { name: "delete", description: "Delete a published share by slug, or remove an alias" },
+      args: {
+        slug: { type: "positional", required: false },
+        alias: { type: "string", required: false },
+        config: { type: "string", required: false },
+        onlyAlias: { type: "boolean", required: false },
+      },
+      run({ args }) {
+        const dataRoot = dataRootForConfig(args.config ? String(args.config) : undefined);
+
+        if (args.alias && args.onlyAlias) {
+          const alias = String(args.alias);
+          const slug = readAlias(dataRoot, alias);
+          const removed = deleteAlias(dataRoot, alias);
+          console.log(JSON.stringify(removed
+            ? { ok: true, alias, slug, removed: true }
+            : { ok: false, error: { code: "NOT_FOUND", message: `Alias not found: ${alias}` } }
+          ));
+          process.exit(removed ? 0 : 1);
+        }
+
+        const slug = args.slug ? String(args.slug) : undefined;
+        if (!slug) {
+          console.error("share-server delete requires either <slug> or --alias <alias> --onlyAlias");
+          process.exit(1);
+        }
+
+        const removedArtifact = deleteArtifact(dataRoot, slug);
+        const removedAliases = removeAliasesForSlug(dataRoot, slug);
+        const existing = readMetadata(dataRoot);
+        const filtered = existing.filter((record) => record.slug !== slug);
+        const metadataRemoved = filtered.length !== existing.length;
+        rewriteMetadata(dataRoot, filtered);
+        const ok = removedArtifact || metadataRemoved || removedAliases.length > 0;
+        console.log(JSON.stringify(ok
+          ? { ok: true, slug, removedArtifact, removedAliases, metadataRemoved }
+          : { ok: false, error: { code: "NOT_FOUND", message: `Share not found: ${slug}` } }
+        ));
+        process.exit(ok ? 0 : 1);
       },
     }),
     "install-launch-agent": defineCommand({

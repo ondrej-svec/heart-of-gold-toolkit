@@ -4,7 +4,7 @@ import { dirname, join, resolve } from "node:path";
 import { homedir, platform } from "node:os";
 import { ensureConfigAndDataDirs, loadConfig, resolveConfigPath, writeConfig } from "./config";
 import { publishArtifact } from "./publish";
-import { ensureStorageLayout } from "./storage";
+import { deleteAlias, deleteArtifact, ensureStorageLayout, readAlias, readMetadata, removeAliasesForSlug, rewriteMetadata } from "./storage";
 import { createViewerHandler } from "./viewer";
 import type { HealthResponse } from "./types";
 
@@ -92,14 +92,7 @@ async function startServer(flags: Record<string, string | boolean>): Promise<voi
       }
 
       if (request.method === "GET" && url.pathname === "/shares") {
-        const sharesPath = join(dataRoot, "metadata", "shares.jsonl");
-        const text = existsSync(sharesPath) ? await Bun.file(sharesPath).text() : "";
-        const items = text
-          .split(/\r?\n/)
-          .map((line) => line.trim())
-          .filter(Boolean)
-          .map((line) => JSON.parse(line));
-        return Response.json({ ok: true, items });
+        return Response.json({ ok: true, items: readMetadata(dataRoot) });
       }
 
       if (request.method === "POST" && url.pathname === "/publish") {
@@ -125,6 +118,39 @@ async function startServer(flags: Record<string, string | boolean>): Promise<voi
             "INVALID_REQUEST";
           return Response.json({ ok: false, error: { code, message } }, { status: 400 });
         }
+      }
+
+      if (request.method === "DELETE" && url.pathname.startsWith("/shares/")) {
+        const slug = decodeURIComponent(url.pathname.replace(/^\/shares\//, "")).trim();
+        if (!slug) {
+          return Response.json({ ok: false, error: { code: "MISSING_SLUG", message: "Share slug is required." } }, { status: 400 });
+        }
+
+        const removedArtifact = deleteArtifact(dataRoot, slug);
+        const removedAliases = removeAliasesForSlug(dataRoot, slug);
+        const existing = readMetadata(dataRoot);
+        const filtered = existing.filter((record) => record.slug !== slug);
+        const metadataRemoved = filtered.length !== existing.length;
+        rewriteMetadata(dataRoot, filtered);
+
+        if (!removedArtifact && !metadataRemoved && removedAliases.length === 0) {
+          return Response.json({ ok: false, error: { code: "NOT_FOUND", message: `Share not found: ${slug}` } }, { status: 404 });
+        }
+
+        return Response.json({ ok: true, slug, removedArtifact, removedAliases, metadataRemoved });
+      }
+
+      if (request.method === "DELETE" && url.pathname.startsWith("/aliases/")) {
+        const alias = decodeURIComponent(url.pathname.replace(/^\/aliases\//, "")).trim();
+        if (!alias) {
+          return Response.json({ ok: false, error: { code: "MISSING_ALIAS", message: "Alias is required." } }, { status: 400 });
+        }
+        const slug = readAlias(dataRoot, alias);
+        const removed = deleteAlias(dataRoot, alias);
+        if (!removed) {
+          return Response.json({ ok: false, error: { code: "NOT_FOUND", message: `Alias not found: ${alias}` } }, { status: 404 });
+        }
+        return Response.json({ ok: true, alias, slug, removed: true });
       }
 
       return Response.json({ ok: false, error: { code: "INVALID_REQUEST", message: "Unknown route" } }, { status: 404 });

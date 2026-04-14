@@ -59,6 +59,16 @@ bash scripts/enable-viewer.sh --public-base-url "https://<machine>.<tailnet>.ts.
 bash scripts/disable-viewer.sh
 ```
 
+### Delete a published artifact by slug
+```bash
+heart-of-gold share-server delete <slug>
+```
+
+### Delete only an alias pointer
+```bash
+heart-of-gold share-server delete --alias <alias> --onlyAlias
+```
+
 ## Notes
 
 - In v1, lifecycle control assumes the reference server was installed as a macOS LaunchAgent.
@@ -73,6 +83,8 @@ bash scripts/disable-viewer.sh
 - `scripts/restart.sh` — restart the LaunchAgent cleanly
 - `scripts/enable-viewer.sh` — enable private Tailscale Serve exposure for the viewer listener
 - `scripts/disable-viewer.sh` — turn off private Tailscale Serve exposure
+- `heart-of-gold share-server delete <slug>` — remove a published artifact, its aliases, and its metadata entries
+- `heart-of-gold share-server delete --alias <alias> --onlyAlias` — remove only an alias pointer
 
 ## References
 
