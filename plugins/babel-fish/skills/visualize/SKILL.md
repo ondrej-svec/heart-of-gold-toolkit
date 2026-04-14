@@ -1,9 +1,10 @@
 ---
 name: visualize
 description: >
-  Render mind maps and tree visualizations directly in the terminal using Unicode box-drawing characters
-  with ANSI colors. Works over SSH, no browser needed. Use on brainstorm docs, plan docs, markdown files,
-  or any structured content. Triggers: visualize, mindmap, mind map, show me the structure, draw a map.
+  Render mind maps and tree visualizations from markdown. Prefer terminal output for quick local inspection,
+  and generate shareable HTML when the user wants a browser view and share-html infrastructure is configured.
+  Works on brainstorm docs, plan docs, markdown files, or any structured content. Triggers: visualize,
+  mindmap, mind map, show me the structure, draw a map.
 allowed-tools:
   - Read
   - Bash
@@ -17,8 +18,8 @@ Translating structured text into spatial understanding. Because walls of text hi
 
 ## Boundaries
 
-- MAY: read files, generate mind maps, run the renderer script via bash
-- MAY NOT: modify files, create new files (except temp files in /tmp), install packages
+- MAY: read files, generate terminal mind maps, generate temporary HTML artifacts, run renderer/share scripts via bash
+- MAY NOT: modify project files, create persistent files outside temp/output artifacts, install unrelated packages
 
 ## The Renderer
 
@@ -46,7 +47,7 @@ fi
 ## Usage
 
 ```bash
-# Render a markdown file
+# Render a markdown file in the terminal
 node "$SCRIPT" path/to/file.md
 
 # With options
@@ -54,10 +55,25 @@ node "$SCRIPT" --no-color path/to/file.md    # plain Unicode, no ANSI
 node "$SCRIPT" --width 120 path/to/file.md   # constrain to 120 columns
 node "$SCRIPT" --depth 2 path/to/file.md     # limit tree depth
 node "$SCRIPT" --json path/to/data.json      # JSON tree input
+node "$SCRIPT" --html /tmp/map.html path/to/file.md  # generate HTML mind map
 
 # Pipe markdown
 echo "# Root\n## Branch A\n## Branch B" | node "$SCRIPT"
 ```
+
+### Shareable HTML flow
+
+Use the helper script when the user wants a browser URL and the share server is already configured:
+
+```bash
+bash scripts/render-and-share.sh path/to/file.md
+```
+
+This script:
+1. generates an HTML mind map via the existing renderer
+2. locates `share-html/scripts/publish.sh`
+3. publishes the artifact to the configured local share server
+4. prints the publish JSON so you can return the URL
 
 ## Rendering Behavior
 
@@ -71,6 +87,20 @@ echo "# Root\n## Branch A\n## Branch B" | node "$SCRIPT"
   - Depth 4+: dim
 
 ## Phase 0 — Determine What to Visualize
+
+First decide whether the user wants:
+- a quick terminal view
+- a browser/shareable HTML view
+
+**Prefer browser/shareable HTML when:**
+- the user asks to open it in a browser
+- the user wants to share the result with another person or device
+- the structure is large enough that browser navigation is more useful than terminal rendering
+
+**Prefer terminal rendering when:**
+- the user wants a quick local look
+- the environment is SSH-heavy or browser access is not requested
+- share-html is not configured
 
 When invoked as `/visualize [path]`:
 
@@ -88,11 +118,13 @@ When invoked as `/visualize [path]`:
 2. Generate an appropriate markdown structure
 3. Render it
 
-## Phase 1 — Render
+## Phase 1 — Render or Share
 
-**IMPORTANT: Output the mind map in Claude's response text, NOT as bash tool output.**
+### Path A — Terminal rendering
 
-Claude Code's bash output panel truncates long output and wraps wide content, breaking alignment. Instead:
+**IMPORTANT: Output the mind map in the assistant response text, NOT as raw bash tool output.**
+
+Many harness bash panels truncate long output and wrap wide content, breaking alignment. Instead:
 
 1. Locate the renderer script (see above)
 2. Ensure dependencies are installed
@@ -102,18 +134,35 @@ Claude Code's bash output panel truncates long output and wraps wide content, br
    ```
 4. Read `/tmp/mindmap-result.txt`
 5. Output the contents inside a markdown fenced code block in your response text
-6. Clean up: `rm /tmp/mindmap-result.txt`
+6. Clean up: `rm -f /tmp/mindmap-result.txt`
 
-The default mode is **vertical layout** — boxes on main branches, compact leaves, ~40 chars wide. Fits perfectly in Claude Code's response area.
+The default mode is **vertical layout** — boxes on main branches, compact leaves, ~40 chars wide.
 
-**For shell usage** (not through Claude Code): Run without `--no-color` for ANSI colors, or use `--horizontal` for the wide spatial layout.
+### Path B — Shareable HTML
+
+If the user wants browser viewing or sharing and `share-html` is configured:
+
+1. Verify or assume the input markdown is ready
+2. Run:
+   ```bash
+   bash scripts/render-and-share.sh [file]
+   ```
+3. Read the returned JSON
+4. Return the primary URL to the user (`url` when present, otherwise `viewerUrl`)
+5. Briefly explain what was published
+
+If publishing fails because the share server is not configured, say so clearly and fall back to terminal rendering unless the user wants to stop and run `share-server-setup` first.
+
+**For shell usage** (not through assistant panels): terminal rendering can use ANSI colors, or `--horizontal` for the wide spatial layout.
 
 ## Phase 2 — Offer Next Steps
 
-After rendering, briefly note:
-- "Use `--depth N` to see more/less detail"
-- "Use `--width N` to fit a different terminal size"
-- If the source was a brainstorm/plan, offer to continue the workflow (e.g., proceed to `/plan` or `/work`)
+After rendering or sharing, briefly note:
+- for terminal mode: "Use `--depth N` to see more/less detail"
+- for terminal mode: "Use `--width N` to fit a different terminal size"
+- for shared HTML: return the viewer URL and say whether it is local-only or publicly reachable on the user's tailnet
+- if publishing failed due to missing share infrastructure: suggest `share-server-setup`
+- if the source was a brainstorm/plan/architecture doc, offer to continue the workflow (e.g., proceed to `/plan`, `/work`, or implementation)
 
 ## Input Formats
 
@@ -166,4 +215,4 @@ Write the generated markdown to `/tmp/mindmap-XXXXXX.md`, render it, then clean 
 
 ## What Makes This Babel Fish
 
-The Babel Fish translates between languages. This skill translates between *modalities* — from linear text to spatial structure. It makes the invisible visible: the hierarchy, the relationships, the gaps that only show up when you see the shape of the thinking.
+The Babel Fish translates between languages. This skill translates between *modalities* — from linear text to spatial structure, and now from private working docs to shareable browser views. It makes the invisible visible: the hierarchy, the relationships, the gaps that only show up when you see the shape of the thinking.

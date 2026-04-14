@@ -176,9 +176,12 @@ Use **AskUserQuestion** with:
 - header: "Next step"
 - options:
   1. label: "Start implementation (Recommended)", description: "Proceed to scaffold or test writing"
-  2. label: "Review and refine", description: "Adjust stories or architecture based on feedback"
-  3. label: "Done for now", description: "Return later"
+  2. label: "Visualize / Share", description: "Prefer a shareable HTML view when sharing is configured; otherwise render structure in the terminal"
+  3. label: "Review and refine", description: "Adjust stories or architecture based on feedback"
+  4. label: "Done for now", description: "Return later"
 - multiSelect: false
+
+**If user selects "Visualize / Share":** Run `/babel-fish:visualize {stories_path}/{slug}.architecture.md` and prefer the shareable HTML flow when browser viewing or sharing is useful and `share-html` is configured. Otherwise render the terminal mind map. After rendering or sharing, return to this handoff with the remaining options.
 
 **If pipeline mode (`$BRAINSTORM_PATH` set):**
 Complete without asking. Output paths for downstream consumers:

@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "chalk": "^5.4.1",
-    "cli-boxes": "^4.0.1"
+    "cli-boxes": "^4.0.1",
+    "markmap-cli": "^0.18.12"
   }
 }

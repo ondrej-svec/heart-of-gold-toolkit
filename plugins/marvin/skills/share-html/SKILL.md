@@ -10,14 +10,20 @@ Publish browser-viewable artifacts to the local share server.
 
 ## Use this skill when
 
-- the user generated an HTML report or preview and wants a stable URL
+- the user generated an HTML report, preview, or visualization and wants a stable URL
 - the user wants to open output in a browser on another device
 - the user wants a share flow that works across coding agents
+- another shared skill produced HTML as a derived artifact and now needs publication
 
 ## Supported inputs
 
 - a single `.html` file
 - a directory containing `index.html`
+
+Common producers include:
+- handcrafted HTML reports
+- static-site outputs
+- HTML mind maps or structured document previews generated from brainstorms, plans, or architecture docs
 
 If the server is not configured yet, stop and run `share-server-setup` first.
 

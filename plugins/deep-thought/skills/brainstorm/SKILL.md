@@ -291,13 +291,13 @@ Ask the user what to do next.
 - Prefer the harness's structured choice UI if available
 - Otherwise present this short plain-text choice list:
   1. **Proceed to /plan** — Turn these decisions into an implementation plan
-  2. **Visualize** — Render a mind map of this brainstorm in the terminal
+  2. **Visualize / Share** — Prefer a shareable HTML mind map when sharing is configured; otherwise render in the terminal
   3. **Keep exploring** — More questions or refine decisions before moving on
   4. **Done for now** — Return later; to plan: `/plan {brainstorm-path}`
 
 **If user selects "Proceed to /plan":** Suggest running `/plan {brainstorm-path}`.
 
-**If user selects "Visualize":** Run `/babel-fish:visualize {brainstorm-path}` to render a mind map of the brainstorm structure. After rendering, return to this handoff with the remaining options.
+**If user selects "Visualize / Share":** Run `/babel-fish:visualize {brainstorm-path}` and prefer the shareable HTML flow when browser viewing or sharing is useful and `share-html` is configured. Otherwise render the terminal mind map. After rendering or sharing, return to this handoff with the remaining options.
 
 **If user selects "Keep exploring":** Return to Phase 3 and continue asking questions one at a time. When satisfied, update the document and return to this handoff.
 
