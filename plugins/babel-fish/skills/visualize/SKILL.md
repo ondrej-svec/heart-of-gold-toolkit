@@ -21,24 +21,28 @@ Translating structured text into spatial understanding. Because walls of text hi
 - MAY: read files, generate terminal mind maps, generate temporary HTML artifacts, run renderer/share scripts via bash
 - MAY NOT: modify project files, create persistent files outside temp/output artifacts, install unrelated packages
 
-## The Renderer
+## The Renderers
 
-A Node.js script that converts markdown headings into colored, spatial Unicode mind maps.
+Visualization now has two layers:
+- `scripts/smart-render.js` — renders one HTML artifact using the mode the coding agent chose (or a safe fallback)
+- `scripts/render-mindmap/index.js` — specialized mind-map renderer for branchy content
 
-**Location:** `scripts/render-mindmap/index.js` (relative to this skill's directory)
+**Locations:**
+- `scripts/smart-render.js`
+- `scripts/render-mindmap/index.js`
 
-**To find the script path**, locate it by searching for `render-mindmap/index.js`:
+**To find the smart renderer path**, locate it by searching for `smart-render.js`:
 ```bash
 # Option 1: Use CLAUDE_PLUGIN_ROOT if available
-SCRIPT="${CLAUDE_PLUGIN_ROOT}/skills/visualize/scripts/render-mindmap/index.js"
+SCRIPT="${CLAUDE_PLUGIN_ROOT}/skills/visualize/scripts/smart-render.js"
 
 # Option 2: Search for it
-SCRIPT=$(find ~/.claude/plugins -path "*/babel-fish/skills/visualize/scripts/render-mindmap/index.js" 2>/dev/null | head -1)
+SCRIPT=$(find ~/.claude/plugins -path "*/babel-fish/skills/visualize/scripts/smart-render.js" 2>/dev/null | head -1)
 ```
 
-**First run:** If `node_modules/` doesn't exist in the renderer directory, run `npm install` there first:
+**First run:** If `node_modules/` doesn't exist in the mind-map renderer directory, run `npm install` there first:
 ```bash
-RENDER_DIR=$(dirname "$SCRIPT")
+RENDER_DIR=$(dirname "$SCRIPT")/render-mindmap
 if [ ! -d "$RENDER_DIR/node_modules" ]; then
   (cd "$RENDER_DIR" && npm install --silent)
 fi
@@ -47,33 +51,33 @@ fi
 ## Usage
 
 ```bash
-# Render a markdown file in the terminal
-node "$SCRIPT" path/to/file.md
+# Generate a safe default HTML visualization for a markdown file
+node "$SCRIPT" path/to/file.md --out /tmp/view.html
 
-# With options
-node "$SCRIPT" --no-color path/to/file.md    # plain Unicode, no ANSI
-node "$SCRIPT" --width 120 path/to/file.md   # constrain to 120 columns
-node "$SCRIPT" --depth 2 path/to/file.md     # limit tree depth
-node "$SCRIPT" --json path/to/data.json      # JSON tree input
-node "$SCRIPT" --html /tmp/map.html path/to/file.md  # generate HTML mind map
+# Usually the coding agent should choose the mode from context
+node "$SCRIPT" path/to/file.md --mode roadmap --out /tmp/view.html
+node "$SCRIPT" path/to/file.md --mode outline --out /tmp/view.html
+node "$SCRIPT" path/to/file.md --mode architecture --out /tmp/view.html
+node "$SCRIPT" path/to/file.md --mode mindmap --out /tmp/view.html
 
-# Pipe markdown
-echo "# Root\n## Branch A\n## Branch B" | node "$SCRIPT"
+# Use the specialized mind-map renderer directly when needed
+node "$(dirname "$SCRIPT")/render-mindmap/index.js" --html /tmp/map.html path/to/file.md
 ```
 
 ### Shareable HTML flow
 
-Use the helper script when the user wants a browser URL and the share server is already configured:
+Use the helper script when the user wants a browser URL and the share server is already configured. It now generates one polished HTML artifact first, then publishes it:
 
 ```bash
 bash scripts/render-and-share.sh path/to/file.md
 ```
 
 This script:
-1. generates an HTML mind map via the existing renderer
-2. locates `share-html/scripts/publish.sh`
-3. publishes the artifact to the configured local share server
-4. prints the publish JSON so you can return the URL
+1. generates one HTML artifact via the smart renderer
+2. uses the mode the coding agent chose (or the renderer's safe default)
+3. locates `share-html/scripts/publish.sh`
+4. publishes the artifact to the configured local share server
+5. prints the publish result so you can return the URL
 
 ## Rendering Behavior
 
@@ -106,8 +110,10 @@ When invoked as `/visualize [path]`:
 
 **If a file path is provided:**
 1. Read the file
-2. If it looks like a brainstorm, plan, architecture doc, or the user asked for browser viewing, try the shareable HTML path first
-3. Otherwise render it directly with the mind map renderer
+2. Decide what kind of visual artifact would help most from context
+3. If confidence is high enough, choose the mode and generate/share HTML first
+4. If confidence is not high enough, ask the user which direction would help most
+5. If sharing is unavailable or the user explicitly wants terminal output, fall back appropriately
 
 **If no path is provided:**
 1. Check if there's a recent brainstorm or plan document in the conversation context
@@ -141,22 +147,40 @@ The default mode is **vertical layout** — boxes on main branches, compact leav
 
 ### Path B — Shareable HTML
 
-For brainstorms, plans, architecture docs, and other structured workflow artifacts, prefer this path first when `share-html` is configured.
+For substantial artifacts, prefer this path first when `share-html` is configured.
+
+The coding agent should choose the mode from context. Toolkit guidance:
+- plans often fit `roadmap` or `outline`
+- architecture docs often fit `architecture` or `outline`
+- concise branchy brainstorms may fit `mindmap`
+- product/UI concepts may fit `mockup`
+- stakeholder-friendly summaries may fit `explainer`
+
+If uncertain, ask the user using the harness's structured choice UI when available; otherwise present concise plain-text options.
 
 1. Verify or assume the input markdown is ready
 2. Run:
    ```bash
-   bash scripts/render-and-share.sh --url-only [file]
+   bash scripts/render-and-share.sh --mode <chosen-mode> --url-only [file]
    ```
 3. Read the returned URL from stdout
 4. Return that URL to the user as the primary result
-5. Briefly explain what was published
+5. Briefly explain what was published and why this mode was chosen
 
 If you need more detail for debugging, you may run the helper without `--url-only` and inspect the returned JSON.
 
 If publishing fails because the share server is not configured, say so clearly and fall back to terminal rendering unless the user wants to stop and run `share-server-setup` first.
 
 **For shell usage** (not through assistant panels): terminal rendering can use ANSI colors, or `--horizontal` for the wide spatial layout.
+
+## Current HTML modes
+
+- `outline` — safe default for dense or unknown structured docs
+- `roadmap` — useful for plans and phased execution views
+- `architecture` — useful for architecture docs and architect outputs
+- `mindmap` — useful for concise branchy artifacts where it truly helps
+- `mockup` — reserved for future product/UI concept views
+- `explainer` — reserved for future stakeholder/narrative views
 
 ## Phase 2 — Offer Next Steps
 

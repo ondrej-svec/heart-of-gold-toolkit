@@ -11,6 +11,7 @@
     "check:security": "python3 scripts/check-security-regressions.py",
     "check:compat": "python3 scripts/check-harness-compatibility.py",
     "test:pi-guided": "node --test tests/pi-guided-workflows.test.mjs",
+    "test:visualize": "node --test tests/visualize-smart-render.test.mjs",
     "prepublishOnly": "npm run check:publish-safety && npm run check:compat"
   },
   "dependencies": {

@@ -3,11 +3,12 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 RENDER_DIR="$SCRIPT_DIR/render-mindmap"
-RENDER_SCRIPT="$RENDER_DIR/index.js"
+RENDER_SCRIPT="$SCRIPT_DIR/smart-render.js"
 INPUT_PATH=""
 SLUG=""
 TITLE=""
 ALIAS=""
+MODE="auto"
 KEEP_HTML=0
 URL_ONLY=0
 HTML_OUT=""
@@ -15,15 +16,17 @@ TEMP_DIR=""
 
 usage() {
   cat <<'EOF'
-Usage: render-and-share.sh <markdown-file> [--slug STEM] [--title TITLE] [--alias ALIAS] [--html-out PATH] [--keep-html] [--url-only]
+Usage: render-and-share.sh <markdown-file> [--mode MODE] [--slug STEM] [--title TITLE] [--alias ALIAS] [--html-out PATH] [--keep-html] [--url-only]
 
-Generate an HTML mind map from a markdown file, publish it via share-html, and print the publish JSON.
+Generate a polished HTML visualization from a markdown file, publish it via share-html, and print the publish JSON.
+Use --mode to force a renderer (mindmap, outline, roadmap, architecture, mockup, explainer).
 Use --url-only to print only the final browser URL.
 EOF
 }
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
+    --mode) MODE="$2"; shift 2 ;;
     --slug) SLUG="$2"; shift 2 ;;
     --title) TITLE="$2"; shift 2 ;;
     --alias) ALIAS="$2"; shift 2 ;;
@@ -75,7 +78,7 @@ cleanup() {
 }
 trap cleanup EXIT
 
-node "$RENDER_SCRIPT" --html "$HTML_OUT" "$INPUT_PATH" >/dev/null
+node "$RENDER_SCRIPT" "$INPUT_PATH" --mode "$MODE" --out "$HTML_OUT" >/dev/null
 
 find_share_publish_script() {
   local candidates=(
