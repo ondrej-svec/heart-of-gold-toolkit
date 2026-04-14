@@ -9,14 +9,16 @@ SLUG=""
 TITLE=""
 ALIAS=""
 KEEP_HTML=0
+URL_ONLY=0
 HTML_OUT=""
 TEMP_DIR=""
 
 usage() {
   cat <<'EOF'
-Usage: render-and-share.sh <markdown-file> [--slug STEM] [--title TITLE] [--alias ALIAS] [--html-out PATH] [--keep-html]
+Usage: render-and-share.sh <markdown-file> [--slug STEM] [--title TITLE] [--alias ALIAS] [--html-out PATH] [--keep-html] [--url-only]
 
 Generate an HTML mind map from a markdown file, publish it via share-html, and print the publish JSON.
+Use --url-only to print only the final browser URL.
 EOF
 }
 
@@ -27,6 +29,7 @@ while [[ $# -gt 0 ]]; do
     --alias) ALIAS="$2"; shift 2 ;;
     --html-out) HTML_OUT="$2"; shift 2 ;;
     --keep-html) KEEP_HTML=1; shift ;;
+    --url-only) URL_ONLY=1; shift ;;
     --help) usage; exit 0 ;;
     --*) echo "Unknown argument: $1" >&2; exit 1 ;;
     *)
@@ -104,4 +107,17 @@ if [[ -n "$SLUG" ]]; then CMD+=(--slug "$SLUG"); fi
 if [[ -n "$TITLE" ]]; then CMD+=(--title "$TITLE"); fi
 if [[ -n "$ALIAS" ]]; then CMD+=(--alias "$ALIAS"); fi
 
-"${CMD[@]}"
+PUBLISH_JSON="$("${CMD[@]}")"
+
+if [[ "$URL_ONLY" -eq 1 ]]; then
+  python3 - <<'PY' "$PUBLISH_JSON"
+import json, sys
+payload = json.loads(sys.argv[1])
+if not payload.get("ok", True):
+    print(json.dumps(payload))
+    raise SystemExit(1)
+print(payload.get("url") or payload.get("viewerUrl") or "")
+PY
+else
+  printf '%s\n' "$PUBLISH_JSON"
+fi

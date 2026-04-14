@@ -1,10 +1,10 @@
 ---
 name: visualize
 description: >
-  Render mind maps and tree visualizations from markdown. Prefer terminal output for quick local inspection,
-  and generate shareable HTML when the user wants a browser view and share-html infrastructure is configured.
-  Works on brainstorm docs, plan docs, markdown files, or any structured content. Triggers: visualize,
-  mindmap, mind map, show me the structure, draw a map.
+  Render mind maps and tree visualizations from markdown. Prefer shareable HTML first for brainstorms, plans,
+  architecture docs, and other structured workflow artifacts when share-html infrastructure is configured;
+  otherwise fall back to terminal output for quick local inspection. Works on markdown files or any structured
+  content. Triggers: visualize, mindmap, mind map, show me the structure, draw a map.
 allowed-tools:
   - Read
   - Bash
@@ -88,25 +88,26 @@ This script:
 
 ## Phase 0 — Determine What to Visualize
 
-First decide whether the user wants:
-- a quick terminal view
-- a browser/shareable HTML view
+First decide whether this should be a browser/shareable HTML view or a quick terminal view.
 
-**Prefer browser/shareable HTML when:**
+**Prefer browser/shareable HTML first when:**
+- the source is a brainstorm, plan, architecture doc, or other structured workflow artifact
 - the user asks to open it in a browser
 - the user wants to share the result with another person or device
 - the structure is large enough that browser navigation is more useful than terminal rendering
+- `share-html` is configured
 
 **Prefer terminal rendering when:**
-- the user wants a quick local look
-- the environment is SSH-heavy or browser access is not requested
 - share-html is not configured
+- the user explicitly wants a quick terminal-only look
+- the environment is SSH-heavy and the browser/share path is not requested
 
 When invoked as `/visualize [path]`:
 
 **If a file path is provided:**
 1. Read the file
-2. Render it directly with the mind map renderer
+2. If it looks like a brainstorm, plan, architecture doc, or the user asked for browser viewing, try the shareable HTML path first
+3. Otherwise render it directly with the mind map renderer
 
 **If no path is provided:**
 1. Check if there's a recent brainstorm or plan document in the conversation context
@@ -140,16 +141,18 @@ The default mode is **vertical layout** — boxes on main branches, compact leav
 
 ### Path B — Shareable HTML
 
-If the user wants browser viewing or sharing and `share-html` is configured:
+For brainstorms, plans, architecture docs, and other structured workflow artifacts, prefer this path first when `share-html` is configured.
 
 1. Verify or assume the input markdown is ready
 2. Run:
    ```bash
-   bash scripts/render-and-share.sh [file]
+   bash scripts/render-and-share.sh --url-only [file]
    ```
-3. Read the returned JSON
-4. Return the primary URL to the user (`url` when present, otherwise `viewerUrl`)
+3. Read the returned URL from stdout
+4. Return that URL to the user as the primary result
 5. Briefly explain what was published
+
+If you need more detail for debugging, you may run the helper without `--url-only` and inspect the returned JSON.
 
 If publishing fails because the share server is not configured, say so clearly and fall back to terminal rendering unless the user wants to stop and run `share-server-setup` first.
 
@@ -160,7 +163,7 @@ If publishing fails because the share server is not configured, say so clearly a
 After rendering or sharing, briefly note:
 - for terminal mode: "Use `--depth N` to see more/less detail"
 - for terminal mode: "Use `--width N` to fit a different terminal size"
-- for shared HTML: return the viewer URL and say whether it is local-only or publicly reachable on the user's tailnet
+- for shared HTML: return the final browser URL as the main result and say whether it is local-only or publicly reachable on the user's tailnet
 - if publishing failed due to missing share infrastructure: suggest `share-server-setup`
 - if the source was a brainstorm/plan/architecture doc, offer to continue the workflow (e.g., proceed to `/plan`, `/work`, or implementation)
 

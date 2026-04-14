@@ -283,13 +283,13 @@ Ask the user what to do next.
 - Prefer the harness's structured choice UI if available
 - Otherwise present this short plain-text choice list:
   1. **Start /work (Recommended)** — Begin implementing this plan
-  2. **Visualize / Share** — Prefer a shareable HTML mind map when sharing is configured; otherwise render in the terminal
+  2. **Visualize / Share** — Generate a shareable HTML mind map first when sharing is configured; otherwise render in the terminal
   3. **Review and refine** — Adjust the plan based on feedback
   4. **Done for now** — Return later; to start: `/work {plan-path}`
 
 **If user selects "Start /work":** Suggest running `/work {plan-path}`.
 
-**If user selects "Visualize / Share":** Run `/babel-fish:visualize {plan-path}` and prefer the shareable HTML flow when browser viewing or sharing is useful and `share-html` is configured. Otherwise render the terminal mind map. After rendering or sharing, return to this handoff with the remaining options.
+**If user selects "Visualize / Share":** Run `/babel-fish:visualize {plan-path}` and try the shareable HTML flow first when `share-html` is configured. Otherwise render the terminal mind map. After rendering or sharing, return to this handoff with the remaining options.
 
 **If user selects "Review and refine":** Accept feedback, update the plan, then present these options again.
 
