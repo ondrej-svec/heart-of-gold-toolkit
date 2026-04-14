@@ -1,10 +1,10 @@
 ---
 name: visualize
 description: >
-  Render mind maps and tree visualizations from markdown. Prefer shareable HTML first for brainstorms, plans,
-  architecture docs, and other structured workflow artifacts when share-html infrastructure is configured;
-  otherwise fall back to terminal output for quick local inspection. Works on markdown files or any structured
-  content. Triggers: visualize, mindmap, mind map, show me the structure, draw a map.
+  Create shareable HTML visual artifacts from markdown, plans, architecture docs, brainstorms, and other structured
+  content. Prefer browser-viewable HTML first when it will materially improve clarity or sharing; otherwise fall back
+  to terminal rendering. Triggers: visualize, mindmap, mind map, show me the structure, draw a map, make this clear,
+  make this visual.
 allowed-tools:
   - Read
   - Bash
@@ -14,151 +14,148 @@ allowed-tools:
 
 # Visualize — Babel Fish
 
-Translating structured text into spatial understanding. Because walls of text hide structure that pictures reveal.
+Translating structured text into spatial understanding. The job is not to "turn markdown into HTML." The job is to create a visual artifact that helps a human understand the material faster.
+
+## Mission
+
+Create one clear, polished, shareable visual artifact that:
+- matches the user's actual need
+- feels intentionally designed, not markdown restyled in boxes
+- summarizes before detailing
+- uses browser HTML as the primary medium for substantial artifacts
+- falls back to terminal rendering only when that is the better fit
 
 ## Boundaries
 
 - MAY: read files, generate terminal mind maps, generate temporary HTML artifacts, run renderer/share scripts via bash
 - MAY NOT: modify project files, create persistent files outside temp/output artifacts, install unrelated packages
 
-## The Renderers
+## Core Principle
 
-Visualization now has two layers:
-- `scripts/smart-render.js` — renders one HTML artifact using the mode the coding agent chose (or a safe fallback)
-- `scripts/render-mindmap/index.js` — specialized mind-map renderer for branchy content
+Do **not** mirror the source document structure one-to-one unless the user explicitly wants a document view.
 
-**Locations:**
-- `scripts/smart-render.js`
-- `scripts/render-mindmap/index.js`
+Instead:
+1. understand the source
+2. decide what the artifact is trying to communicate
+3. choose the visual form that best serves that goal
+4. compress and reshape the content into a stronger visual story
+5. keep raw/source detail secondary or collapsible when possible
 
-**To find the smart renderer path**, locate it by searching for `smart-render.js`:
-```bash
-# Option 1: Use CLAUDE_PLUGIN_ROOT if available
-SCRIPT="${CLAUDE_PLUGIN_ROOT}/skills/visualize/scripts/smart-render.js"
+HTML should feel like:
+- a dashboard
+- an explainer
+- a roadmap
+- an architecture brief
+- a deliberate mind map
 
-# Option 2: Search for it
-SCRIPT=$(find ~/.claude/plugins -path "*/babel-fish/skills/visualize/scripts/smart-render.js" 2>/dev/null | head -1)
-```
+Not like:
+- a markdown page with nicer CSS
 
-**First run:** If `node_modules/` doesn't exist in the mind-map renderer directory, run `npm install` there first:
-```bash
-RENDER_DIR=$(dirname "$SCRIPT")/render-mindmap
-if [ ! -d "$RENDER_DIR/node_modules" ]; then
-  (cd "$RENDER_DIR" && npm install --silent)
-fi
-```
+## Artifact Families
 
-## Usage
+These are guidance categories for the coding agent. They are not rigid parser outputs.
 
-```bash
-# Generate a safe default HTML visualization for a markdown file
-node "$SCRIPT" path/to/file.md --out /tmp/view.html
+### `outline`
+Use when the user wants:
+- document structure
+- a reading aid
+- a faithful but polished source-oriented view
+- a safe fallback when a richer artifact is not justified
 
-# Usually the coding agent should choose the mode from context
-node "$SCRIPT" path/to/file.md --mode roadmap --out /tmp/view.html
-node "$SCRIPT" path/to/file.md --mode outline --out /tmp/view.html
-node "$SCRIPT" path/to/file.md --mode architecture --out /tmp/view.html
-node "$SCRIPT" path/to/file.md --mode mindmap --out /tmp/view.html
+### `roadmap`
+Use when the source is best understood as:
+- phases
+- priorities
+- sequencing
+- workstreams
+- execution flow
 
-# Use the specialized mind-map renderer directly when needed
-node "$(dirname "$SCRIPT")/render-mindmap/index.js" --html /tmp/map.html path/to/file.md
-```
+### `architecture`
+Use when the source is best understood as:
+- components
+- boundaries
+- integrations
+- decisions
+- responsibilities
 
-### Shareable HTML flow
+### `mindmap`
+Use only when the content is genuinely:
+- concise
+- branchy
+- idea-oriented
+- better understood spatially than sequentially
 
-Use the helper script when the user wants a browser URL and the share server is already configured. It now generates one polished HTML artifact first, then publishes it:
+### `explainer`
+Use when the artifact should help another human quickly understand:
+- the recommendation
+- tradeoffs
+- key decisions
+- what matters and why
 
-```bash
-bash scripts/render-and-share.sh path/to/file.md
-```
+### `mockup`
+Use when the user really wants:
+- product/UI concept visualization
+- believable interface framing
+- layout and interaction-oriented representation
 
-This script:
-1. generates one HTML artifact via the smart renderer
-2. uses the mode the coding agent chose (or the renderer's safe default)
-3. locates `share-html/scripts/publish.sh`
-4. publishes the artifact to the configured local share server
-5. prints the publish result so you can return the URL
+## Style Foundations
 
-## Rendering Behavior
+Apply these defaults unless the user asks for something else:
 
-- **Auto-depth:** If no `--depth` is specified, the renderer tries depths 3, 2, 1 and picks the deepest that fits the terminal width.
-- **Pruning:** Long labels are truncated with `…`. Nodes with many children show the first few plus `+N more`.
-- **Colors** (via ANSI, visible in Claude Code bash output):
-  - Root: bold white on blue
-  - Depth 1: bold cyan
-  - Depth 2: green
-  - Depth 3: yellow
-  - Depth 4+: dim
+- calm, high-contrast visual language
+- restrained accent usage
+- strong hierarchy and generous spacing
+- summary-first information architecture
+- progressive disclosure for dense detail
+- cards, panels, lanes, chips, and callouts over markdown-heavy paragraphs
+- readable max-widths for prose
+- sticky navigation only when it helps, never as the dominant element
+- polished but restrained effects; no gimmicky AI-demo chrome
 
-## Phase 0 — Determine What to Visualize
+See also:
+- `docs/architecture/visualize-design-rules.md`
 
-First decide whether this should be a browser/shareable HTML view or a quick terminal view.
+## Rules: Do
 
-**Prefer browser/shareable HTML first when:**
-- the source is a brainstorm, plan, architecture doc, or other structured workflow artifact
-- the user asks to open it in a browser
-- the user wants to share the result with another person or device
-- the structure is large enough that browser navigation is more useful than terminal rendering
-- `share-html` is configured
+- Decide the communication goal before choosing the renderer.
+- Prefer shareable HTML for substantial workflow artifacts when `share-html` is configured.
+- Transform the source into a view model in your head before rendering: summary, priorities, risks, dependencies, decisions, outcomes.
+- Lead with a strong first screen: title, one-line mission, key takeaways, and obvious next scan targets.
+- Convert dense content into visual units where appropriate: cards, grouped sections, lanes, side panels, chips, callouts, expandable details.
+- Use `roadmap` or richer execution-oriented views for plans when that improves understanding.
+- Use `architecture` views for system/design-heavy documents.
+- Keep raw source detail available, but secondary.
+- Briefly explain why you chose the visualization mode when sharing the result.
 
-**Prefer terminal rendering when:**
-- share-html is not configured
-- the user explicitly wants a quick terminal-only look
-- the environment is SSH-heavy and the browser/share path is not requested
+## Rules: Don't
 
-When invoked as `/visualize [path]`:
+- Do not treat HTML generation as a markdown restyling task.
+- Do not dump long raw paragraphs into large cards as the main UI.
+- Do not let the table of contents dominate the page.
+- Do not force a mind map onto content that is not naturally branch-shaped.
+- Do not use flashy gradients, glass, shadows, or color noise unless they clearly improve hierarchy.
+- Do not silently guess when the visualization choice is materially ambiguous.
+- Do not create multiple competing artifacts unless the user explicitly asks for comparison.
 
-**If a file path is provided:**
-1. Read the file
-2. Decide what kind of visual artifact would help most from context
-3. If confidence is high enough, choose the mode and generate/share HTML first
-4. If confidence is not high enough, ask the user which direction would help most
-5. If sharing is unavailable or the user explicitly wants terminal output, fall back appropriately
+## Expected Behavior
 
-**If no path is provided:**
-1. Check if there's a recent brainstorm or plan document in the conversation context
-2. If yes: use that document's path
-3. If no: summarize the current conversation topic into a markdown structure with headings, write it to a temp file, then render
+When invoked, behave like a visual editor, not a format converter.
 
-**If the user says "visualize this" or "show me a mind map":**
-1. Look at what was just discussed or created
-2. Generate an appropriate markdown structure
-3. Render it
+1. Read the source or infer the source from context.
+2. Decide whether the user needs:
+   - structure comprehension
+   - execution clarity
+   - system understanding
+   - stakeholder explanation
+   - UI/product visualization
+3. Choose the best artifact family.
+4. If uncertain, ask one concise question.
+5. Generate one HTML artifact first when browser rendering will help.
+6. Fall back to terminal rendering when browser/share is unavailable or explicitly not wanted.
 
-## Phase 1 — Render or Share
+If the user says "you decide," choose the clearest non-gimmicky artifact, not the fanciest one.
 
-### Path A — Terminal rendering
-
-**IMPORTANT: Output the mind map in the assistant response text, NOT as raw bash tool output.**
-
-Many harness bash panels truncate long output and wrap wide content, breaking alignment. Instead:
-
-1. Locate the renderer script (see above)
-2. Ensure dependencies are installed
-3. Run the renderer with `--no-color`, redirect to a temp file:
-   ```bash
-   node "$SCRIPT" --no-color [file] > /tmp/mindmap-result.txt 2>&1
-   ```
-4. Read `/tmp/mindmap-result.txt`
-5. Output the contents inside a markdown fenced code block in your response text
-6. Clean up: `rm -f /tmp/mindmap-result.txt`
-
-The default mode is **vertical layout** — boxes on main branches, compact leaves, ~40 chars wide.
-
-### Path B — Shareable HTML
-
-For substantial artifacts, prefer this path first when `share-html` is configured.
-
-The coding agent should choose the mode from context. Toolkit guidance:
-- plans often fit `roadmap` or `outline`
-- architecture docs often fit `architecture` or `outline`
-- concise branchy brainstorms may fit `mindmap`
-- product/UI concepts may fit `mockup`
-- stakeholder-friendly summaries may fit `explainer`
-
-If uncertain, ask the user using the harness's structured choice UI when available; otherwise present concise plain-text options.
-
-### Uncertainty protocol
+## Uncertainty Protocol
 
 When the best visualization is not clear, do **not** silently guess if the choice would materially affect usefulness.
 
@@ -192,88 +189,167 @@ If the user does not care or says "you decide," choose the safest useful mode:
 - use `architecture` for clearly system-design-heavy docs
 - use `mindmap` only when the artifact is genuinely concise and branchy
 
-1. Verify or assume the input markdown is ready
-2. Run:
+## Renderers
+
+Visualization has two implementation layers:
+- `scripts/smart-render.js` — renders one HTML artifact using the mode the coding agent chose, with a safe fallback
+- `scripts/render-mindmap/index.js` — specialized mind-map renderer for branchy content
+
+**Locations:**
+- `scripts/smart-render.js`
+- `scripts/render-mindmap/index.js`
+
+To find the smart renderer path:
+
+```bash
+# Option 1: Use CLAUDE_PLUGIN_ROOT if available
+SCRIPT="${CLAUDE_PLUGIN_ROOT}/skills/visualize/scripts/smart-render.js"
+
+# Option 2: Search for it
+SCRIPT=$(find ~/.claude/plugins -path "*/babel-fish/skills/visualize/scripts/smart-render.js" 2>/dev/null | head -1)
+```
+
+First run for the mind-map renderer:
+
+```bash
+RENDER_DIR=$(dirname "$SCRIPT")/render-mindmap
+if [ ! -d "$RENDER_DIR/node_modules" ]; then
+  (cd "$RENDER_DIR" && npm install --silent)
+fi
+```
+
+## Usage
+
+```bash
+# Generate a safe default HTML visualization for a markdown file
+node "$SCRIPT" path/to/file.md --out /tmp/view.html
+
+# Usually the coding agent should choose the mode from context
+node "$SCRIPT" path/to/file.md --mode roadmap --out /tmp/view.html
+node "$SCRIPT" path/to/file.md --mode outline --out /tmp/view.html
+node "$SCRIPT" path/to/file.md --mode architecture --out /tmp/view.html
+node "$SCRIPT" path/to/file.md --mode mindmap --out /tmp/view.html
+
+# Use the specialized mind-map renderer directly when needed
+node "$(dirname "$SCRIPT")/render-mindmap/index.js" --html /tmp/map.html path/to/file.md
+```
+
+## HTML Share Flow
+
+Use the helper script when the user wants a browser URL and the share server is already configured:
+
+```bash
+bash scripts/render-and-share.sh path/to/file.md
+```
+
+This script:
+1. generates one HTML artifact via the smart renderer
+2. uses the mode the coding agent chose (or the renderer's safe default)
+3. locates `share-html/scripts/publish.sh`
+4. publishes the artifact to the configured local share server
+5. prints the publish result so you can return the URL
+
+### Recommended share flow
+
+1. Verify or assume the input markdown is ready.
+2. Choose the mode from context.
+3. Run:
    ```bash
    bash scripts/render-and-share.sh --mode <chosen-mode> --url-only [file]
    ```
-3. Read the returned URL from stdout
-4. Return that URL to the user as the primary result
-5. Briefly explain what was published and why this mode was chosen
-
-If you need more detail for debugging, you may run the helper without `--url-only` and inspect the returned JSON.
+4. Read the returned URL from stdout.
+5. Return that URL to the user as the primary result.
+6. Briefly explain what was published and why this mode was chosen.
 
 If publishing fails because the share server is not configured, say so clearly and fall back to terminal rendering unless the user wants to stop and run `share-server-setup` first.
 
-**For shell usage** (not through assistant panels): terminal rendering can use ANSI colors, or `--horizontal` for the wide spatial layout.
+## Terminal Rendering
 
-## Current HTML modes
+Use terminal rendering when:
+- share-html is not configured
+- the user explicitly wants terminal-only output
+- a quick local structural check is more useful than a browser view
 
-- `outline` — safe default for dense or unknown structured docs
-- `roadmap` — useful for plans and phased execution views
-- `architecture` — useful for architecture docs and architect outputs
-- `mindmap` — useful for concise branchy artifacts where it truly helps
-- `mockup` — reserved for future product/UI concept views
-- `explainer` — reserved for future stakeholder/narrative views
+**IMPORTANT:** Output the mind map in the assistant response text, not as raw bash tool output.
 
-## Phase 2 — Offer Next Steps
+Many harness bash panels truncate long output and wrap wide content, breaking alignment. Instead:
 
-After rendering or sharing, briefly note:
-- for terminal mode: "Use `--depth N` to see more/less detail"
-- for terminal mode: "Use `--width N` to fit a different terminal size"
-- for shared HTML: return the final browser URL as the main result and say whether it is local-only or publicly reachable on the user's tailnet
-- if publishing failed due to missing share infrastructure: suggest `share-server-setup`
-- if the source was a brainstorm/plan/architecture doc, offer to continue the workflow (e.g., proceed to `/plan`, `/work`, or implementation)
+1. Locate the renderer script.
+2. Ensure dependencies are installed.
+3. Run the renderer with `--no-color`, redirect to a temp file:
+   ```bash
+   node "$SCRIPT" --no-color [file] > /tmp/mindmap-result.txt 2>&1
+   ```
+4. Read `/tmp/mindmap-result.txt`.
+5. Output the contents inside a fenced code block.
+6. Clean up:
+   ```bash
+   rm -f /tmp/mindmap-result.txt
+   ```
+
+The default mode is vertical layout — boxes on main branches, compact leaves, about 40 chars wide.
+
+## Required Output Structure
+
+For substantial HTML artifacts, prefer this structure:
+- strong title + one-line framing
+- summary layer first
+- main visual body second
+- dense details compressed or collapsible
+- source-faithful appendix only if needed
+
+### Plan-oriented artifact target shape
+- title + mission
+- key stats or scope summary
+- priorities / phases / workstreams
+- dependencies / risks / acceptance gates
+- expandable detail or appendix
+
+### Architecture-oriented artifact target shape
+- title + system framing
+- major components / boundaries / integrations
+- key decisions and tradeoffs
+- risks / assumptions
+- supporting detail below
+
+### Explainer target shape
+- title + recommendation
+- why this matters
+- options / comparison / decision
+- what happens next
+- supporting source detail below
+
+## Quality Gates
+
+Before returning a shared HTML result, check mentally:
+- Does the first screen explain the artifact in under 10 seconds?
+- Does this feel designed, not like markdown with nicer CSS?
+- Is hierarchy obvious?
+- Is summary ahead of detail?
+- Are dense sections compressed into meaningful visual units?
+- Is the chosen mode actually appropriate for the content?
+- If this is a plan, does it foreground execution rather than document order?
+- If this is a brainstorm, is it actually branch-shaped enough for a mind map?
+
+If the answer to several of these is no, reconsider the mode or ask the user.
 
 ## Input Formats
 
 ### Markdown (primary)
-Standard markdown with `#` headings defining hierarchy:
-```markdown
-# Root Topic
-## Branch A
-- Detail 1
-- Detail 2
-## Branch B
-### Sub-branch
-- Detail 3
-```
+Standard markdown with `#` headings defining hierarchy.
 
 ### JSON
-Tree structure with `label` and `children`:
-```json
-{
-  "label": "Root",
-  "children": [
-    { "label": "Branch A", "children": [] },
-    { "label": "Branch B", "children": [
-      { "label": "Sub-branch", "children": [] }
-    ]}
-  ]
-}
-```
+Tree structure with `label` and `children`.
 
-## Generating Structure from Context
+## Generating Structure From Context
 
-When visualizing conversation context (no file path), create a markdown structure that captures:
-
-**For brainstorm content:**
-- Root = topic
-- Branches = key decisions or themes
-- Leaves = specific choices or details
-
-**For plan content:**
-- Root = project name
-- Branches = phases
-- Leaves = tasks within each phase
-
-**For general discussion:**
-- Root = main topic
-- Branches = subtopics discussed
-- Leaves = key points or conclusions
+When visualizing conversation context with no file path:
+- brainstorms: root = topic, branches = key themes, leaves = concrete ideas
+- plans: root = project, branches = priorities/phases, leaves = tasks
+- general discussion: root = main topic, branches = subtopics, leaves = key takeaways
 
 Write the generated markdown to `/tmp/mindmap-XXXXXX.md`, render it, then clean up.
 
 ## What Makes This Babel Fish
 
-The Babel Fish translates between languages. This skill translates between *modalities* — from linear text to spatial structure, and now from private working docs to shareable browser views. It makes the invisible visible: the hierarchy, the relationships, the gaps that only show up when you see the shape of the thinking.
+The Babel Fish translates between languages. This skill translates between modalities — from linear text to spatial understanding, and from private working notes to clear shareable browser artifacts.
