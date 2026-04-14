@@ -120,6 +120,26 @@ Apply these defaults unless the user asks for something else:
 See also:
 - `docs/architecture/visualize-design-rules.md`
 
+## Writing Tone
+
+Write artifact copy like a strong product/design-systems editor:
+- concise
+- confident
+- specific
+- implementation-aware
+- high signal-to-noise
+
+Prefer lines like:
+- `One code change, bounded migration risk`
+- `Three priority tiers, one direction`
+- `Deferred — tracked, not scheduled`
+
+Avoid:
+- fluffy marketing copy
+- generic AI hype
+- long throat-clearing intros
+- repeating the source document verbatim
+
 ## Rules: Do
 
 - Decide the communication goal before choosing the renderer.
@@ -130,6 +150,7 @@ See also:
 - Use `roadmap` or richer execution-oriented views for plans when that improves understanding.
 - Use `architecture` views for system/design-heavy documents.
 - Keep raw source detail available, but secondary.
+- Make section labels do real editorial work: `Scope at a glance`, `Why this shape`, `What could go wrong`, `Deferred — tracked, not scheduled`.
 - Briefly explain why you chose the visualization mode when sharing the result.
 
 ## Rules: Don't
@@ -141,6 +162,8 @@ See also:
 - Do not use flashy gradients, glass, shadows, or color noise unless they clearly improve hierarchy.
 - Do not silently guess when the visualization choice is materially ambiguous.
 - Do not create multiple competing artifacts unless the user explicitly asks for comparison.
+- Do not preserve source heading order if a clearer narrative order exists.
+- Do not expose every extracted detail at the same visual weight.
 
 ## Expected Behavior
 
@@ -339,10 +362,14 @@ When authoring HTML directly, follow this sequence:
 
 1. Read the source and decide the artifact family.
 2. Decide the audience and the first question the page should answer.
-3. Create the scaffold with `new-authored-artifact.sh`.
-4. Replace the template content with a real designed artifact.
-5. Keep source detail secondary.
-6. Publish with `publish-authored-html.sh`.
+3. Create the scaffold with `new-authored-artifact.js` or `new-authored-artifact.sh`.
+4. Draft the page in three layers:
+   - **summary layer** — what matters first
+   - **decision / execution layer** — the main story
+   - **source layer** — appendix, evidence, or raw detail
+5. Replace the template content with a real designed artifact.
+6. Keep source detail secondary.
+7. Publish with `publish-authored-html.js` or `publish-authored-html.sh`.
 
 Harness note:
 - prefer separate commands over complex one-liners
@@ -355,6 +382,7 @@ For plans specifically:
 - summarize workstreams into short cards or task tiles
 - show dependencies, risks, and acceptance separately
 - keep raw markdown only in an appendix or disclosure block
+- compress long task descriptions into one-sentence operational summaries first
 
 ## Required Output Structure
 
@@ -386,6 +414,53 @@ For substantial HTML artifacts, prefer this structure:
 - what happens next
 - supporting source detail below
 
+## Expected Behavior by Artifact Family
+
+### Plan / roadmap artifacts
+Must usually include:
+- a top-line mission
+- scope or execution stats
+- grouped workstreams or phases
+- key decisions / rationale
+- explicit risks / acceptance posture
+- deferred or out-of-scope work if relevant
+
+### Architecture artifacts
+Must usually include:
+- system framing
+- major components / boundaries
+- integration or dependency context
+- key tradeoffs / decisions
+- assumptions / risks
+
+### Explainers
+Must usually include:
+- what this is
+- why it matters
+- the recommendation or conclusion
+- supporting evidence
+- what happens next
+
+## Recommended Authoring Moves
+
+When the artifact still feels too markdown-like, do one or more of these:
+- replace raw section names with editorial section labels
+- compress paragraphs into 1–3 sentence summary cards
+- convert repeated prose into chips, bullets, metrics, or compact lists
+- surface one key takeaway per section before the detail
+- split `what / why / risk / next` into separate visual units
+- move citations, raw notes, and source text into a secondary appendix
+
+## Guideline Authoring Workflow
+
+1. Restate the artifact purpose in one sentence.
+2. Decide the audience and primary question.
+3. Choose the artifact family and page shape.
+4. Extract only what is needed for the summary layer.
+5. Build the main body around grouped visual units, not source sections.
+6. Add source appendix or evidence only after the main page works.
+7. Run the quality gates before publishing.
+
 ## Quality Gates
 
 Before returning a shared HTML result, check mentally:
@@ -397,8 +472,36 @@ Before returning a shared HTML result, check mentally:
 - Is the chosen mode actually appropriate for the content?
 - If this is a plan, does it foreground execution rather than document order?
 - If this is a brainstorm, is it actually branch-shaped enough for a mind map?
+- Do the section titles help scanning?
+- Is secondary detail actually secondary?
 
 If the answer to several of these is no, reconsider the mode or ask the user.
+
+## Pattern Examples
+
+### Good plan framing
+- `Scope at a glance`
+- `Three priority tiers, one direction`
+- `What could go wrong`
+- `Deferred — tracked, not scheduled`
+
+### Good risk cards
+- short risk title
+- severity or posture badge
+- one-sentence mitigation
+- accepted vs mitigated distinction when relevant
+
+### Good summary stats
+- workstreams
+- tasks
+- code edits
+- new files
+- doctrine docs touched
+
+### Good appendix behavior
+- source plan path
+- cited references
+- raw plan or evidence hidden behind disclosure
 
 ## Input Formats
 

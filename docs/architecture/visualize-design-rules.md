@@ -109,6 +109,26 @@ Generated artifacts should usually provide:
 - compressed representation of dense material
 - a clear primary reading path
 - optional appendix/source detail for fidelity
+- editorial section labels that improve scanning rather than merely mirroring the source document
+
+## Writing Guidance
+
+Artifact copy should feel like strong product/design-systems writing:
+- crisp
+- specific
+- outcome-aware
+- low on filler
+
+Good examples:
+- `One code change, bounded migration risk`
+- `Three priority tiers, one direction`
+- `Deferred — tracked, not scheduled`
+
+Weak examples:
+- `Implementation Tasks`
+- `Risk Analysis`
+- `Additional Notes`
+when those labels simply mirror markdown without helping the reader
 
 ## Mode-Specific Guidance
 
@@ -160,4 +180,5 @@ Before returning a generated HTML artifact, ask:
 - Is the chosen mode fit for the job?
 - Does the artifact foreground what matters most?
 - Is detail compressed enough to scan?
+- Do section labels help comprehension?
 - Would a human call this a designed page rather than a rendered markdown document?
