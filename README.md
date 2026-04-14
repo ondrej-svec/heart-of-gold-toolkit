@@ -40,6 +40,8 @@ When installed as a Pi package, Heart of Gold exposes Pi-native extension comman
 - `/deep-thought-plan` — start planning (research and produce a plan document)
 - `/marvin-work` — start executing a plan (with always-on safety guardrails)
 
+Pi package installs also include a Pi-only guided workflow enhancer for supported Heart of Gold skills. For `brainstorm` and `plan`, when the assistant asks a high-confidence structured question, Pi can upgrade it into interactive UI (`select` or focused editor input) and feed the answer back into the same workflow. Shared skills remain plain-text portable in every other harness.
+
 The skills themselves enforce their own boundaries (read-only for brainstorm/plan, safe commands for work) via `allowed-tools` and prompt constraints — no manual mode switching needed.
 
 The work extension also provides always-on guardrails that protect `.env`, `.git/`, and `node_modules/` from edits, block `git add .` and destructive `rm`, and require confirmation for `git push` / `npm publish`.
