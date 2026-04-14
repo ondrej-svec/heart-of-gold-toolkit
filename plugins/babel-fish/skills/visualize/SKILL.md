@@ -116,6 +116,8 @@ Apply these defaults unless the user asks for something else:
 - readable max-widths for prose
 - sticky navigation only when it helps, never as the dominant element
 - polished but restrained effects; no gimmicky AI-demo chrome
+- use the shared theme-ready scaffold with curated palette tokens rather than ad hoc colors
+- default to a calm Rosé Pine-inspired palette that works well for both dark and light modes
 
 See also:
 - `docs/architecture/visualize-design-rules.md`
@@ -376,6 +378,7 @@ Harness note:
 - prefer the Node helpers for cross-platform behavior
 - avoid assuming `mktemp /tmp/name-XXXXXX.html` works on every shell; use the provided helper instead
 - if a harness only supports shell comfortably, use the `.sh` helpers as fallback
+- the shared scaffold already includes a light/dark/auto theme toggle and responsive viewport behavior; preserve those unless the user explicitly wants something else
 
 For plans specifically:
 - do not dump the full task prose into the primary lanes
@@ -450,6 +453,8 @@ When the artifact still feels too markdown-like, do one or more of these:
 - surface one key takeaway per section before the detail
 - split `what / why / risk / next` into separate visual units
 - move citations, raw notes, and source text into a secondary appendix
+- reduce density before widening the layout
+- stack or split crowded regions rather than cramming more into one viewport row
 
 ## Guideline Authoring Workflow
 
@@ -474,6 +479,8 @@ Before returning a shared HTML result, check mentally:
 - If this is a brainstorm, is it actually branch-shaped enough for a mind map?
 - Do the section titles help scanning?
 - Is secondary detail actually secondary?
+- Does the current viewport feel comfortable, or is content being cramped into too few rows?
+- Does the page work in both dark and light mode unless intentionally single-theme?
 
 If the answer to several of these is no, reconsider the mode or ask the user.
 

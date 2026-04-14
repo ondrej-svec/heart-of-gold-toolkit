@@ -47,6 +47,8 @@ Use a small set of layout and component patterns repeatedly rather than inventin
 - Use whitespace to separate sections instead of excessive border chrome
 - Use multi-column layouts only when the information type genuinely benefits
 - Keep sticky navigation simple and non-intrusive
+- Design for the active viewport first; if a region feels cramped, reduce density or stack it sooner
+- Do not preserve a desktop multi-column layout on smaller screens when readability suffers
 
 ## Typography Rules
 
@@ -63,6 +65,8 @@ Use a small set of layout and component patterns repeatedly rather than inventin
 - Use semantic colors only for true meaning (risk, warning, success, neutral)
 - Never use many unrelated accent colors unless the visualization mode specifically requires category encoding
 - Dark mode must preserve contrast and hierarchy
+- Prefer a curated palette family over ad hoc color picking
+- A calm Rosé Pine-style palette is a good default for generated artifacts because it stays readable and premium in both dark and light modes
 
 ## Component Rules
 
@@ -88,6 +92,7 @@ Avoid:
 - Hover effects should be subtle
 - Keyboard and responsive behavior should remain sane even for static artifacts
 - Interactions should help comprehension, not show off
+- A light/dark/auto theme toggle is appropriate for substantial authored artifacts when it can be implemented simply and robustly
 
 ## Agent Authoring Contract
 
@@ -181,4 +186,6 @@ Before returning a generated HTML artifact, ask:
 - Does the artifact foreground what matters most?
 - Is detail compressed enough to scan?
 - Do section labels help comprehension?
+- Does the viewport feel comfortable rather than cramped?
+- Does the light/dark treatment remain coherent?
 - Would a human call this a designed page rather than a rendered markdown document?
