@@ -22,7 +22,7 @@ test('safe default render is outline-oriented unless the agent forces a mode', (
   assert.match(html, /Mode: outline/);
 });
 
-test('forced roadmap mode renders plan dashboard', () => {
+test('forced roadmap mode renders a plan dashboard instead of markdown-shaped output', () => {
   const dir = mkdtempSync(join(tmpdir(), 'hog-visualize-'));
   const out = join(dir, 'view.html');
   execFileSync('node', [script, 'docs/plans/2026-04-14-feat-smart-visualize-html-plan.md', '--mode', 'roadmap', '--out', out], { stdio: 'inherit' });
@@ -30,5 +30,9 @@ test('forced roadmap mode renders plan dashboard', () => {
   rmSync(dir, { recursive: true, force: true });
   assert.match(html, /Mode: roadmap/);
   assert.match(html, /Plan Dashboard/);
-  assert.match(html, /Implementation Tasks/);
+  assert.match(html, /Execution Summary/);
+  assert.match(html, /Priority Lanes/);
+  assert.match(html, /Workstreams & Tasks/);
+  assert.match(html, /Source Appendix/);
+  assert.doesNotMatch(html, /<h2>Implementation Tasks<\/h2>/);
 });
