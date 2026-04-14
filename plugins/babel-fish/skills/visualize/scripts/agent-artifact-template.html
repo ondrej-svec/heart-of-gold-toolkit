@@ -131,21 +131,47 @@
       margin-bottom: var(--space-3);
     }
 
-    .theme-toggle {
+    .theme-switcher {
       display: inline-flex;
       align-items: center;
-      gap: 10px;
-      padding: 10px 14px;
+      gap: 6px;
+      padding: 6px;
       border-radius: 999px;
       border: 1px solid var(--border);
-      background: var(--panel-soft);
+      background: color-mix(in srgb, var(--panel-strong) 82%, transparent);
       box-shadow: var(--shadow-md);
-      color: var(--muted);
       backdrop-filter: blur(14px);
     }
 
-    .theme-toggle strong {
+    .theme-option {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-width: 44px;
+      padding: 10px 14px;
+      border-radius: 999px;
+      color: var(--muted-2);
+      transition: background-color 160ms ease, color 160ms ease, transform 160ms ease;
+    }
+
+    .theme-option:hover {
       color: var(--text-strong);
+      background: color-mix(in srgb, var(--panel-soft) 80%, transparent);
+    }
+
+    .theme-option[aria-pressed="true"] {
+      background: color-mix(in srgb, var(--accent) 12%, var(--panel-soft));
+      color: var(--text-strong);
+      box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 24%, var(--border));
+    }
+
+    .theme-option .icon {
+      font-size: 15px;
+      line-height: 1;
+    }
+
+    .theme-option .text {
       font-size: 13px;
       font-weight: 600;
     }
@@ -414,9 +440,17 @@
         justify-content: stretch;
       }
 
-      .theme-toggle {
+      .theme-switcher {
         width: 100%;
-        justify-content: center;
+        justify-content: space-between;
+      }
+
+      .theme-option {
+        flex: 1 1 0;
+      }
+
+      .theme-option .text {
+        display: none;
       }
 
       .hero,
@@ -442,10 +476,20 @@
 <body>
   <main>
     <div class="topbar">
-      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Toggle light and dark theme">
-        <strong>Theme</strong>
-        <span id="theme-label">Auto</span>
-      </button>
+      <div class="theme-switcher" role="group" aria-label="Theme switcher">
+        <button class="theme-option" id="theme-light" type="button" data-theme-value="light" aria-pressed="false" aria-label="Use light theme" title="Light theme">
+          <span class="icon" aria-hidden="true">☀</span>
+          <span class="text">Light</span>
+        </button>
+        <button class="theme-option" id="theme-auto" type="button" data-theme-value="auto" aria-pressed="true" aria-label="Use automatic theme" title="Auto theme">
+          <span class="icon" aria-hidden="true">◐</span>
+          <span class="text">Auto</span>
+        </button>
+        <button class="theme-option" id="theme-dark" type="button" data-theme-value="dark" aria-pressed="false" aria-label="Use dark theme" title="Dark theme">
+          <span class="icon" aria-hidden="true">☾</span>
+          <span class="text">Dark</span>
+        </button>
+      </div>
     </div>
 
     <section class="hero">
@@ -503,10 +547,9 @@
     (() => {
       const root = document.documentElement;
       const metaTheme = document.querySelector('meta[name="theme-color"]');
-      const button = document.getElementById('theme-toggle');
-      const label = document.getElementById('theme-label');
       const storageKey = 'hog-artifact-theme';
       const media = window.matchMedia('(prefers-color-scheme: dark)');
+      const options = Array.from(document.querySelectorAll('.theme-option'));
 
       const computeTheme = (mode) => {
         if (mode === 'auto') return media.matches ? 'dark' : 'light';
@@ -517,18 +560,21 @@
 
       const apply = (mode) => {
         root.dataset.theme = mode;
-        if (label) label.textContent = mode[0].toUpperCase() + mode.slice(1);
         if (metaTheme) metaTheme.setAttribute('content', themeColor(mode));
+        options.forEach((option) => {
+          option.setAttribute('aria-pressed', option.dataset.themeValue === mode ? 'true' : 'false');
+        });
       };
 
       const saved = localStorage.getItem(storageKey) || 'auto';
       apply(saved);
 
-      button?.addEventListener('click', () => {
-        const current = root.dataset.theme || 'auto';
-        const next = current === 'auto' ? 'dark' : current === 'dark' ? 'light' : 'auto';
-        localStorage.setItem(storageKey, next);
-        apply(next);
+      options.forEach((option) => {
+        option.addEventListener('click', () => {
+          const mode = option.dataset.themeValue || 'auto';
+          localStorage.setItem(storageKey, mode);
+          apply(mode);
+        });
       });
 
       media.addEventListener?.('change', () => {
