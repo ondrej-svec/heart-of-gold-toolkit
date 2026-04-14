@@ -6,7 +6,8 @@ TEMPLATE="$SCRIPT_DIR/agent-artifact-template.html"
 OUT_PATH="${1:-}"
 
 if [[ -z "$OUT_PATH" ]]; then
-  OUT_PATH="$(mktemp /tmp/hog-visualize-artifact-XXXXXX.html)"
+  TEMP_BASE="$(mktemp /tmp/hog-visualize-artifact-XXXXXX)"
+  OUT_PATH="${TEMP_BASE}.html"
 fi
 
 cp "$TEMPLATE" "$OUT_PATH"

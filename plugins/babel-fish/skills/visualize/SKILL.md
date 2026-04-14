@@ -233,10 +233,18 @@ fi
 
 When quality matters more than speed, start from the shared authored-artifact template, write the HTML directly, then publish it.
 
+**Claude Code / hook-friendly pattern:** avoid shell substitution like `$(...)` in one-liners if hooks are sensitive to it. Run these as separate commands.
+
 ```bash
-HTML_OUT="$(bash "$(dirname "$SCRIPT")/new-authored-artifact.sh")"
-# edit the generated template at $HTML_OUT
-bash "$(dirname "$SCRIPT")/publish-authored-html.sh" --url-only "$HTML_OUT"
+# 1. Print a fresh temp HTML path based on the shared template
+bash /absolute/path/to/new-authored-artifact.sh
+
+# 2. Use the printed path in the next command(s)
+# Example:
+cp /absolute/path/to/agent-artifact-template.html /tmp/hog-artifact-123456.html
+
+# 3. After editing the file, publish it
+bash /absolute/path/to/publish-authored-html.sh --url-only /tmp/hog-artifact-123456.html
 ```
 
 Template and helper files:
@@ -266,18 +274,19 @@ node "$(dirname "$SCRIPT")/render-mindmap/index.js" --html /tmp/map.html path/to
 
 Use this when the artifact needs stronger design judgment than the fallback renderer can provide.
 
-1. Create the scaffold:
+1. Create the scaffold with a standalone command:
    ```bash
-   HTML_OUT="$(bash "$(dirname "$SCRIPT")/new-authored-artifact.sh")"
+   bash /absolute/path/to/new-authored-artifact.sh
    ```
-2. Author the HTML artifact directly into that file.
-3. Publish it:
+2. Read the printed temp path from stdout.
+3. Author the HTML artifact directly into that file.
+4. Publish it with a standalone command:
    ```bash
-   bash "$(dirname "$SCRIPT")/publish-authored-html.sh" --url-only "$HTML_OUT"
+   bash /absolute/path/to/publish-authored-html.sh --url-only /tmp/your-artifact.html
    ```
-4. Read the returned URL from stdout.
-5. Return that URL to the user as the primary result.
-6. Briefly explain what was published and why this visual form was chosen.
+5. Read the returned URL from stdout.
+6. Return that URL to the user as the primary result.
+7. Briefly explain what was published and why this visual form was chosen.
 
 ### Fallback share flow: render then publish
 
@@ -332,6 +341,11 @@ When authoring HTML directly, follow this sequence:
 4. Replace the template content with a real designed artifact.
 5. Keep source detail secondary.
 6. Publish with `publish-authored-html.sh`.
+
+Harness note:
+- prefer separate shell commands over complex one-liners
+- avoid assuming `mktemp /tmp/name-XXXXXX.html` works on every shell; use the provided helper instead
+- if you need a manual temp path, use `mktemp /tmp/name-XXXXXX` and then append `.html` in a second step if needed
 
 For plans specifically:
 - do not dump the full task prose into the primary lanes
