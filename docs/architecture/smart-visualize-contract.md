@@ -187,6 +187,7 @@ If the agent asked the user to clarify the desired visual direction, the chosen 
 
 The toolkit should support the agent-authored path with lightweight helpers such as:
 - an authored HTML scaffold/template
+- cross-platform helper scripts for creating the scaffold and publishing finished HTML
 - a publish helper that sends finished HTML to `share-html`
 - fallback renderers for quick or low-judgment cases
 

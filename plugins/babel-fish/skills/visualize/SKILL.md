@@ -233,22 +233,22 @@ fi
 
 When quality matters more than speed, start from the shared authored-artifact template, write the HTML directly, then publish it.
 
-**Claude Code / hook-friendly pattern:** avoid shell substitution like `$(...)` in one-liners if hooks are sensitive to it. Run these as separate commands.
+**Cross-platform preferred path:** use the Node helpers first. They work better across macOS, Linux, Windows, Codex, Claude Code, and Pi than shell-specific one-liners.
 
 ```bash
 # 1. Print a fresh temp HTML path based on the shared template
-bash /absolute/path/to/new-authored-artifact.sh
+node /absolute/path/to/new-authored-artifact.js
 
-# 2. Use the printed path in the next command(s)
-# Example:
-cp /absolute/path/to/agent-artifact-template.html /tmp/hog-artifact-123456.html
-
-# 3. After editing the file, publish it
-bash /absolute/path/to/publish-authored-html.sh --url-only /tmp/hog-artifact-123456.html
+# 2. After editing the file, publish it
+node /absolute/path/to/publish-authored-html.js --url-only /tmp/path/from-step-1/artifact.html
 ```
+
+**Shell fallback:** if Node helper usage is awkward in a specific harness, the `.sh` helpers are still available.
 
 Template and helper files:
 - `scripts/agent-artifact-template.html`
+- `scripts/new-authored-artifact.js`
+- `scripts/publish-authored-html.js`
 - `scripts/new-authored-artifact.sh`
 - `scripts/publish-authored-html.sh`
 
@@ -274,19 +274,21 @@ node "$(dirname "$SCRIPT")/render-mindmap/index.js" --html /tmp/map.html path/to
 
 Use this when the artifact needs stronger design judgment than the fallback renderer can provide.
 
-1. Create the scaffold with a standalone command:
+1. Create the scaffold with a standalone cross-platform command:
    ```bash
-   bash /absolute/path/to/new-authored-artifact.sh
+   node /absolute/path/to/new-authored-artifact.js
    ```
 2. Read the printed temp path from stdout.
 3. Author the HTML artifact directly into that file.
-4. Publish it with a standalone command:
+4. Publish it with a standalone cross-platform command:
    ```bash
-   bash /absolute/path/to/publish-authored-html.sh --url-only /tmp/your-artifact.html
+   node /absolute/path/to/publish-authored-html.js --url-only /tmp/your-artifact.html
    ```
 5. Read the returned URL from stdout.
 6. Return that URL to the user as the primary result.
 7. Briefly explain what was published and why this visual form was chosen.
+
+Shell helpers remain available as a fallback if a harness prefers `bash`.
 
 ### Fallback share flow: render then publish
 
@@ -343,9 +345,10 @@ When authoring HTML directly, follow this sequence:
 6. Publish with `publish-authored-html.sh`.
 
 Harness note:
-- prefer separate shell commands over complex one-liners
+- prefer separate commands over complex one-liners
+- prefer the Node helpers for cross-platform behavior
 - avoid assuming `mktemp /tmp/name-XXXXXX.html` works on every shell; use the provided helper instead
-- if you need a manual temp path, use `mktemp /tmp/name-XXXXXX` and then append `.html` in a second step if needed
+- if a harness only supports shell comfortably, use the `.sh` helpers as fallback
 
 For plans specifically:
 - do not dump the full task prose into the primary lanes
