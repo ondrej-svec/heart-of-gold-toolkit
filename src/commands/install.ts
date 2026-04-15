@@ -1,9 +1,8 @@
 import { defineCommand } from "citty";
 import { loadAllPlugins, loadPlugin } from "../parsers/claude";
 import { targets } from "../targets/index";
-import { resolve, join } from "path";
-import { existsSync } from "fs";
-import { execSync } from "child_process";
+import { resolve } from "path";
+import { findHeartOfGoldPiPackageInstalls } from "../utils/pi-package-detection.js";
 
 export const installCommand = defineCommand({
   meta: {
@@ -26,21 +25,41 @@ export const installCommand = defineCommand({
       description: "Override output root directory",
       required: false,
     },
+    force: {
+      type: "boolean",
+      description: "Proceed even if Pi already loads @heart-of-gold/toolkit as a package",
+      required: false,
+      default: false,
+    },
   },
   async run({ args }) {
     const targetName = args.to;
 
     if (targetName === "pi") {
-      try {
-        const npmRoot = execSync("npm root -g", { encoding: "utf8" }).trim();
-        const packagePath = join(npmRoot, "@heart-of-gold", "toolkit", "package.json");
-        if (existsSync(packagePath)) {
-          console.warn("Warning: @heart-of-gold/toolkit is already installed as a Pi package.");
-          console.warn("Using 'install --to pi' as well will create duplicate Pi skill collisions on reload.");
-          console.warn("Prefer one Pi install path: either 'pi install npm:@heart-of-gold/toolkit' or 'bunx @heart-of-gold/toolkit install --to pi'.\n");
+      const matches = findHeartOfGoldPiPackageInstalls(process.cwd());
+      if (matches.length > 0) {
+        const locations = matches
+          .map(({ settingsPath, source }) => `  - ${settingsPath} → ${source}`)
+          .join("\n");
+
+        const message = [
+          "Refusing to install duplicate Pi skills.",
+          "Pi is already configured to load @heart-of-gold/toolkit as a package from:",
+          locations,
+          "",
+          "Choose one Pi install path:",
+          "  1. keep the Pi package:    pi install npm:@heart-of-gold/toolkit",
+          "  2. keep native skill copy: bunx @heart-of-gold/toolkit install --to pi",
+          "",
+          "Remove one side before continuing, or rerun with --force if you really want both.",
+        ].join("\n");
+
+        if (!args.force) {
+          console.error(message);
+          process.exit(1);
         }
-      } catch {
-        // ignore detection failures and proceed normally
+
+        console.warn(`${message}\n`);
       }
     }
     const target = targets[targetName];

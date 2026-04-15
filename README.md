@@ -36,6 +36,8 @@ bunx @heart-of-gold/toolkit install --to pi
 **Important:** choose one Pi install path or the other.
 Do **not** use both the Pi package install and `install --to pi` at the same time, or Pi will report duplicate skill collisions on reload.
 
+The CLI now refuses `install --to pi` when your Pi settings already reference `@heart-of-gold/toolkit` as a package. If you intentionally want both paths for debugging, rerun with `--force`.
+
 Pi also discovers skills from the shared `~/.agents/skills/` location, so installs done with the OpenCode target are usable from Pi too.
 
 When installed as a Pi package, Heart of Gold exposes Pi-native extension commands for the flagship workflows:
@@ -168,7 +170,7 @@ The toolkit ships as an npm package with a CLI for installing skills into any su
 
 - `--to pi` installs to Pi's native `~/.pi/agent/skills/`
 - `--to opencode` installs to shared `~/.agents/skills/`, which Pi also discovers
-- `pi install npm:@heart-of-gold/toolkit` installs the package directly in Pi, including the shared skills plus pi-native extensions
+- `pi install npm:@heart-of-gold/toolkit` adds the package to Pi settings, then Pi installs and loads it as a package with shared skills plus pi-native extensions
 
 ```bash
 # Install all plugins into Codex
