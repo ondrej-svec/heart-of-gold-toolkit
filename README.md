@@ -2,7 +2,7 @@
 
 > **Don't Panic.**
 
-30 skills for AI coding agents. Five plugins. Works with **Claude Code, Codex, OpenCode, Pi**, and any tool supporting the [agentskills.io](https://agentskills.io) standard. Named after *The Hitchhiker's Guide to the Galaxy* because the universe is absurd and your tools should at least have personality.
+31 skills for AI coding agents. Five plugins. Works with **Claude Code, Codex, OpenCode, Pi**, and any tool supporting the [agentskills.io](https://agentskills.io) standard. Named after *The Hitchhiker's Guide to the Galaxy* because the universe is absurd and your tools should at least have personality.
 
 ## Installation
 
@@ -136,14 +136,15 @@ Configurable sources (RSS, Gmail, HN, web search), narrative briefs, LinkedIn dr
 
 ### [Babel Fish](plugins/babel-fish/) — Universal Translator
 
-Turn words into audio. Turn ideas into images. Visualize anything as a terminal mind map.
+Turn words into audio. Turn ideas into images. Visualize anything as a terminal mind map. Stitch screenshots into a LinkedIn-ready carousel PDF.
 
-3 skills
+4 skills
 
 ```
-/babel-fish:audio     # TTS, podcasts, voice cloning, sound effects
-/babel-fish:image     # AI image generation and editing
-/babel-fish:visualize # terminal mind maps from any structured content
+/babel-fish:audio             # TTS, podcasts, voice cloning, sound effects
+/babel-fish:image             # AI image generation and editing
+/babel-fish:visualize         # terminal mind maps from any structured content
+/babel-fish:linkedin-carousel # screenshots → LinkedIn document-post PDF with matched backgrounds
 ```
 
 ### [Quellis](plugins/quellis/) — AI Coaching Companion

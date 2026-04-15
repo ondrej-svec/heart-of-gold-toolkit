@@ -3,7 +3,7 @@
 > "The Babel fish is small, yellow, leathery, and probably the oddest thing in the universe."
 > It also translates your words into audio and your ideas into images.
 
-A media generation plugin for Claude Code. Turns text into audio, ideas into images, and structured content into terminal mind maps.
+A media generation plugin for Claude Code. Turns text into audio, ideas into images, structured content into terminal mind maps, and screenshots into LinkedIn-ready carousel PDFs.
 
 ## Security & Trust
 
@@ -36,10 +36,14 @@ Supports Gemini and FLUX models via OpenRouter API.
 ### `/babel-fish:visualize`
 Render mind maps and tree visualizations directly in the terminal using Unicode box-drawing characters and ANSI colors. Works over SSH — no browser needed. Use it on brainstorm docs, plan docs, markdown files, or any structured content.
 
+### `/babel-fish:linkedin-carousel`
+Turn an ordered set of screenshots or images into a LinkedIn document-post PDF (carousel). Auto-samples each source's corner pixel so per-page padding blends invisibly into the image, picks a sensible canvas aspect from the source dimensions, and renders at 2× with Lanczos resampling. Powered by ImageMagick.
+
 ## Requirements
 
 - ElevenLabs API key (for audio)
 - OpenRouter API key (for image generation)
+- ImageMagick (`magick` on PATH) — for `linkedin-carousel`
 
 ## Install
 

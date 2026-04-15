@@ -27,7 +27,7 @@
       "name": "babel-fish",
       "source": "./plugins/babel-fish",
       "description": "Universal Translator — media generation tools for audio, image, and video content",
-      "version": "0.2.8"
+      "version": "0.2.9"
     },
     {
       "name": "quellis",
