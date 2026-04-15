@@ -23,5 +23,8 @@ bun.lockb
 dist/
 build/
 
+# Generated package archives
+*.tgz
+
 # Docs (not needed by consumers)
 docs/
