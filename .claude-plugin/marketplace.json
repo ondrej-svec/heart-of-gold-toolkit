@@ -15,7 +15,7 @@
       "name": "deep-thought",
       "source": "./plugins/deep-thought",
       "description": "The Answer Computer — reasoning tools for brainstorming, planning, and deep thinking",
-      "version": "0.2.10"
+      "version": "0.2.11"
     },
     {
       "name": "marvin",

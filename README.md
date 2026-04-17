@@ -2,7 +2,7 @@
 
 > **Don't Panic.**
 
-31 skills for AI coding agents. Five plugins. Works with **Claude Code, Codex, OpenCode, Pi**, and any tool supporting the [agentskills.io](https://agentskills.io) standard. Named after *The Hitchhiker's Guide to the Galaxy* because the universe is absurd and your tools should at least have personality.
+32 skills for AI coding agents. Five plugins. Works with **Claude Code, Codex, OpenCode, Pi**, and any tool supporting the [agentskills.io](https://agentskills.io) standard. Named after *The Hitchhiker's Guide to the Galaxy* because the universe is absurd and your tools should at least have personality.
 
 ## Installation
 
@@ -79,11 +79,11 @@ Treat skills and helper scripts as executable automation, not passive text. Revi
 
 ### [Deep Thought](plugins/deep-thought/) — The Answer Computer
 
-Nine ways to think clearly about hard problems.
+Ten ways to think clearly about hard problems.
 
-Brainstorm before you plan. Plan before you build. Investigate when something breaks. Review when it ships. And when the stakes are high, simulate an expert panel that argues with itself until the right answer falls out.
+Brainstorm before you plan. Plan before you build. Investigate when something breaks. Review when it ships. Map where it could go when you can't see the futures yet. And when the stakes are high, simulate an expert panel that argues with itself until the right answer falls out.
 
-9 skills · 9 agents · 16 knowledge files
+10 skills · 9 agents · 16 knowledge files
 
 ```
 /deep-thought:brainstorm          # explore before committing
@@ -95,6 +95,7 @@ Brainstorm before you plan. Plan before you build. Investigate when something br
 /deep-thought:architecture-review # failure modes, scaling, ADRs
 /deep-thought:cto                 # strategic CTO advisor (grounded in the leadership canon)
 /deep-thought:craft-skill         # meta: generate SKILL.md files
+/deep-thought:improbable-futures  # product cartography — three lovable futures + visual map
 ```
 
 ### [Marvin](plugins/marvin/) — The Paranoid Android

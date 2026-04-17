@@ -3,7 +3,7 @@
 > "The Answer to the Great Question... Of Life, the Universe and Everything... Is... Forty-two."
 > But the question matters more. That's what this plugin is for.
 
-A reasoning plugin for Claude Code. Nine skills for thinking clearly about hard problems — from early-stage brainstorming through architectural review and strategic CTO decisions.
+A reasoning plugin for Claude Code. Ten skills for thinking clearly about hard problems — from early-stage brainstorming through architectural review and strategic CTO decisions.
 
 ## Skills
 
@@ -38,6 +38,9 @@ Strategic CTO advisor grounded in the leadership canon (Larson, Fournier, Majors
 
 ### `/deep-thought:craft-skill`
 Meta-skill — generates and refines SKILL.md files for Claude Code. Use it to create new skills with proper structure, boundaries, and validation criteria.
+
+### `/deep-thought:improbable-futures`
+Product cartography for any project. Reads current state, sketches three lovable futures worth chasing — each with a named user's love-letter from six months ahead, the capability that future demands, and the first moves toward it. Adds wild-card branches and hands off to `/babel-fish:visualize` for the visual map.
 
 ## Agents
 
