@@ -172,6 +172,12 @@ if [[ "$EVENTS_ENABLED" == "true" ]]; then
   run_source "events" "python3 '$SCRIPTS_DIR/fetch-events.py' --config '$CONFIG_PATH'"
 fi
 
+# 5. Anthropic news (sitemap-driven)
+ANTHROPIC_NEWS_ENABLED=$(echo "$CONFIG_JSON" | python3 -c "import json,sys; d=json.load(sys.stdin); print('true' if d['sources'].get('anthropic_news',{}).get('enabled',False) else 'false')")
+if [[ "$ANTHROPIC_NEWS_ENABLED" == "true" ]]; then
+  run_source "anthropic_news" "python3 '$SCRIPTS_DIR/fetch-anthropic-news.py' --config '$CONFIG_PATH'"
+fi
+
 # ── Combine and normalize ─────────────────────────────────────────────────────
 
 echo "  · Combining signals..." >&2
@@ -183,7 +189,7 @@ sys.path.insert(0, '$SCRIPTS_DIR')
 from pipeline_utils import combine_signals, validate_signal, next_pipeline_path, normalize_score
 
 # Read all source outputs
-source_files = ['rss', 'hn', 'gmail', 'events']
+source_files = ['rss', 'hn', 'gmail', 'events', 'anthropic_news']
 all_signals = []
 for name in source_files:
     path = '$WORK_DIR/' + name + '.json'
