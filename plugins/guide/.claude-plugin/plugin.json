@@ -1,6 +1,6 @@
 {
   "name": "guide",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "The Hitchhiker's Guide — content creation suite with automated pipeline, daily briefs, and blog writing",
   "author": {
     "name": "ondrej-svec",

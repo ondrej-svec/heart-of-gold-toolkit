@@ -217,7 +217,7 @@ npm run check:compat
 - **Claude Code**: No additional requirements
 - **Guide plugin**: Python 3.10+, `feedparser`, `pyyaml`, `jq`, `curl`, `zip`
 - **Babel Fish audio**: ElevenLabs API key
-- **Babel Fish image**: OpenRouter API key
+- **Babel Fish image**: Codex CLI ≥ 0.124.0-alpha.2 (default, uses ChatGPT OAuth), or `GEMINI_API_KEY`, or OpenRouter API key
 - **iMessage delivery**: macOS (optional)
 - **Private tailnet viewer exposure**: Tailscale CLI (optional)
 
