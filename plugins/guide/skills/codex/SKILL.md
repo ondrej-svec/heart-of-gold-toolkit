@@ -75,3 +75,18 @@ Codex is powered by OpenAI models with their own knowledge cutoffs and limitatio
 - Stop and report failures whenever `codex --version` or a `codex exec` command exits non-zero; request direction before retrying.
 - Before using high-impact flags (`--full-auto`, `--sandbox danger-full-access`, `--skip-git-repo-check`) ask the user for permission using `AskUserQuestion` unless already given.
 - When output includes warnings or partial results, summarize them and ask how to adjust using `AskUserQuestion`.
+
+## Image Generation (codex ≥ 0.124.0-alpha.2)
+
+Codex ships a built-in `image_gen` tool that uses OpenAI's `gpt-image-2` under the user's ChatGPT OAuth — **no `OPENAI_API_KEY` required**. To invoke it:
+
+```bash
+codex exec --skip-git-repo-check --sandbox workspace-write --full-auto \
+  "Use your built-in image_gen tool to generate: <PROMPT>. After it returns, copy the file to <OUT_PATH> and print the path."
+```
+
+- Supported models (server-picked): `gpt-image-2` (default, newest), `gpt-image-1.5` (only one supporting `background=transparent`), `gpt-image-1`, `gpt-image-1-mini`.
+- Quality: `low` | `medium` | `high` | `auto`. Sizes: `auto` or `WxH` with max edge ≤ 3840px, edges multiples of 16, 655k–8.3M total pixels.
+- Output lands in `$CODEX_HOME/generated_images/<session>/<hash>.png` — ask the agent to copy to the user's target.
+- Convenience wrapper (handles prompt assembly + output copy) is at `~/.claude/skills/image-gen/scripts/generate_image_codex.sh`; the `image-gen` skill documents the full UX. Prefer that wrapper over hand-rolling the codex invocation.
+- Do **not** use codex's bundled fallback script `scripts/image_gen.py` — it requires an `OPENAI_API_KEY`, which is precisely what the built-in path avoids.
