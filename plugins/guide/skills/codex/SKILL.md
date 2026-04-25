@@ -9,15 +9,16 @@ description: Use when the user asks to run Codex CLI (codex exec, codex resume) 
 
 | Model | Best for |
 | --- | --- |
-| `gpt-5.4` | Flagship — complex software engineering, strongest coding + reasoning |
+| `gpt-5.5` | Flagship (released 2026-04-23) — complex coding, computer use, knowledge work, research workflows. **ChatGPT sign-in only — not available with API-key auth.** Fall back to `gpt-5.4` if not in the user's model picker yet. |
+| `gpt-5.4` | Professional coding with strong reasoning + tool use. Default fallback when `gpt-5.5` is unavailable. |
 | `gpt-5.4-mini` | Faster/cheaper for lighter coding tasks and subagents |
-| `gpt-5.4-nano` | Optimized for latency and cost on lightweight workloads |
-| `gpt-5.3-codex-spark` | Near-instant real-time coding iteration (research preview) |
+| `gpt-5.3-codex` | Complex software engineering with industry-leading coding capabilities |
+| `gpt-5.3-codex-spark` | Near-instant real-time coding iteration (ChatGPT Pro research preview) |
 
-Default recommendation: `gpt-5.4` for complex tasks, `gpt-5.4-mini` for speed.
+Default recommendation: `gpt-5.5` for complex tasks (with `gpt-5.4` fallback), `gpt-5.4-mini` for speed.
 
 ## Running a Task
-1. Ask the user (via `AskUserQuestion`) which model to use (default: `gpt-5.4`) AND which reasoning effort (`xhigh`, `high`, `medium`, or `low`) in a **single prompt with two questions**.
+1. Ask the user (via `AskUserQuestion`) which model to use (default: `gpt-5.5`, fallback `gpt-5.4`) AND which reasoning effort (`xhigh`, `high`, `medium`, or `low`) in a **single prompt with two questions**.
 2. Select the sandbox mode required for the task; default to `--sandbox read-only` unless edits or network access are necessary.
 3. Assemble the command with the appropriate options:
    - `-m, --model <MODEL>`
