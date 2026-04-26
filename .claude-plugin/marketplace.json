@@ -21,7 +21,7 @@
       "name": "marvin",
       "source": "./plugins/marvin",
       "description": "The Paranoid Android — quality tools for code review, knowledge compounding, and work execution",
-      "version": "0.3.10"
+      "version": "0.3.11"
     },
     {
       "name": "babel-fish",
