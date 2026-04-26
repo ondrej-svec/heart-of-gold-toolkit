@@ -18,9 +18,10 @@
 //   -m, --message TEXT  description after the standard "Release X.Y.Z — " prefix
 //   -h, --help          this text
 
-import { readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { execSync } from "node:child_process";
 import { dirname, join } from "node:path";
+import { createInterface } from "node:readline";
 import { fileURLToPath } from "node:url";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -58,19 +59,75 @@ Examples:
 Flags:
   --ship              after commit, run \`git push\` and \`npm publish --access public\`
   --dry-run           print the plan, change no files
+  --add-pi-skills     skip the prompt and add every detected new skill to pi.skills
+  --no-pi-skills      skip the pi.skills detection entirely
   -m, --message TEXT  description after the standard "Release X.Y.Z — " prefix
   -h, --help          this text
 
 Plugins: ${PLUGINS.join(" | ")} | root`);
 }
 
+function prompt(question) {
+  return new Promise((resolve) => {
+    const rl = createInterface({ input: process.stdin, output: process.stdout });
+    rl.question(question, (answer) => {
+      rl.close();
+      resolve(answer.trim().toLowerCase());
+    });
+  });
+}
+
+function detectMissingPiSkills(rootPkg) {
+  const exported = new Set(rootPkg.pi?.skills ?? []);
+  const found = [];
+  for (const plugin of PLUGINS) {
+    const skillsDir = join(ROOT, "plugins", plugin, "skills");
+    if (!existsSync(skillsDir)) continue;
+    for (const entry of readdirSync(skillsDir, { withFileTypes: true })) {
+      if (!entry.isDirectory()) continue;
+      if (!existsSync(join(skillsDir, entry.name, "SKILL.md"))) continue;
+      found.push(`./plugins/${plugin}/skills/${entry.name}`);
+    }
+  }
+  return found.filter((path) => !exported.has(path));
+}
+
+function addPiSkills(rootPkg, missing) {
+  // Insert each path at the end of its plugin's contiguous block — preserves
+  // existing per-plugin ordering (which isn't always alphabetical) and just
+  // appends new entries within each plugin's section.
+  const skills = [...(rootPkg.pi?.skills ?? [])];
+  for (const path of missing) {
+    const pluginPrefix = path.split("/").slice(0, 3).join("/") + "/";
+    let insertAt = skills.length;
+    for (let i = skills.length - 1; i >= 0; i--) {
+      if (skills[i].startsWith(pluginPrefix)) {
+        insertAt = i + 1;
+        break;
+      }
+    }
+    skills.splice(insertAt, 0, path);
+  }
+  rootPkg.pi = rootPkg.pi ?? {};
+  rootPkg.pi.skills = skills;
+}
+
 function parse(argv) {
-  const out = { target: null, kind: null, dryRun: false, ship: false, message: "" };
+  const out = {
+    target: null,
+    kind: null,
+    dryRun: false,
+    ship: false,
+    message: "",
+    piSkills: "prompt",
+  };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === "--help" || a === "-h") { help(); process.exit(0); }
     else if (a === "--dry-run") out.dryRun = true;
     else if (a === "--ship") out.ship = true;
+    else if (a === "--add-pi-skills") out.piSkills = "auto";
+    else if (a === "--no-pi-skills") out.piSkills = "skip";
     else if (a === "--message" || a === "-m") out.message = argv[++i] ?? "";
     else if (a.includes(":")) [out.target, out.kind] = a.split(":");
     else throw new Error(`Unknown arg: ${a}`);
@@ -114,8 +171,8 @@ function ensureGitClean(allowedRelativePaths) {
   }
 }
 
-function main() {
-  const { target, kind, dryRun, ship, message } = parse(process.argv.slice(2));
+async function main() {
+  const { target, kind, dryRun, ship, message, piSkills } = parse(process.argv.slice(2));
 
   const rootPkg = readJson(ROOT_PKG);
   const marketplace = readJson(MARKETPLACE);
@@ -132,10 +189,16 @@ function main() {
     pluginPlan = { name: target, pluginPath, pluginJson, oldPlugin, newPlugin };
   }
 
+  const missingPi = piSkills === "skip" ? [] : detectMissingPiSkills(rootPkg);
+
   console.log("\nRelease plan");
   console.log("------------");
   if (pluginPlan) console.log(`  plugin ${pluginPlan.name}: ${pluginPlan.oldPlugin} → ${pluginPlan.newPlugin}`);
   console.log(`  root @heart-of-gold/toolkit: ${oldRoot} → ${newRoot}`);
+  if (missingPi.length > 0) {
+    console.log(`  pi.skills: ${missingPi.length} new skill${missingPi.length === 1 ? "" : "s"} detected`);
+    for (const p of missingPi) console.log(`    + ${p}`);
+  }
   console.log(`  prepublish checks: will run`);
   console.log(`  commit: yes`);
   console.log(`  push: ${ship ? "yes" : "no"}`);
@@ -143,6 +206,12 @@ function main() {
   if (dryRun) {
     console.log("\n[dry-run] Nothing changed.");
     return;
+  }
+
+  let addPi = piSkills === "auto" && missingPi.length > 0;
+  if (missingPi.length > 0 && piSkills === "prompt") {
+    const answer = await prompt(`\nAdd ${missingPi.length} new skill${missingPi.length === 1 ? "" : "s"} to pi.skills? [Y/n] `);
+    addPi = answer === "" || answer === "y" || answer === "yes";
   }
 
   const allowed = [
@@ -160,6 +229,7 @@ function main() {
     writeJson(MARKETPLACE, marketplace);
   }
   rootPkg.version = newRoot;
+  if (addPi) addPiSkills(rootPkg, missingPi);
   writeJson(ROOT_PKG, rootPkg);
 
   console.log("\nRunning prepublish checks…");
@@ -185,9 +255,7 @@ function main() {
   console.log(`\nReleased @heart-of-gold/toolkit@${newRoot}.`);
 }
 
-try {
-  main();
-} catch (err) {
+main().catch((err) => {
   console.error(`\nrelease: ${err.message}\n`);
   process.exit(1);
-}
+});
