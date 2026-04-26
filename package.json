@@ -12,6 +12,7 @@
     "check:compat": "python3 scripts/check-harness-compatibility.py",
     "test:pi-guided": "node --test tests/pi-guided-workflows.test.mjs",
     "test:visualize": "node --test tests/visualize-smart-render.test.mjs",
+    "release": "node scripts/release.mjs",
     "prepublishOnly": "npm run check:publish-safety && npm run check:compat"
   },
   "dependencies": {
