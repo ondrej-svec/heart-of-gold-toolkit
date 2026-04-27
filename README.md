@@ -2,7 +2,7 @@
 
 > **Don't Panic.**
 
-32 skills for AI coding agents. Five plugins. Works with **Claude Code, Codex, OpenCode, Pi**, and any tool supporting the [agentskills.io](https://agentskills.io) standard. Named after *The Hitchhiker's Guide to the Galaxy* because the universe is absurd and your tools should at least have personality.
+37 skills for AI coding agents. Five plugins. Works with **Claude Code, Codex, OpenCode, Pi**, and any tool supporting the [agentskills.io](https://agentskills.io) standard. Named after *The Hitchhiker's Guide to the Galaxy* because the universe is absurd and your tools should at least have personality.
 
 ## Installation
 
@@ -83,7 +83,7 @@ Ten ways to think clearly about hard problems.
 
 Brainstorm before you plan. Plan before you build. Investigate when something breaks. Review when it ships. Map where it could go when you can't see the futures yet. And when the stakes are high, simulate an expert panel that argues with itself until the right answer falls out.
 
-10 skills · 9 agents · 16 knowledge files
+11 skills · 9 agents · 18 knowledge files
 
 ```
 /deep-thought:brainstorm          # explore before committing
@@ -96,6 +96,7 @@ Brainstorm before you plan. Plan before you build. Investigate when something br
 /deep-thought:cto                 # strategic CTO advisor (grounded in the leadership canon)
 /deep-thought:craft-skill         # meta: generate SKILL.md files
 /deep-thought:improbable-futures  # product cartography — three lovable futures + visual map
+/deep-thought:expert-panel        # multi-framework content review with convergent synthesis
 ```
 
 ### [Marvin](plugins/marvin/) — The Paranoid Android
@@ -104,7 +105,7 @@ The unglamorous work that compounds.
 
 Execute plans task by task with tests after every change. Quick-review code with an emphasis on simplicity — catch YAGNI violations, premature abstractions, and code that solves problems that don't exist yet. Document solutions so the next person doesn't waste time re-discovering what you already figured out.
 
-10 skills · 2 agents · 3 knowledge files
+11 skills · 3 agents · 3 knowledge files
 
 ```
 /marvin:work                 # execute plans — implement, test, commit, ship
@@ -112,6 +113,7 @@ Execute plans task by task with tests after every change. Quick-review code with
 /marvin:compound             # document solved problems for future reference
 /marvin:redteam              # adversarial review — find weaknesses, expose with failing tests
 /marvin:scaffold             # prepare project structure, configs, dependencies
+/marvin:harness-up           # install AGENTS.md doctrine, docs/ taxonomy, and verification rules
 /marvin:test-writer          # write failing tests from user stories
 /marvin:copy-editor          # two-layer copy editor (typography audit + LLM judgment)
 /marvin:share-server-setup   # set up local artifact sharing infrastructure
