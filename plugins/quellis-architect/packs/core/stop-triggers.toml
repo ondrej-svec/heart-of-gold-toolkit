@@ -1,0 +1,32 @@
+# Quellis V1.0 core pack — Stop-time evidence triggers.
+#
+# Three evidence-aware triggers, all wired to the Phase 1.E evidence-search
+# helper. Each names a `requires` evidence kind; the matcher consults the
+# session transcript before blocking.
+#
+# Schema: see ../../docs/triggers.md (stop.v1).
+# Evidence kinds + escape hatches: ../../docs/evidence.md.
+# Validate: python3 ../../hooks/lib/validate_pack.py stop-triggers.toml
+
+schema_version = "stop.v1"
+
+[[trigger]]
+id = "evidence.completion-without-test-run"
+type = "evidence"
+claim_regex = "\\b(?:done|finished|complete|completed|verified|tested|safe|production-ready|all (?:edge cases|tests passing))\\b"
+requires = "test-run"
+block_reason = "Completion claim without test-run evidence — pause. Done/verified/safe/tested needs a test invocation in this transcript. Show the run or restate as uncertain."
+
+[[trigger]]
+id = "evidence.migration-applied-without-verification"
+type = "evidence"
+claim_regex = "\\b(?:migration|schema change|backfill) (?:applied|complete|deployed|done|finished)\\b"
+requires = "verification-query"
+block_reason = "Migration-applied claim without verification — pause. Applied means the schema query confirmed the new shape AND a sample row read worked. Show the queries."
+
+[[trigger]]
+id = "evidence.secret-removed-without-scan"
+type = "evidence"
+claim_regex = "\\b(?:secrets?|credentials?|api keys?|tokens?) (?:removed|cleaned|scrubbed|redacted|rotated)\\b"
+requires = "scan-output"
+block_reason = "Secret-removal claim without scan evidence — pause. Secrets removed needs a scanner pass (gitleaks, truffleHog) showing none remain. Or restate as removed from this file only."

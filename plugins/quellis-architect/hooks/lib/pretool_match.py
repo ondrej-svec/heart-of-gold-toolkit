@@ -134,7 +134,7 @@ def match_triggers(
             continue
         matched_input = _stringify_for_match(tool_input)
         try:
-            if re.search(pattern, matched_input):
+            if re.search(pattern, matched_input, re.MULTILINE):
                 return trigger, matched_input
         except re.error:
             # Bad regex in pack — skip this trigger, do not break the session.

@@ -1,0 +1,101 @@
+# Quellis V1.0 core pack — PreToolUse triggers.
+#
+# Three non-negotiable triggers + four convention triggers. Promoted from
+# docs/trigger-mockups/ on 2026-05-13 after the Auto Mode reframe review.
+#
+# Schema: see ../../docs/triggers.md (pretool.v1).
+# Validate: python3 ../../hooks/lib/validate_pack.py pretool-triggers.toml
+
+schema_version = "pretool.v1"
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Non-negotiable triggers — fire regardless of intensity.
+# ──────────────────────────────────────────────────────────────────────────────
+
+[[trigger]]
+id = "non-negotiable.git-reset-hard-unpushed"
+type = "non-negotiable"
+match_tool = "Bash"
+match_regex = "^git reset --hard\\b"
+block_reason = "Hard reset throws away the working tree — name what is being discarded first. List the commits or changes about to disappear, confirm none are unpushed work the user cares about, then proceed."
+
+[[trigger]]
+id = "non-negotiable.env-file-write"
+type = "non-negotiable"
+match_tool = "Edit"
+match_regex = "\\.env(?!\\.(?:example|template|sample)$)(?:\\.[a-zA-Z0-9_-]+)?$"
+block_reason = "Editing a `.env` writes secret material — refuse. Use the project's secret store (1Password, Doppler, Vercel) and reference variable names only."
+
+[[trigger]]
+id = "non-negotiable.env-file-write-via-write-tool"
+type = "non-negotiable"
+match_tool = "Write"
+match_regex = "\\.env(?!\\.(?:example|template|sample)$)(?:\\.[a-zA-Z0-9_-]+)?$"
+block_reason = "Writing a `.env` commits secret material — refuse. Use the project's secret store (1Password, Doppler, Vercel) and reference variable names only."
+
+[[trigger]]
+id = "non-negotiable.package-publish"
+type = "non-negotiable"
+match_tool = "Bash"
+match_regex = "^(?:npm|yarn|pnpm|bun) publish\\b|^cargo publish\\b|^gh release create\\b"
+block_reason = "Publishing creates an immutable public artifact — refuse without a user yes. Once a package version is pushed to npm/crates.io/GitHub releases it cannot be unpublished cleanly. Ask before, not after."
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Convention triggers — suppressed at intensity = chill; fire at standard+.
+# ──────────────────────────────────────────────────────────────────────────────
+
+[[trigger]]
+id = "convention.auth-without-rationale-edit"
+type = "convention"
+match_tool = "Edit"
+match_regex = "(?:^|/)(?:auth|authn|authz|clerk|session|jwt|oauth|saml|sso)/"
+block_reason = "Editing auth code without a rationale — pause. Auth changes need a one-line why in the commit message and a pointer to an ADR or threat-model note."
+
+[[trigger]]
+id = "convention.auth-without-rationale-write"
+type = "convention"
+match_tool = "Write"
+match_regex = "(?:^|/)(?:auth|authn|authz|clerk|session|jwt|oauth|saml|sso)/"
+block_reason = "Writing new auth code without a rationale in the diff or an ADR — pause. New auth surface needs a one-line why and a pointer to the decision doc or threat-model note that justifies the shape."
+
+[[trigger]]
+id = "convention.migration-without-backfill-note"
+type = "convention"
+match_tool = "Edit"
+match_regex = "(?:^|/)(?:migrations|prisma/migrations|drizzle/migrations|db/migrate|supabase/migrations|alembic/versions)/"
+block_reason = "Editing a migration without a backfill plan — pause. New columns or type changes need a note on how existing rows behave. Inline `-- backfill: …` or link an ADR."
+
+[[trigger]]
+id = "convention.migration-write-without-backfill-note"
+type = "convention"
+match_tool = "Write"
+match_regex = "(?:^|/)(?:migrations|prisma/migrations|drizzle/migrations|db/migrate|supabase/migrations|alembic/versions)/"
+block_reason = "Writing a new migration file without a backfill plan — pause. Existing-row strategy must appear inline as `-- backfill: …` or as a linked ADR before the migration commits."
+
+[[trigger]]
+id = "convention.scoring-or-payment-path-edit"
+type = "convention"
+match_tool = "Edit"
+match_regex = "(?:^|/)(?:scoring|score|payment|billing|invoice|stripe|paddle|charge|subscription|pricing|checkout)/"
+block_reason = "Editing scoring or payment code — pause. Money paths and ranking logic must not be edited without a failing test that this change makes pass, or a deliberate recalibration the user has authorized."
+
+[[trigger]]
+id = "convention.scoring-or-payment-path-write"
+type = "convention"
+match_tool = "Write"
+match_regex = "(?:^|/)(?:scoring|score|payment|billing|invoice|stripe|paddle|charge|subscription|pricing|checkout)/"
+block_reason = "Writing new scoring or payment code — pause. New money paths need a failing test this change makes pass, or explicit user authorization for a deliberate recalibration."
+
+[[trigger]]
+id = "convention.sql-template-interpolation"
+type = "convention"
+match_tool = "Edit"
+match_regex = "sql\\s*`[^`]*\\$\\{(?!\\s*(?:sql\\.identifier|sql\\.raw|db\\.unsafe))"
+block_reason = "SQL with `${}` interpolation in a tagged template — pause. Interpolated SQL is an injection class. Use a parameterized query or wrap with sql.identifier / sql.raw / db.unsafe."
+
+[[trigger]]
+id = "convention.sql-template-interpolation-write"
+type = "convention"
+match_tool = "Write"
+match_regex = "sql\\s*`[^`]*\\$\\{(?!\\s*(?:sql\\.identifier|sql\\.raw|db\\.unsafe))"
+block_reason = "New SQL `${}` interpolation in a tagged template — pause. Interpolated SQL is an injection class. Use a parameterized query or wrap with sql.identifier / sql.raw / db.unsafe."

@@ -1,18 +1,30 @@
 # Convention PreToolUse triggers — mockups
 
-Five architectural-convention triggers. Unlike the non-negotiables, these are *suppressible* at `chill` intensity. They fire at `standard` (the default) and at `strict`. The pattern: code change touches a load-bearing surface; the trigger asks for the documentation, evidence, or coordination that the project's conventions require.
+Four architectural-convention triggers. Unlike the non-negotiables, these are *suppressible* at `chill` intensity. They fire at `standard` (the default) and at `strict`. The pattern: code change touches a load-bearing surface; the trigger asks for the documentation, evidence, or coordination that the project's conventions require.
 
-> **Status:** drafts for Ondrej's review. Not yet in `packs/core/pretool-triggers.toml`.
+> **Status:** approved 2026-05-13 (review notes folded in). Ready for promotion to `packs/core/pretool-triggers.toml`.
 
-> The plan's examples for 1.D.4 reference specific surfaces (auth, Clerk, migrations, scoring/payment, SQL templates). These mockups generalize where the project's conventions are stable, and stay specific where the plan named them.
+## Why convention triggers are the value prop
+
+After the Auto Mode reframe (see plan § "Market context"), the non-negotiable list shrank from seven to three because most of it duplicated Auto Mode's defaults. The convention triggers don't duplicate anything — they encode *project-specific architectural judgment* that no LLM classifier can know without project context.
+
+The arXiv stress-test paper on Auto Mode identified the file-edit Tier 2 exemption as the load-bearing structural gap: 36.8% of state-changing actions skip the classifier entirely. Convention triggers live exactly in this gap. They are the file-edit-shaped intercepts Auto Mode does not run.
+
+## What we dropped and why
+
+The first draft listed five triggers. One was deferred:
+
+- `convention.new-top-level-dep` — Real diff support (read pre-edit file, compare to post-edit) lands in V1.1. V1.0 would have had to fire on every package.json/Cargo.toml/pyproject.toml edit and accept the false-positive rate on version bumps and `scripts` changes. After the auto-mode reshape trimmed the non-negotiables to three, four cleaner conventions are a better V1.0 surface than five with one shaky member.
 
 ---
 
-## 1. Editing auth code without an ADR or written rationale
+## 1. Editing auth code or adding an auth library without an ADR or written rationale
 
 **ID:** `convention.auth-without-rationale`
 **Tool:** `Edit`, `Write`
-**Pattern (against file_path):** `(?:^|/)(?:auth|authn|authz|clerk|session|jwt|oauth|saml|sso)/`
+**Pattern:**
+- against file_path: `(?:^|/)(?:auth|authn|authz|clerk|session|jwt|oauth|saml|sso)/`
+- OR against content (when file_path matches `package\.json$|Cargo\.toml$|pyproject\.toml$|go\.mod$`): `clerk|@auth0|next-auth|lucia|supabase[/-]auth|@aws-sdk/client-cognito|firebase-auth|passport|@workos/|stack-auth`
 
 **Block message (198 chars):**
 
@@ -22,16 +34,22 @@ Five architectural-convention triggers. Unlike the non-negotiables, these are *s
 
 Stop the edit. Ask for one of: (a) a sentence describing the auth invariant being preserved, (b) a path to the ADR or decision doc, or (c) explicit confirmation that this is exploratory work and the rationale will land before the PR. Then proceed with the edit, and ensure the commit message carries the rationale.
 
-**Positive examples:**
+This trigger generalizes from "editing the auth folder" to "introducing or changing auth in any way." Adding `@clerk/nextjs` to package.json is an architectural decision the same shape as editing `auth/middleware.ts`.
+
+**Positive examples (folder):**
 - Editing `apps/web/src/auth/session.ts`
 - Editing `clerk/middleware.ts`
 - Writing a new file under `auth/`
 
-**Negative examples:**
-- Editing `tests/auth/session.test.ts` *(test file — separate trigger if needed)*
-- Editing `README.md` that mentions auth
+**Positive examples (package.json):**
+- Adding `"@clerk/nextjs": "^4.0.0"` to `dependencies`
+- Adding `"next-auth": "..."`
+- Adding `passport` or `lucia`
 
-> Open question for Ondrej: do you want this to also fire on Edits to package.json that add an auth library?
+**Negative examples:**
+- Editing `tests/auth/session.test.ts` *(test file)*
+- Editing `README.md` that mentions auth
+- Bumping `@clerk/nextjs` from `4.0.0` to `4.1.0` *(version-only changes are V1.1 territory — V1.0 may fire on these as a false positive)*
 
 ---
 
@@ -39,7 +57,7 @@ Stop the edit. Ask for one of: (a) a sentence describing the auth invariant bein
 
 **ID:** `convention.migration-without-backfill-note`
 **Tool:** `Edit`, `Write`
-**Pattern:** `(?:^|/)(?:migrations|prisma/migrations|drizzle/migrations|db/migrate)/`
+**Pattern:** `(?:^|/)(?:migrations|prisma/migrations|drizzle/migrations|db/migrate|supabase/migrations|alembic/versions)/`
 
 **Block message (196 chars):**
 
@@ -49,49 +67,24 @@ Stop the edit. Ask for one of: (a) a sentence describing the auth invariant bein
 
 Stop the edit. Inspect the migration: is it a new column with a default that covers existing rows? A nullable column that callers handle? A backfill query in the same migration? If none, ask the user what the existing-row strategy is before proceeding. Append the backfill note inline as a SQL comment or link an ADR.
 
+**Why Quellis covers this when Auto Mode does not:** Migration files are file edits — Tier 2. Auto Mode auto-approves them. The intelligence about "is there a backfill plan?" requires reading the migration content, which a generic classifier cannot reliably do.
+
 **Positive examples:**
 - Editing `migrations/2026_05_13_add_user_intensity.sql`
 - Writing a new file in `prisma/migrations/...`
+- Editing `supabase/migrations/20260513_add_column.sql`
 
 **Negative examples:**
 - Editing `migrations/README.md`
+- Editing `db/migrate/utils.ts` *(helpers, not migrations)*
 
 ---
 
-## 3. Adding a top-level dependency without a "why" check
-
-**ID:** `convention.new-top-level-dep`
-**Tool:** `Edit`
-**Pattern:** matches Edit operations on `package.json` / `pyproject.toml` / `Cargo.toml` / `go.mod` where the dependencies block grows. *(In V1.0 we match the file plus a heuristic regex against the content; a richer check ships in V1.1 by diffing the file pre/post.)*
-
-**Pattern (against file_path AND content):** `package\.json$|pyproject\.toml$|Cargo\.toml$|go\.mod$`
-**Pattern (against content):** `"dependencies"\s*:\s*\{|\[dependencies\]|\[tool\.poetry\.dependencies\]|^require \(`
-
-**Block message (199 chars):**
-
-> Adding a top-level dependency — pause. Each new dep is supply-chain surface. Name what it does, why an existing dep does not cover the need, and that the package has at least one recent release and credible maintenance.
-
-**Intended Claude response:**
-
-Stop the edit. For each new dep, report: package name, version, total weekly downloads, last release date, and whether it has a known CVE in the last 12 months. If any of those metrics is missing or alarming, ask the user before adding. Prefer existing deps in the project where they cover the same need.
-
-**Positive examples:**
-- Adding a new entry under `"dependencies": {}` in `package.json`
-- Adding a new line in `[dependencies]` of `Cargo.toml`
-
-**Negative examples:**
-- Bumping an existing dep's version *(covered by a separate softer trigger in V1.1)*
-- Editing `package.json` `scripts` block
-
-> Open question for Ondrej: this trigger needs richer diff support than V1.0 has. Ship it as "fire on every package.json edit" and accept some false positives, or defer to V1.1 when we have proper diff inspection?
-
----
-
-## 4. Touching scoring or payment code paths
+## 3. Touching scoring or payment code paths
 
 **ID:** `convention.scoring-or-payment-path`
 **Tool:** `Edit`, `Write`
-**Pattern:** `(?:^|/)(?:scoring|score|payment|billing|invoice|stripe|paddle|charge|subscription|pricing)/`
+**Pattern:** `(?:^|/)(?:scoring|score|payment|billing|invoice|stripe|paddle|charge|subscription|pricing|checkout)/`
 
 **Block message (197 chars):**
 
@@ -100,6 +93,8 @@ Stop the edit. For each new dep, report: package name, version, total weekly dow
 **Intended Claude response:**
 
 Stop the edit. Confirm one of: (a) there is already a failing test that this change makes pass, (b) the change is to comments / types / refactor with no behavior change (and a regression test exists), (c) this is a deliberate scoring/pricing recalibration and the user has authorized it explicitly. Then proceed.
+
+**Why Quellis covers this when Auto Mode does not:** These are file edits — Tier 2. No generic classifier can know that *your* codebase's `apps/api/src/scoring/` is special; that's project-specific architectural knowledge encoded in the pack.
 
 **Positive examples:**
 - Editing `apps/api/src/scoring/rank.ts`
@@ -112,49 +107,50 @@ Stop the edit. Confirm one of: (a) there is already a failing test that this cha
 
 ---
 
-## 5. SQL template-string interpolation (injection risk)
+## 4. SQL template-string interpolation (injection risk)
 
 **ID:** `convention.sql-template-interpolation`
 **Tool:** `Edit`, `Write`
-**Pattern (against content):** `sql\s*` + backtick + `[^` + backtick + `]*\$\{`
+**Pattern (against content):** `sql\s*` + backtick + `[^` + backtick + `]*\$\{(?!\s*(?:sql\.identifier|sql\.raw|db\.unsafe))`
 
-> *(Mockup note: the exact regex is rendered carefully because backticks and `${` are notoriously hard to escape in inline docs. The validator will receive an escaped form.)*
+> *(Mockup note: the exact regex is rendered carefully because backticks and `${` are notoriously hard to escape in inline docs. The validator will receive an escaped form. The negative-lookahead exempts query-builder helpers.)*
 
-**Block message (198 chars):**
+**Block message (199 chars):**
 
-> SQL with `${}` interpolation inside a tagged template literal — pause. Even when the variable looks safe today, interpolated SQL is an injection class. Use a parameterized query or a query builder's bound parameters.
+> SQL with `${}` interpolation inside a tagged template literal — pause. Even when the variable looks safe today, interpolated SQL is an injection class. Use a parameterized query or wrap with `sql.identifier`/`sql.raw`/`db.unsafe`.
 
 **Intended Claude response:**
 
-Stop the edit. Inspect the interpolation: if the variable is a literal constant from the same file, surface that and ask the user whether to inline the constant directly into the SQL string (still bad form). If the variable is data, refactor to a parameterized query (`sql` tag with `${param}` only for identifiers like table names that the driver verifies, or `db.query('... ?', [param])` for values).
+Stop the edit. Inspect the interpolation: if the variable is wrapped in `sql.identifier(...)` (for identifiers verified by the driver), `sql.raw(...)` (for deliberate raw SQL), or `db.unsafe(...)` (for one-off scripts), it is intentional and the trigger should not have fired — report the false positive. If the interpolation is unwrapped data, refactor to a parameterized query (`?` placeholders + bound parameters) or wrap with one of the helpers above and add a comment justifying it.
+
+**Why Quellis covers this when Auto Mode does not:** Code edits — Tier 2. Even when Auto Mode is active, file edits inside the working dir skip the classifier. SQL injection is exactly the class of bug AI-generated code routinely introduces.
 
 **Positive examples:**
 - ``sql`SELECT * FROM users WHERE id = ${userId}` ``
 - ``sql`INSERT INTO ${tableName} VALUES (...)` ``
 
-**Negative examples:**
+**Negative examples (exempt):**
 - ``sql`SELECT * FROM users WHERE id = ?` `` *(parameterized)*
-- ``"SELECT * FROM users"`` *(plain string, no template)*
-
-> Open question for Ondrej: should the trigger have an exemption for `sql.identifier(...)` and `sql.raw(...)` patterns from common query builders? Or keep it strict in V1.0 and accept the false positives?
+- ``sql`SELECT * FROM ${sql.identifier(tableName)}` ``
+- ``sql`${sql.raw(dynamicClause)}` ``
+- ``db.unsafe(`UPDATE ...`)`` *(deliberate one-off)*
 
 ---
 
 ## Review summary table
 
-| # | ID | Lead clause | Chars | Flag for review |
+| # | ID | Lead clause | Chars | Differentiator |
 |---|---|---|---:|---|
-| 1 | `convention.auth-without-rationale` | "Editing auth code without a rationale" | 198 | Fire on package.json auth-lib adds too? |
-| 2 | `convention.migration-without-backfill-note` | "Editing a migration file without a backfill plan" | 196 | — |
-| 3 | `convention.new-top-level-dep` | "Adding a top-level dependency" | 199 | Needs V1.1 diff support; ship lossy or defer? |
-| 4 | `convention.scoring-or-payment-path` | "Editing scoring or payment code" | 197 | — |
-| 5 | `convention.sql-template-interpolation` | "SQL with `${}` interpolation" | 198 | Exempt `sql.identifier` / `sql.raw`? |
+| 1 | `convention.auth-without-rationale` | "Editing auth code without a rationale" | 198 | Project-specific architectural surface — Auto Mode cannot reach |
+| 2 | `convention.migration-without-backfill-note` | "Editing a migration file without a backfill plan" | 196 | Tier 2 file edit; needs content-aware judgment |
+| 3 | `convention.scoring-or-payment-path` | "Editing scoring or payment code" | 197 | Project-specific load-bearing surface |
+| 4 | `convention.sql-template-interpolation` | "SQL with `${}` interpolation" | 199 | Common AI-generated bug class; Tier 2 file edit |
 
-All five under the 200-char ceiling. All lead with the concern in fewer than 8 words.
+All four under the 200-char ceiling. All four lead with the concern in fewer than 8 words. Each one has a clear "why Auto Mode does not cover this" — the convention triggers are not duplicating any other layer in the stack.
 
 ## Intensity matrix
 
-| Intensity | Triggers 1–5 |
+| Intensity | Triggers 1–4 |
 |---|---|
 | `chill` | suppressed |
 | `standard` (default) | fire |
