@@ -47,44 +47,83 @@ block_reason = "Publishing creates an immutable public artifact — refuse witho
 [[trigger]]
 id = "convention.auth-without-rationale-edit"
 type = "convention"
+path_family = "auth"
 match_tool = "Edit"
 match_regex = "(?:^|/)(?:auth|authn|authz|clerk|session|jwt|oauth|saml|sso)/"
+suppress_if_content_matches = "(?im)^//\\s*ADR-|^#\\s*ADR-|<!--\\s*rationale:"
 block_reason = "Editing auth code without a rationale — pause. Auth changes need a one-line why in the commit message and a pointer to an ADR or threat-model note."
 
 [[trigger]]
 id = "convention.auth-without-rationale-write"
 type = "convention"
+path_family = "auth"
 match_tool = "Write"
 match_regex = "(?:^|/)(?:auth|authn|authz|clerk|session|jwt|oauth|saml|sso)/"
+suppress_if_content_matches = "(?im)^//\\s*ADR-|^#\\s*ADR-|<!--\\s*rationale:"
 block_reason = "Writing new auth code without a rationale in the diff or an ADR — pause. New auth surface needs a one-line why and a pointer to the decision doc or threat-model note that justifies the shape."
+
+[[trigger]]
+id = "convention.auth-via-bash"
+type = "convention"
+path_family = "auth"
+match_tool = "Bash"
+match_regex = "(?:>>?|\\btee\\s+(?:-[a-z]+\\s+)?)(?:\\s|[\"'])*/?(?:[\\w.-]+/)*(?:auth|authn|authz|clerk|session|jwt|oauth|saml|sso)/"
+suppress_if_content_matches = "(?im)^//\\s*ADR-|^#\\s*ADR-|<!--\\s*rationale:"
+block_reason = "Writing auth code via shell redirection — pause. Same rule as Edit/Write: auth surfaces need an ADR or rationale note. Surface the why or use Edit/Write so the diff is reviewable."
 
 [[trigger]]
 id = "convention.migration-without-backfill-note"
 type = "convention"
+path_family = "migration"
 match_tool = "Edit"
 match_regex = "(?:^|/)(?:migrations|prisma/migrations|drizzle/migrations|db/migrate|supabase/migrations|alembic/versions)/"
+suppress_if_content_matches = "(?im)^--\\s*backfill:|<!--\\s*backfill:|@backfill:|ADR:"
 block_reason = "Editing a migration without a backfill plan — pause. New columns or type changes need a note on how existing rows behave. Inline `-- backfill: …` or link an ADR."
 
 [[trigger]]
 id = "convention.migration-write-without-backfill-note"
 type = "convention"
+path_family = "migration"
 match_tool = "Write"
 match_regex = "(?:^|/)(?:migrations|prisma/migrations|drizzle/migrations|db/migrate|supabase/migrations|alembic/versions)/"
+suppress_if_content_matches = "(?im)^--\\s*backfill:|<!--\\s*backfill:|@backfill:|ADR:"
 block_reason = "Writing a new migration file without a backfill plan — pause. Existing-row strategy must appear inline as `-- backfill: …` or as a linked ADR before the migration commits."
+
+[[trigger]]
+id = "convention.migration-write-via-bash"
+type = "convention"
+path_family = "migration"
+match_tool = "Bash"
+match_regex = "(?:>>?|\\btee\\s+(?:-[a-z]+\\s+)?)(?:\\s|[\"'])*/?(?:[\\w.-]+/)*(?:migrations|prisma/migrations|drizzle/migrations|db/migrate|supabase/migrations|alembic/versions)/"
+suppress_if_content_matches = "(?im)^--\\s*backfill:|<!--\\s*backfill:|@backfill:|ADR:"
+block_reason = "Writing a migration via shell redirection — pause. Heredoc and tee bypass the Edit/Write path but the rule stands: backfill strategy must appear inline as `-- backfill: …` or as a linked ADR."
 
 [[trigger]]
 id = "convention.scoring-or-payment-path-edit"
 type = "convention"
+path_family = "scoring-or-payment"
 match_tool = "Edit"
 match_regex = "(?:^|/)(?:scoring|score|payment|billing|invoice|stripe|paddle|charge|subscription|pricing|checkout)/"
+suppress_if_content_matches = "(?im)^//\\s*test:|^#\\s*test:|\\btest\\(['\"]"
 block_reason = "Editing scoring or payment code — pause. Money paths and ranking logic must not be edited without a failing test that this change makes pass, or a deliberate recalibration the user has authorized."
 
 [[trigger]]
 id = "convention.scoring-or-payment-path-write"
 type = "convention"
+path_family = "scoring-or-payment"
 match_tool = "Write"
 match_regex = "(?:^|/)(?:scoring|score|payment|billing|invoice|stripe|paddle|charge|subscription|pricing|checkout)/"
+suppress_if_content_matches = "(?im)^//\\s*test:|^#\\s*test:|\\btest\\(['\"]"
 block_reason = "Writing new scoring or payment code — pause. New money paths need a failing test this change makes pass, or explicit user authorization for a deliberate recalibration."
+
+[[trigger]]
+id = "convention.scoring-or-payment-via-bash"
+type = "convention"
+path_family = "scoring-or-payment"
+match_tool = "Bash"
+match_regex = "(?:>>?|\\btee\\s+(?:-[a-z]+\\s+)?)(?:\\s|[\"'])*/?(?:[\\w.-]+/)*(?:scoring|score|payment|billing|invoice|stripe|paddle|charge|subscription|pricing|checkout)/"
+suppress_if_content_matches = "(?im)^//\\s*test:|^#\\s*test:|\\btest\\(['\"]"
+block_reason = "Writing scoring or payment code via shell redirection — pause. Same rule: a failing test or an explicit recalibration authorization in the diff. Use Edit/Write so the diff is reviewable."
 
 [[trigger]]
 id = "convention.sql-template-interpolation"

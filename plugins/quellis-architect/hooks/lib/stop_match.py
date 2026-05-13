@@ -99,39 +99,53 @@ def match_triggers(pack: dict, claim_text: str, intensity: str) -> dict | None:
     return None
 
 
-def run(stdin: str, repo_root: Path) -> tuple[int, str]:
-    """Pure-function entry point — returns (exit_code, stderr_message)."""
+def run(stdin: str, repo_root: Path) -> tuple[int, str, dict | None]:
+    """Pure-function entry point.
+
+    Returns `(exit_code, stderr_message, log_event)`. `log_event` is a
+    structured `log.v1` record that `main()` writes to
+    `.quellis/acceptance-log.jsonl` (plan §2.D.3). It is `None` when
+    nothing matched.
+    """
     try:
         event = json.loads(stdin) if stdin.strip() else {}
     except json.JSONDecodeError:
-        return 0, ""
+        return 0, "", None
 
     pack_path = locate_pack(repo_root)
     if pack_path is None:
-        return 0, ""
+        return 0, "", None
 
     try:
         pack = _load_toml(pack_path)
     except (OSError, ValueError):
-        return 0, ""
+        return 0, "", None
 
     claim_text = extract_last_assistant_text(event)
     if not claim_text:
-        return 0, ""
+        return 0, "", None
 
     intensity = read_intensity(repo_root)
     trigger = match_triggers(pack, claim_text, intensity)
     if trigger is None:
-        return 0, ""
+        return 0, "", None
 
     # Phase 1.E: if the trigger names an evidence kind, walk the transcript
     # to confirm the evidence is *missing* before blocking. A "completion"
     # claim with a test-run earlier in the transcript is not a violation.
     requires = trigger.get("requires")
     transcript_path = _extract_transcript_path(event)
+    session_id = event.get("session_id") or event.get("sessionId") or ""
     if requires and transcript_path and requires in EVIDENCE_KINDS:
         if has_evidence(transcript_path, requires):
-            return 0, ""
+            log_event = {
+                "hook": "Stop",
+                "trigger_id": trigger.get("id") or "unknown",
+                "match_text": claim_text,
+                "event_type": "suppressed_compliant",
+                "session_id": session_id,
+            }
+            return 0, "", log_event
 
     reason = trigger.get("block_reason") or "Claim lacks supporting evidence."
     if len(reason) > BLOCK_REASON_LIMIT:
@@ -147,7 +161,14 @@ def run(stdin: str, repo_root: Path) -> tuple[int, str]:
             body = body[: BLOCK_REASON_LIMIT + 79] + "…"
     else:
         body = reason
-    return 2, f"[quellis:{trigger_id}] {body}"
+    log_event = {
+        "hook": "Stop",
+        "trigger_id": trigger_id,
+        "match_text": claim_text,
+        "event_type": "fire",
+        "session_id": session_id,
+    }
+    return 2, f"[quellis:{trigger_id}] {body}", log_event
 
 
 def _extract_transcript_path(event: dict) -> Path | None:
@@ -185,7 +206,11 @@ def _quote_claim(claim_text: str, pattern: str | None) -> str:
 def main() -> int:
     repo_root = Path(os.environ.get("CLAUDE_PROJECT_DIR") or os.getcwd())
     stdin = sys.stdin.read()
-    code, message = run(stdin, repo_root)
+    code, message, log_event = run(stdin, repo_root)
+    if log_event is not None:
+        sys.path.insert(0, str(Path(__file__).parent))
+        from acceptance_log import append_event  # type: ignore  # noqa: E402
+        append_event(repo_root, log_event)
     if message:
         print(message, file=sys.stderr)
     return code

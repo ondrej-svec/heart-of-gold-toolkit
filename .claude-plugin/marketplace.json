@@ -39,7 +39,7 @@
       "name": "quellis-architect",
       "source": "./plugins/quellis-architect",
       "description": "Senior architect for coding agents — opinionated bootstrap, in-flight intercepts, evidence gates, paired with the `quellis` CLI",
-      "version": "0.1.0"
+      "version": "0.2.0"
     }
   ]
 }

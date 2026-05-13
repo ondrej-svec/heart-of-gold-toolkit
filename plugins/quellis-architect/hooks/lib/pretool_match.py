@@ -119,11 +119,21 @@ BLOCK_REASON_LIMIT = 200  # chars; Subjective Contract
 
 def match_triggers(
     pack: dict, tool: str, tool_input: dict, intensity: str
-) -> tuple[dict, str] | None:
-    """Return the first matching trigger and the input string it matched, or None."""
+) -> tuple[dict, str, str] | None:
+    """Return the first matching trigger, the input it matched, and the event kind.
+
+    Event kind is `"fire"` when the trigger should block, or
+    `"suppressed_compliant"` when the trigger matched but the tool input also
+    contains compliance markers declared by `suppress_if_content_matches`
+    (plan §2.D.1). The caller records both kinds in the acceptance log so
+    V1.2 personalization can distinguish "user complied" from "trigger never
+    needed to fire."
+    """
     raw_triggers = pack.get("trigger", []) or []
     if not isinstance(raw_triggers, list):
         return None
+    matched_input: str | None = None
+    suppression_text: str | None = None
     for trigger in raw_triggers:
         if not _trigger_applies_to_intensity(trigger, intensity):
             continue
@@ -132,13 +142,30 @@ def match_triggers(
         pattern = trigger.get("match_regex")
         if not pattern:
             continue
-        matched_input = _stringify_for_match(tool_input)
+        if matched_input is None:
+            matched_input = _stringify_for_match(tool_input)
         try:
-            if re.search(pattern, matched_input, re.MULTILINE):
-                return trigger, matched_input
+            if not re.search(pattern, matched_input, re.MULTILINE):
+                continue
         except re.error:
             # Bad regex in pack — skip this trigger, do not break the session.
             continue
+        suppress_pattern = trigger.get("suppress_if_content_matches")
+        if isinstance(suppress_pattern, str) and suppress_pattern:
+            if suppression_text is None:
+                suppression_text = _stringify_for_suppression(tool_input)
+            try:
+                if re.search(suppress_pattern, suppression_text):
+                    return trigger, matched_input, "suppressed_compliant"
+            except re.error:
+                # Malformed suppression regex — fail toward firing (the main
+                # regex already matched). The pack validator catches this at
+                # install time; this path is the defensive fallback. Note
+                # that `matched_input` in the resulting log event reflects
+                # the *matching* text, not the suppression text — the
+                # operator should fix the regex via `validate_pack.py`.
+                pass
+        return trigger, matched_input, "fire"
     return None
 
 
@@ -172,6 +199,26 @@ def _stringify_for_match(tool_input: dict) -> str:
     return "\n".join(parts)
 
 
+def _stringify_for_suppression(tool_input: dict) -> str:
+    """Pull the content-shaped fields for `suppress_if_content_matches`.
+
+    Suppression looks for compliance markers in what the agent is *writing*
+    — not where. For Edit/Write that is `content` / `new_string`. For Bash
+    that is the `command` itself (where heredoc bodies live). file_path is
+    deliberately excluded to keep suppression about content, not paths.
+    """
+    if isinstance(tool_input, str):
+        return tool_input
+    if not isinstance(tool_input, dict):
+        return ""
+    parts: list[str] = []
+    for key in ("content", "new_string", "command"):
+        value = tool_input.get(key)
+        if isinstance(value, str):
+            parts.append(value)
+    return "\n".join(parts)
+
+
 # ─── Intensity read ──────────────────────────────────────────────────────────
 
 CONFIG_PATH = ".quellis/config.toml"
@@ -197,47 +244,68 @@ def read_intensity(repo_root: Path) -> str:
 # ─── Entry point ─────────────────────────────────────────────────────────────
 
 
-def run(stdin: str, repo_root: Path) -> tuple[int, str]:
-    """Pure-function entry point — returns (exit_code, stderr_message).
+def run(stdin: str, repo_root: Path) -> tuple[int, str, dict | None]:
+    """Pure-function entry point.
 
-    Kept side-effect-free for unit testing. main() handles the I/O.
+    Returns `(exit_code, stderr_message, log_event)`. `log_event` is `None`
+    when nothing matched, or a dict with the structured fire/suppressed
+    record that `main()` writes to `.quellis/acceptance-log.jsonl` per
+    plan §2.D.3. Kept side-effect-free for unit testing.
     """
     try:
         event = json.loads(stdin) if stdin.strip() else {}
     except json.JSONDecodeError:
-        return 0, ""  # bad input → never break the session
+        return 0, "", None  # bad input → never break the session
 
     tool = event.get("tool_name") or event.get("tool") or ""
     tool_input = event.get("tool_input") or event.get("input") or {}
 
     pack_path = locate_pack(repo_root)
     if pack_path is None:
-        return 0, ""  # no pack installed → nothing to enforce
+        return 0, "", None  # no pack installed → nothing to enforce
 
     try:
         pack = _load_toml(pack_path)
     except (OSError, ValueError):
-        return 0, ""  # malformed pack → fail open
+        return 0, "", None  # malformed pack → fail open
 
     intensity = read_intensity(repo_root)
     match = match_triggers(pack, tool, tool_input, intensity)
     if match is None:
-        return 0, ""
+        return 0, "", None
 
-    trigger, _matched_input = match
+    trigger, matched_input, kind = match
+    session_id = event.get("session_id") or event.get("sessionId") or ""
+    log_event = {
+        "hook": "PreToolUse",
+        "trigger_id": trigger.get("id") or "unknown",
+        "tool": tool,
+        "match_text": matched_input,
+        "event_type": kind,
+        "session_id": session_id,
+    }
+
+    if kind == "suppressed_compliant":
+        return 0, "", log_event
+
     reason = (trigger.get("block_reason") or "Blocked by Quellis trigger.")
     if len(reason) > BLOCK_REASON_LIMIT:
         # Truncate at runtime as a defensive net; validator will already have
         # caught this at pack-install time.
         reason = reason[: BLOCK_REASON_LIMIT - 1] + "…"
     trigger_id = trigger.get("id") or "unknown"
-    return 2, f"[quellis:{trigger_id}] {reason}"
+    return 2, f"[quellis:{trigger_id}] {reason}", log_event
 
 
 def main() -> int:
     repo_root = Path(os.environ.get("CLAUDE_PROJECT_DIR") or os.getcwd())
     stdin = sys.stdin.read()
-    code, message = run(stdin, repo_root)
+    code, message, log_event = run(stdin, repo_root)
+    if log_event is not None:
+        # Lazy import: keep run() side-effect-free for unit tests.
+        sys.path.insert(0, str(Path(__file__).parent))
+        from acceptance_log import append_event  # type: ignore  # noqa: E402
+        append_event(repo_root, log_event)
     if message:
         print(message, file=sys.stderr)
     return code

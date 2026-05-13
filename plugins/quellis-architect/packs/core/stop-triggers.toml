@@ -13,9 +13,14 @@ schema_version = "stop.v1"
 [[trigger]]
 id = "evidence.completion-without-test-run"
 type = "evidence"
-claim_regex = "\\b(?:done|finished|complete|completed|verified|tested|safe|production-ready|all (?:edge cases|tests passing))\\b"
+# 2026-05-13 calibration narrowing (plan §2.D.5):
+#   - dropped bare `done/finished/complete/completed` (high false-positive rate
+#     on 89 real sessions; agents say "done with X" routinely without claiming
+#     correctness)
+#   - hedge-aware lookbehind skips "I think tested", "probably safe", etc.
+claim_regex = "\\b(?<!I think )(?<!seems )(?<!probably )(?<!maybe )(?<!yet )(?:verified|tested|safe|production-ready|all (?:edge cases|tests passing))\\b"
 requires = "test-run"
-block_reason = "Completion claim without test-run evidence — pause. Done/verified/safe/tested needs a test invocation in this transcript. Show the run or restate as uncertain."
+block_reason = "Completion claim without test-run evidence — pause. Verified/tested/safe/production-ready needs a test invocation in this transcript. Show the run or restate as uncertain."
 
 [[trigger]]
 id = "evidence.migration-applied-without-verification"

@@ -103,6 +103,19 @@ def validate_trigger(
                 findings.append(
                     f"trigger[{idx}] id={tid!r}: match_regex does not compile ({exc})"
                 )
+        suppress = trigger.get("suppress_if_content_matches")
+        if suppress is not None:
+            if not isinstance(suppress, str) or not suppress:
+                findings.append(
+                    f"trigger[{idx}] id={tid!r}: suppress_if_content_matches must be a non-empty string"
+                )
+            else:
+                try:
+                    re.compile(suppress)
+                except re.error as exc:
+                    findings.append(
+                        f"trigger[{idx}] id={tid!r}: suppress_if_content_matches does not compile ({exc})"
+                    )
     elif kind == "stop":
         pattern = trigger.get("claim_regex")
         if not isinstance(pattern, str) or not pattern:
@@ -163,6 +176,39 @@ def validate_pack(path: Path) -> list[str]:
             continue
         for f in validate_trigger(trigger, kind, ids_seen, idx):
             findings.append(f"{path}: {f}")
+    if kind == "pretool":
+        for f in validate_path_family_coverage(triggers):
+            findings.append(f"{path}: {f}")
+    return findings
+
+
+def validate_path_family_coverage(triggers: list) -> list[str]:
+    """Plan §2.D.2: any path_family with an Edit/Write trigger must also have
+    a Bash trigger. Otherwise an agent can bypass the path-class rule via
+    heredoc redirection.
+    """
+    findings: list[str] = []
+    families: dict[str, dict[str, list[str]]] = {}
+    for trigger in triggers:
+        if not isinstance(trigger, dict):
+            continue
+        family = trigger.get("path_family")
+        if not isinstance(family, str) or not family:
+            continue
+        tool = trigger.get("match_tool") or ""
+        tid = trigger.get("id") or "<unnamed>"
+        bucket = families.setdefault(family, {"edit_write": [], "bash": []})
+        if tool in {"Edit", "Write"}:
+            bucket["edit_write"].append(tid)
+        elif tool == "Bash":
+            bucket["bash"].append(tid)
+    for family, buckets in families.items():
+        if buckets["edit_write"] and not buckets["bash"]:
+            findings.append(
+                f"path_family {family!r} has Edit/Write triggers "
+                f"({sorted(buckets['edit_write'])}) but no Bash trigger — "
+                "agents can bypass via heredoc / redirection"
+            )
     return findings
 
 

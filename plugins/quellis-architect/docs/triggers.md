@@ -38,15 +38,23 @@ block_reason = "Force-push to a protected branch — escalate to a maintainer."
 | `match_regex` | Python regex string | Matched against the flattened tool input. Searches across `command`, `file_path`, `content`, `pattern`, `url`, then the full JSON blob as fallback. |
 | `block_reason` | string, ≤ 200 chars, ASCII (+ `…—–·` allowed) | Emitted to stderr when the trigger fires. **Subjective Contract:** complete sentences, lead with the concern in 8 words or fewer, no emojis. |
 
-### Optional fields (V1.1+)
+### Optional fields
 
 | Field | When it lands | Purpose |
 |---|---|---|
+| `suppress_if_content_matches` (regex) | V1.1 (§2.D.1) | When the main `match_regex` hits but the **content** of the tool input also matches this regex, the fire is suppressed and recorded in the acceptance log as `suppressed_compliant`. Use for convention triggers where compliance markers in the diff (e.g. `-- backfill: …`, `// ADR-001`, `# test:`) should pre-empt the block. |
 | `inject_on` (glob) | V1.1 (1.C / 2.C) | When the agent touches a file matching this glob, inject the trigger's doctrine card preemptively rather than only blocking. |
 | `accept_window` (seconds) | V1.2 | After this trigger fires, if the user does NOT undo within this window, count it as "accepted" in the acceptance log. |
 | `evidence_pattern` (regex) | V1.1 | For convention triggers that want to enforce "X requires Y in the same change," matched against transcript context. |
 
-V1.0 ships only the required fields. The validator accepts unknown fields with a warning so V1.1 packs are forward-compatible.
+V1.0 shipped only the required fields. V1.1 adds `suppress_if_content_matches`. The validator accepts unknown fields with a warning so packs remain forward-compatible across minor versions.
+
+#### `suppress_if_content_matches` semantics
+
+- The pattern is matched against the **content-shaped** fields of the tool input: `content`, `new_string`, and `command` (where heredoc bodies live). `file_path` is deliberately excluded so a misleading path cannot suppress a real violation.
+- Use Python regex syntax with inline flags. The defaults in `packs/core/` use `(?im)` (case-insensitive, multiline) so leading-line markers like `^-- backfill:` work.
+- A suppressed match still appears in `.quellis/acceptance-log.jsonl` with `event_type: "suppressed_compliant"`. V1.2 personalization uses this signal to distinguish "user complied" from "trigger never fired."
+- If the suppression regex is malformed, the matcher falls back to firing (the conservative path). The validator catches malformed patterns at install time.
 
 ## `stop.v1` schema
 
