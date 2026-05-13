@@ -1,18 +1,25 @@
 #!/usr/bin/env bash
-# Stop hook — V1.0 wiring skeleton (plan 2026-05-13, task 1.C.3).
+# Stop hook runner (plan 2026-05-13, task 1.D.2).
 #
-# Real evidence-gate logic lands in Phase 1.E:
-#   - Read assistant's last message from stdin (JSON, transcript path inside).
-#   - Run claim-scan against .quellis/packs/core/stop-triggers.toml.
-#   - On match: emit "show evidence" message to stderr; exit non-zero to
-#     block the Stop transition.
-#   - Write a line to .quellis/acceptance-log.jsonl recording the fire.
+# Reads Claude Code's Stop JSON from stdin, delegates claim-scanning to
+# hooks/lib/stop_match.py. On a claim-without-evidence match, blocks the
+# Stop transition with a "show evidence" message.
 #
-# Until 1.E ships, this stub is a no-op so Stop transitions go through cleanly.
+# V1.0 ships claim detection only. Phase 1.E adds the evidence-search
+# helper that verifies whether the claim is actually unsupported before
+# the block fires.
 
 set -u
 
-# Drain stdin (Claude Code passes JSON; we discard for now).
-cat >/dev/null 2>&1 || true
+here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+matcher="${here}/lib/stop_match.py"
 
-exit 0
+if ! command -v python3 >/dev/null 2>&1; then
+  echo "[quellis] python3 not on PATH — Stop evidence gate skipped" >&2
+  cat >/dev/null 2>&1 || true
+  exit 0
+fi
+
+python3 "${matcher}"
+exit_code=$?
+exit "${exit_code}"

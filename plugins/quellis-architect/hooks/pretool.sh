@@ -1,20 +1,27 @@
 #!/usr/bin/env bash
-# PreToolUse hook — V1.0 wiring skeleton (plan 2026-05-13, task 1.C.3).
+# PreToolUse hook runner (plan 2026-05-13, task 1.D.1).
 #
-# Real trigger logic lands in Phase 1.D:
-#   - Read tool name + args from stdin (Claude Code hook contract: JSON).
-#   - Load .quellis/packs/core/pretool-triggers.toml (or baselines/core).
-#   - Match against the tool call.
-#   - On match: print a structured block message to stderr; exit non-zero.
-#   - On no match: exit 0 silently.
+# Reads Claude Code's PreToolUse JSON from stdin, delegates matching to
+# hooks/lib/pretool_match.py against the user's .quellis/packs/core pack.
 #
-# Until 1.D ships, this stub is a no-op so the plugin installs and runs
-# without breaking sessions. Stdin is drained but ignored.
+# Failure modes (per docs/coordination.md):
+#   - No Python 3: log to stderr, exit 0 (never break a session).
+#   - No trigger pack: matcher returns 0 silently.
+#   - Malformed pack: matcher returns 0 silently.
+#   - First trigger match: matcher writes message to stderr, exits 2.
 
 set -u
 
-# Drain stdin so Claude Code's hook protocol does not block.
-cat >/dev/null 2>&1 || true
+here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+matcher="${here}/lib/pretool_match.py"
 
-# No triggers loaded yet — pass everything.
-exit 0
+if ! command -v python3 >/dev/null 2>&1; then
+  echo "[quellis] python3 not on PATH — PreToolUse triggers skipped" >&2
+  cat >/dev/null 2>&1 || true
+  exit 0
+fi
+
+# Pass stdin through; matcher exits 2 on block, 0 otherwise.
+python3 "${matcher}"
+exit_code=$?
+exit "${exit_code}"
