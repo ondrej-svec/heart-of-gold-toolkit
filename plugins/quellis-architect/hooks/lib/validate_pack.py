@@ -35,6 +35,8 @@ BLOCK_REASON_LIMIT = 200
 KNOWN_SCHEMAS = {
     "pretool.v1": "pretool",
     "stop.v1": "stop",
+    "contract.v1": "contract",
+    "contract.pointer.v1": "contract-pointer",
 }
 
 TRIGGER_TYPES = {"non-negotiable", "convention", "evidence"}
@@ -165,6 +167,18 @@ def validate_pack(path: Path) -> list[str]:
         )
         return findings
     kind = KNOWN_SCHEMAS[schema]
+    if kind == "contract":
+        sys.path.insert(0, str(Path(__file__).parent))
+        from contract_loader import validate_contract_file  # type: ignore
+        for f in validate_contract_file(pack):
+            findings.append(f"{path}: {f}")
+        return findings
+    if kind == "contract-pointer":
+        sys.path.insert(0, str(Path(__file__).parent))
+        from contract_loader import validate_pointer_file  # type: ignore
+        for f in validate_pointer_file(pack):
+            findings.append(f"{path}: {f}")
+        return findings
     triggers = pack.get("trigger", []) or []
     if not isinstance(triggers, list):
         findings.append(f"{path}: `trigger` must be a list of tables")

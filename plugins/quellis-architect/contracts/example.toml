@@ -1,0 +1,32 @@
+# Example evidence contract — copy this into a user repo at
+# `.quellis/contracts/<task-id>.toml` and edit per your task.
+#
+# Spec: ../docs/contracts.md
+# Validate: python3 ../hooks/lib/validate_pack.py example.toml
+#
+# This file ships with the plugin as a reference; the live contracts in
+# user repos live under their own `.quellis/contracts/` directory.
+
+schema_version = "contract.v1"
+task_id = "example-schema-migration"
+task_title = "Example: schema migration with backfill"
+created_at = "2026-05-13T00:00:00Z"
+status = "active"
+
+[[claim]]
+id = "migration-applied"
+claim_regex = "\\b(?:migration|schema change) (?:applied|complete|done|deployed)\\b"
+requires = "verification-query"
+block_reason = "Migration-applied claim needs a verifying SELECT against information_schema or an EXPLAIN that confirms the new shape lives in the DB."
+
+[[claim]]
+id = "backfill-complete"
+claim_regex = "\\b(?:backfill|backfilled) (?:complete|done|finished)\\b"
+requires = "verification-query"
+block_reason = "Backfill-complete claim needs a COUNT(*) WHERE column IS NULL = 0 query, or equivalent proof of row-level coverage."
+
+[[claim]]
+id = "rollback-tested"
+claim_regex = "\\b(?:rollback|revert)(?:ed|s)? (?:safe|tested|verified|works?)\\b"
+requires = "test-run"
+block_reason = "Rollback-safe claim needs a test run that exercises the reverse migration on a staging copy. Forward-only migrations are fine — just say so."
