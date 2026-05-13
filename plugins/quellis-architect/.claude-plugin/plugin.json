@@ -1,0 +1,12 @@
+{
+  "name": "quellis-architect",
+  "version": "0.1.0",
+  "description": "Senior architect for coding agents — opinionated bootstrap, in-flight intercepts, evidence gates, and adaptive personalization via the paired `quellis` CLI.",
+  "author": {
+    "name": "ondrej-svec",
+    "url": "https://github.com/ondrej-svec"
+  },
+  "homepage": "https://github.com/ondrej-svec/heart-of-gold-toolkit/tree/main/plugins/quellis-architect",
+  "repository": "https://github.com/ondrej-svec/heart-of-gold-toolkit",
+  "license": "MIT"
+}
