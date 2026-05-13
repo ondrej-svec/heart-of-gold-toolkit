@@ -25,12 +25,20 @@
 
 set -euo pipefail
 
+# Capture script paths up-front (before any pushd changes cwd).
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PLUGIN_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+
 # ─── Configuration ────────────────────────────────────────────────────────────
 
-FOOTGUN="${1:-schema-migration}"
+FOOTGUN="schema-migration"
 KEEP_TEMP=false
 for arg in "$@"; do
-  [[ "$arg" == "--keep-temp" ]] && KEEP_TEMP=true
+  case "${arg}" in
+    --keep-temp) KEEP_TEMP=true ;;
+    --*) echo "Unknown flag: ${arg}" >&2; exit 1 ;;
+    *) FOOTGUN="${arg}" ;;
+  esac
 done
 
 DEMO_ROOT="$(mktemp -d -t quellis-v1-demo-XXXXXX)"
@@ -129,6 +137,12 @@ seed_repo "${QUELLIS_REPO}"
 
 pushd "${QUELLIS_REPO}" >/dev/null
 quellis init --intensity standard --no-plugin-install
+# Copy the plugin's bundled packs/core/ into the fixture so the hooks have
+# triggers to fire on. Long-term this should be done by `quellis init`
+# itself (or by the matcher falling back to ${CLAUDE_PLUGIN_ROOT}/packs/);
+# for V1.0 we wire it explicitly in the orchestrator.
+mkdir -p .quellis/packs/core
+cp "${PLUGIN_ROOT}"/packs/core/*.toml .quellis/packs/core/
 popd >/dev/null
 
 # ─── Print the operator instructions ──────────────────────────────────────────
