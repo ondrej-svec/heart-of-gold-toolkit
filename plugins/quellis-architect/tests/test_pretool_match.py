@@ -22,6 +22,7 @@ PLUGIN_ROOT = Path(__file__).resolve().parent.parent
 HOOKS_LIB = PLUGIN_ROOT / "hooks" / "lib"
 
 sys.path.insert(0, str(HOOKS_LIB))
+import evidence_search  # type: ignore  # noqa: E402
 import pretool_match  # type: ignore  # noqa: E402
 import stop_match  # type: ignore  # noqa: E402
 import validate_pack  # type: ignore  # noqa: E402
@@ -342,6 +343,221 @@ class TestPretoolShWiring(unittest.TestCase):
             )
             self.assertEqual(result.returncode, 2)
             self.assertIn("sample.bash-banana", result.stderr)
+
+
+class TestEvidenceSearch(unittest.TestCase):
+    """Phase 1.E — evidence-search helper."""
+
+    def _write_transcript(self, dir_path: Path, events: list[dict]) -> Path:
+        path = dir_path / "transcript.jsonl"
+        with path.open("w") as fh:
+            for event in events:
+                fh.write(json.dumps(event) + "\n")
+        return path
+
+    def test_unknown_kind_returns_true_conservative(self) -> None:
+        """Unknown kinds default to True so unknown triggers do not block."""
+        with tempfile.TemporaryDirectory() as tmp:
+            path = self._write_transcript(Path(tmp), [])
+            self.assertTrue(evidence_search.has_evidence(path, "not-a-real-kind"))
+
+    def test_missing_transcript_returns_false(self) -> None:
+        path = Path("/nonexistent/transcript.jsonl")
+        self.assertFalse(evidence_search.has_evidence(path, "test-run"))
+
+    def test_test_run_evidence_detected(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = self._write_transcript(Path(tmp), [
+                {"type": "user", "message": {"role": "user", "content": "run tests"}},
+                {
+                    "type": "assistant",
+                    "message": {
+                        "role": "assistant",
+                        "content": [
+                            {
+                                "type": "tool_use",
+                                "name": "Bash",
+                                "input": {"command": "cargo test --offline"},
+                            }
+                        ],
+                    },
+                },
+            ])
+            self.assertTrue(evidence_search.has_evidence(path, "test-run"))
+
+    def test_no_test_evidence_returns_false(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = self._write_transcript(Path(tmp), [
+                {
+                    "type": "assistant",
+                    "message": {
+                        "role": "assistant",
+                        "content": [
+                            {
+                                "type": "tool_use",
+                                "name": "Bash",
+                                "input": {"command": "ls -la"},
+                            }
+                        ],
+                    },
+                },
+            ])
+            self.assertFalse(evidence_search.has_evidence(path, "test-run"))
+
+    def test_scan_output_evidence_detected(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = self._write_transcript(Path(tmp), [
+                {
+                    "type": "assistant",
+                    "message": {
+                        "role": "assistant",
+                        "content": [
+                            {
+                                "type": "tool_use",
+                                "name": "Bash",
+                                "input": {"command": "gitleaks detect --no-banner"},
+                            }
+                        ],
+                    },
+                },
+            ])
+            self.assertTrue(evidence_search.has_evidence(path, "scan-output"))
+
+    def test_malformed_jsonl_lines_skipped(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "transcript.jsonl"
+            path.write_text(
+                "this is not json\n"
+                + json.dumps({
+                    "type": "assistant",
+                    "message": {
+                        "content": [
+                            {"type": "tool_use", "name": "Bash", "input": {"command": "pytest"}}
+                        ]
+                    },
+                })
+                + "\n"
+                "{partial\n"
+            )
+            self.assertTrue(evidence_search.has_evidence(path, "test-run"))
+
+
+class TestStopMatchWithEvidence(unittest.TestCase):
+    """Stop matcher with the Phase 1.E evidence-search wired in."""
+
+    EVIDENCE_AWARE_PACK = '''schema_version = "stop.v1"
+
+[[trigger]]
+id = "evidence.banana-without-test-run"
+type = "evidence"
+claim_regex = "\\\\bbanana\\\\b"
+requires = "test-run"
+block_reason = "Banana claim without a test run — fictional fixture used only by the tests."
+'''
+
+    def _write_transcript(self, dir_path: Path, events: list[dict]) -> Path:
+        path = dir_path / "transcript.jsonl"
+        with path.open("w") as fh:
+            for event in events:
+                fh.write(json.dumps(event) + "\n")
+        return path
+
+    def test_evidence_present_suppresses_block(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = make_repo(Path(tmp), stop_toml=self.EVIDENCE_AWARE_PACK)
+            transcript = self._write_transcript(repo, [
+                {
+                    "type": "assistant",
+                    "message": {
+                        "content": [
+                            {"type": "tool_use", "name": "Bash", "input": {"command": "cargo test"}}
+                        ]
+                    },
+                },
+            ])
+            stdin = json.dumps({
+                "transcript_path": str(transcript),
+                "message": "I delivered a banana."
+            })
+            code, _msg = stop_match.run(stdin, repo)
+            self.assertEqual(code, 0, "evidence present must suppress block")
+
+    def test_evidence_absent_still_blocks(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = make_repo(Path(tmp), stop_toml=self.EVIDENCE_AWARE_PACK)
+            transcript = self._write_transcript(repo, [
+                {
+                    "type": "assistant",
+                    "message": {
+                        "content": [
+                            {"type": "tool_use", "name": "Bash", "input": {"command": "ls"}}
+                        ]
+                    },
+                },
+            ])
+            stdin = json.dumps({
+                "transcript_path": str(transcript),
+                "message": "I delivered a banana."
+            })
+            code, msg = stop_match.run(stdin, repo)
+            self.assertEqual(code, 2, "evidence absent must block")
+            self.assertIn("banana", msg.lower())
+
+    def test_missing_transcript_path_still_blocks(self) -> None:
+        """No transcript means we cannot verify; conservative — block on the claim."""
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = make_repo(Path(tmp), stop_toml=self.EVIDENCE_AWARE_PACK)
+            stdin = json.dumps({"message": "I delivered a banana."})
+            code, _msg = stop_match.run(stdin, repo)
+            self.assertEqual(code, 2)
+
+    def test_block_message_quotes_the_claim(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = make_repo(Path(tmp), stop_toml=self.EVIDENCE_AWARE_PACK)
+            stdin = json.dumps({"message": "All done. I delivered a banana and verified it."})
+            code, msg = stop_match.run(stdin, repo)
+            self.assertEqual(code, 2)
+            self.assertIn("You wrote:", msg)
+
+
+class TestValidatorRequiresField(unittest.TestCase):
+
+    def _validate(self, toml_text: str) -> list[str]:
+        with tempfile.NamedTemporaryFile("w", suffix=".toml", delete=False) as fh:
+            fh.write(toml_text)
+            path = Path(fh.name)
+        try:
+            return validate_pack.validate_pack(path)
+        finally:
+            path.unlink()
+
+    def test_known_requires_kind_validates(self) -> None:
+        pack = '''schema_version = "stop.v1"
+
+[[trigger]]
+id = "evidence.with-requires"
+type = "evidence"
+claim_regex = "tested"
+requires = "test-run"
+block_reason = "Tested claim needs a test run."
+'''
+        self.assertEqual(self._validate(pack), [])
+
+    def test_unknown_requires_kind_fails(self) -> None:
+        pack = '''schema_version = "stop.v1"
+
+[[trigger]]
+id = "evidence.bogus"
+type = "evidence"
+claim_regex = "x"
+requires = "not-a-real-kind"
+block_reason = "ok"
+'''
+        findings = self._validate(pack)
+        self.assertTrue(
+            any("requires" in f and "not a known evidence kind" in f for f in findings),
+            f"expected unknown-evidence-kind finding, got: {findings}",
+        )
 
 
 if __name__ == "__main__":

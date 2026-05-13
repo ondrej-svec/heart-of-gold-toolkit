@@ -114,6 +114,22 @@ def validate_trigger(
                 findings.append(
                     f"trigger[{idx}] id={tid!r}: claim_regex does not compile ({exc})"
                 )
+        # `requires` is optional but must name a known evidence kind when set.
+        requires = trigger.get("requires")
+        if requires is not None:
+            if not isinstance(requires, str):
+                findings.append(
+                    f"trigger[{idx}] id={tid!r}: requires must be a string"
+                )
+            else:
+                # Lazy import — only stop packs need this.
+                sys.path.insert(0, str(Path(__file__).parent))
+                from evidence_search import EVIDENCE_KINDS  # type: ignore
+                if requires not in EVIDENCE_KINDS:
+                    findings.append(
+                        f"trigger[{idx}] id={tid!r}: requires {requires!r} "
+                        f"is not a known evidence kind (known: {sorted(EVIDENCE_KINDS)})"
+                    )
 
     return findings
 

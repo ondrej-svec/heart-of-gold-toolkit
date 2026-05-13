@@ -31,7 +31,8 @@ import re
 import sys
 from pathlib import Path
 
-# Reuse the trigger-pack loading + intensity discipline from pretool_match.
+# Reuse the trigger-pack loading + intensity discipline from pretool_match,
+# and the evidence-search helper from Phase 1.E.
 sys.path.insert(0, str(Path(__file__).parent))
 from pretool_match import (  # type: ignore  # noqa: E402
     BLOCK_REASON_LIMIT,
@@ -40,6 +41,7 @@ from pretool_match import (  # type: ignore  # noqa: E402
     _trigger_applies_to_intensity,
     read_intensity,
 )
+from evidence_search import EVIDENCE_KINDS, has_evidence  # type: ignore  # noqa: E402
 
 
 PACK_PATHS = (
@@ -122,11 +124,62 @@ def run(stdin: str, repo_root: Path) -> tuple[int, str]:
     if trigger is None:
         return 0, ""
 
+    # Phase 1.E: if the trigger names an evidence kind, walk the transcript
+    # to confirm the evidence is *missing* before blocking. A "completion"
+    # claim with a test-run earlier in the transcript is not a violation.
+    requires = trigger.get("requires")
+    transcript_path = _extract_transcript_path(event)
+    if requires and transcript_path and requires in EVIDENCE_KINDS:
+        if has_evidence(transcript_path, requires):
+            return 0, ""
+
     reason = trigger.get("block_reason") or "Claim lacks supporting evidence."
     if len(reason) > BLOCK_REASON_LIMIT:
         reason = reason[: BLOCK_REASON_LIMIT - 1] + "…"
     trigger_id = trigger.get("id") or "unknown"
-    return 2, f"[quellis:{trigger_id}] {reason}"
+    quoted = _quote_claim(claim_text, trigger.get("claim_regex"))
+    if quoted:
+        body = f"{reason} You wrote: \"{quoted}\"."
+        if len(body) > BLOCK_REASON_LIMIT + 80:
+            # Cap the combined message at a slightly looser ceiling so the
+            # quote does not dominate, but the original block_reason is
+            # still surfaced in full.
+            body = body[: BLOCK_REASON_LIMIT + 79] + "…"
+    else:
+        body = reason
+    return 2, f"[quellis:{trigger_id}] {body}"
+
+
+def _extract_transcript_path(event: dict) -> Path | None:
+    """Pull the transcript path from Claude Code's Stop event payload."""
+    candidate = event.get("transcript_path") or event.get("transcriptPath")
+    if isinstance(candidate, str) and candidate:
+        path = Path(candidate)
+        if path.is_file():
+            return path
+    return None
+
+
+def _quote_claim(claim_text: str, pattern: str | None) -> str:
+    """Pull a short quote around the matched claim, capped at 80 chars.
+
+    Falls back to the first 80 chars of the message if no pattern given.
+    """
+    if not pattern:
+        return claim_text.strip().splitlines()[0][:80]
+    try:
+        match = re.search(pattern, claim_text, re.IGNORECASE)
+    except re.error:
+        return ""
+    if not match:
+        return claim_text.strip().splitlines()[0][:80]
+    start = max(0, match.start() - 20)
+    end = min(len(claim_text), match.end() + 30)
+    snippet = claim_text[start:end].strip()
+    snippet = " ".join(snippet.split())  # collapse whitespace
+    if len(snippet) > 80:
+        snippet = snippet[:79] + "…"
+    return snippet
 
 
 def main() -> int:
