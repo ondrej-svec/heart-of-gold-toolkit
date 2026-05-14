@@ -1,6 +1,6 @@
 {
   "name": "quellis-architect",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Senior architect for coding agents — opinionated bootstrap, in-flight intercepts, evidence gates, and adaptive personalization via the paired `quellis` CLI.",
   "author": {
     "name": "ondrej-svec",
