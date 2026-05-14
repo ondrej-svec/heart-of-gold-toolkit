@@ -12,6 +12,7 @@ HOOKS_LIB = PLUGIN_ROOT / "hooks" / "lib"
 sys.path.insert(0, str(HOOKS_LIB))
 
 import contract_loader  # type: ignore  # noqa: E402
+import stop_match  # type: ignore  # noqa: E402
 import validate_pack  # type: ignore  # noqa: E402
 
 
@@ -255,6 +256,159 @@ class TestExampleContractShipped(unittest.TestCase):
         example = PLUGIN_ROOT / "contracts" / "example.toml"
         findings = validate_pack.validate_pack(example)
         self.assertEqual(findings, [], f"example contract must validate: {findings}")
+
+
+GLOBAL_STOP_PACK = '''schema_version = "stop.v1"
+
+[[trigger]]
+id = "evidence.completion-without-test-run"
+type = "evidence"
+claim_regex = "\\\\b(?:verified|tested|safe)\\\\b"
+requires = "test-run"
+block_reason = "Completion claim without test-run evidence — pause."
+'''
+
+
+def _write_global_pack(repo: Path) -> None:
+    pack_dir = repo / ".quellis" / "packs" / "core"
+    pack_dir.mkdir(parents=True, exist_ok=True)
+    (pack_dir / "stop-triggers.toml").write_text(GLOBAL_STOP_PACK)
+
+
+def _write_transcript(dir_path: Path, events: list) -> Path:
+    import json as _json
+    path = dir_path / "transcript.jsonl"
+    with path.open("w") as fh:
+        for event in events:
+            fh.write(_json.dumps(event) + "\n")
+    return path
+
+
+class TestContractAwareStop(unittest.TestCase):
+    """2.B.2 — Stop hook consults active contract before global pack."""
+
+    def test_contract_fires_when_global_would_not(self) -> None:
+        """Contract-only shape: 'migration applied' doesn't match global pack."""
+        import json as _json
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = make_repo_with_contract(Path(tmp))
+            _write_global_pack(repo)
+            stdin = _json.dumps({"message": "Migration applied successfully."})
+            code, msg, event = stop_match.run(stdin, repo)
+            self.assertEqual(code, 2, "contract claim must fire")
+            self.assertIn("migration-applied", msg)
+            assert event is not None
+            self.assertEqual(event["event_type"], "fire")
+            self.assertEqual(event["contract_task_id"], "demo-task-001")
+
+    def test_contract_suppressed_when_evidence_present(self) -> None:
+        import json as _json
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = make_repo_with_contract(Path(tmp))
+            _write_global_pack(repo)
+            # Contract's `migration-applied` requires verification-query.
+            transcript = _write_transcript(repo, [
+                {"type": "assistant", "message": {"content": [
+                    {"type": "tool_use", "name": "Bash",
+                     "input": {"command": "psql -c 'SELECT * FROM information_schema.columns WHERE table_name = users'"}}
+                ]}},
+            ])
+            stdin = _json.dumps({
+                "transcript_path": str(transcript),
+                "message": "Migration applied — column appears in information_schema.",
+            })
+            code, _msg, event = stop_match.run(stdin, repo)
+            self.assertEqual(code, 0, "evidence present must suppress")
+            assert event is not None
+            self.assertEqual(event["event_type"], "suppressed_compliant")
+            self.assertEqual(event["contract_task_id"], "demo-task-001")
+
+    def test_contract_takes_precedence_over_global(self) -> None:
+        """A claim matching both layers fires on the contract (first match wins)."""
+        import json as _json
+        # Use a contract claim that overlaps with the global pack.
+        contract_overlap = '''schema_version = "contract.v1"
+task_id = "demo-task-001"
+status = "active"
+
+[[claim]]
+id = "stricter-tested"
+claim_regex = "\\\\btested\\\\b"
+requires = "verification-query"
+block_reason = "Stricter rule: this task's tested claim needs a DB query, not just a unit test."
+'''
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = make_repo_with_contract(Path(tmp), contract_toml=contract_overlap)
+            _write_global_pack(repo)
+            stdin = _json.dumps({"message": "Tested and ready."})
+            code, msg, event = stop_match.run(stdin, repo)
+            self.assertEqual(code, 2)
+            self.assertIn("stricter-tested", msg, "contract trigger fires, not global")
+            assert event is not None
+            self.assertEqual(event["contract_task_id"], "demo-task-001")
+
+    def test_global_pack_fires_when_no_contract_match(self) -> None:
+        """If contract claims don't match, fall through to global."""
+        import json as _json
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = make_repo_with_contract(Path(tmp))
+            _write_global_pack(repo)
+            stdin = _json.dumps({"message": "The implementation is verified."})
+            code, msg, event = stop_match.run(stdin, repo)
+            self.assertEqual(code, 2, "global pack still fires when contract doesn't match")
+            self.assertIn("completion-without-test-run", msg)
+            assert event is not None
+            # Global fires have no contract_task_id.
+            self.assertNotIn("contract_task_id", event)
+
+    def test_no_active_contract_uses_global_pack_only(self) -> None:
+        import json as _json
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = Path(tmp)
+            _write_global_pack(repo)
+            stdin = _json.dumps({"message": "Tested and good."})
+            code, _msg, event = stop_match.run(stdin, repo)
+            self.assertEqual(code, 2)
+            assert event is not None
+            self.assertNotIn("contract_task_id", event)
+
+    def test_completed_contract_is_skipped_falls_through(self) -> None:
+        """A `completed`-status contract is ignored; global pack still gates."""
+        import json as _json
+        completed = VALID_CONTRACT.replace('status = "active"', 'status = "completed"')
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = make_repo_with_contract(Path(tmp), contract_toml=completed)
+            _write_global_pack(repo)
+            stdin = _json.dumps({"message": "Migration applied."})
+            # Contract is `completed` → loader returns None → global pack
+            # has no claim matching 'migration applied' → exit 0.
+            code, _msg, _ = stop_match.run(stdin, repo)
+            self.assertEqual(code, 0, "completed contract should not gate")
+
+    def test_malformed_pointer_falls_through_to_global(self) -> None:
+        """A broken pointer file must not break the Stop hook."""
+        import json as _json
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = Path(tmp)
+            (repo / ".quellis" / "contracts").mkdir(parents=True)
+            (repo / ".quellis" / "contracts" / "active.toml").write_text("this = = is not toml")
+            _write_global_pack(repo)
+            stdin = _json.dumps({"message": "Verified the change."})
+            code, msg, _ = stop_match.run(stdin, repo)
+            self.assertEqual(code, 2, "global pack still works with broken contract")
+            self.assertIn("completion-without-test-run", msg)
+
+    def test_contract_with_no_global_pack_still_works(self) -> None:
+        """Contract layer is independent of the global pack file."""
+        import json as _json
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = make_repo_with_contract(Path(tmp))
+            # No stop-triggers.toml written.
+            stdin = _json.dumps({"message": "Migration applied."})
+            code, _msg, event = stop_match.run(stdin, repo)
+            self.assertEqual(code, 2)
+            assert event is not None
+            self.assertEqual(event["contract_task_id"], "demo-task-001")
 
 
 if __name__ == "__main__":

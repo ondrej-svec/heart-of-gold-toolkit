@@ -42,6 +42,7 @@ from pretool_match import (  # type: ignore  # noqa: E402
     read_intensity,
 )
 from evidence_search import EVIDENCE_KINDS, has_evidence  # type: ignore  # noqa: E402
+from contract_loader import load_active_contract  # type: ignore  # noqa: E402
 
 
 PACK_PATHS = (
@@ -106,12 +107,46 @@ def run(stdin: str, repo_root: Path) -> tuple[int, str, dict | None]:
     structured `log.v1` record that `main()` writes to
     `.quellis/acceptance-log.jsonl` (plan §2.D.3). It is `None` when
     nothing matched.
+
+    Match order (plan §2.B.2):
+      1. Active evidence contract claims, in declaration order
+      2. Global `stop-triggers.toml` (the V1.0 baseline)
+
+    The contract layer tightens, never weakens — global triggers still
+    fire if no contract claim matched first.
     """
     try:
         event = json.loads(stdin) if stdin.strip() else {}
     except json.JSONDecodeError:
         return 0, "", None
 
+    claim_text = extract_last_assistant_text(event)
+    if not claim_text:
+        return 0, "", None
+
+    intensity = read_intensity(repo_root)
+    transcript_path = _extract_transcript_path(event)
+    session_id = event.get("session_id") or event.get("sessionId") or ""
+
+    # 1. Contract layer first.
+    try:
+        contract = load_active_contract(repo_root)
+    except Exception:
+        contract = None  # malformed contract → fail open
+    if contract is not None:
+        contract_match = _match_contract_claim(contract, claim_text)
+        if contract_match is not None:
+            result = _decide(
+                contract_match,
+                claim_text=claim_text,
+                transcript_path=transcript_path,
+                session_id=session_id,
+                contract_task_id=contract["task_id"],
+            )
+            if result is not None:
+                return result
+
+    # 2. Fall through to the global pack.
     pack_path = locate_pack(repo_root)
     if pack_path is None:
         return 0, "", None
@@ -121,43 +156,70 @@ def run(stdin: str, repo_root: Path) -> tuple[int, str, dict | None]:
     except (OSError, ValueError):
         return 0, "", None
 
-    claim_text = extract_last_assistant_text(event)
-    if not claim_text:
-        return 0, "", None
-
-    intensity = read_intensity(repo_root)
     trigger = match_triggers(pack, claim_text, intensity)
     if trigger is None:
         return 0, "", None
 
-    # Phase 1.E: if the trigger names an evidence kind, walk the transcript
-    # to confirm the evidence is *missing* before blocking. A "completion"
-    # claim with a test-run earlier in the transcript is not a violation.
-    requires = trigger.get("requires")
-    transcript_path = _extract_transcript_path(event)
-    session_id = event.get("session_id") or event.get("sessionId") or ""
+    return _decide(
+        trigger,
+        claim_text=claim_text,
+        transcript_path=transcript_path,
+        session_id=session_id,
+        contract_task_id=None,
+    ) or (0, "", None)
+
+
+def _match_contract_claim(contract: dict, claim_text: str) -> dict | None:
+    """Walk contract claims in order. First regex match wins."""
+    for claim in contract.get("claims", []):
+        regex = claim.get("claim_regex")
+        if not isinstance(regex, str) or not regex:
+            continue
+        try:
+            if re.search(regex, claim_text, re.IGNORECASE):
+                return claim
+        except re.error:
+            continue
+    return None
+
+
+def _decide(
+    matched: dict,
+    *,
+    claim_text: str,
+    transcript_path: Path | None,
+    session_id: str,
+    contract_task_id: str | None,
+) -> tuple[int, str, dict | None] | None:
+    """Shared post-match logic for contracts and global pack.
+
+    Returns the (code, message, log_event) triple, or None when no
+    decision was made (caller falls through). Today this never returns
+    None — every matched trigger produces a result — but the type
+    keeps the call sites uniform for future extensions.
+    """
+    requires = matched.get("requires")
     if requires and transcript_path and requires in EVIDENCE_KINDS:
         if has_evidence(transcript_path, requires):
-            log_event = {
+            log_event: dict = {
                 "hook": "Stop",
-                "trigger_id": trigger.get("id") or "unknown",
+                "trigger_id": matched.get("id") or "unknown",
                 "match_text": claim_text,
                 "event_type": "suppressed_compliant",
                 "session_id": session_id,
             }
+            if contract_task_id:
+                log_event["contract_task_id"] = contract_task_id
             return 0, "", log_event
 
-    reason = trigger.get("block_reason") or "Claim lacks supporting evidence."
+    reason = matched.get("block_reason") or "Claim lacks supporting evidence."
     if len(reason) > BLOCK_REASON_LIMIT:
         reason = reason[: BLOCK_REASON_LIMIT - 1] + "…"
-    trigger_id = trigger.get("id") or "unknown"
-    quoted = _quote_claim(claim_text, trigger.get("claim_regex"))
+    trigger_id = matched.get("id") or "unknown"
+    quoted = _quote_claim(claim_text, matched.get("claim_regex"))
     if quoted:
         body = f"{reason} You wrote: \"{quoted}\"."
         if len(body) > BLOCK_REASON_LIMIT + 80:
-            # Cap the combined message at a slightly looser ceiling so the
-            # quote does not dominate, but the original block_reason is
-            # still surfaced in full.
             body = body[: BLOCK_REASON_LIMIT + 79] + "…"
     else:
         body = reason
@@ -168,6 +230,8 @@ def run(stdin: str, repo_root: Path) -> tuple[int, str, dict | None]:
         "event_type": "fire",
         "session_id": session_id,
     }
+    if contract_task_id:
+        log_event["contract_task_id"] = contract_task_id
     return 2, f"[quellis:{trigger_id}] {body}", log_event
 
 
