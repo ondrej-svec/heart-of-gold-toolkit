@@ -87,36 +87,47 @@ Run without `--dry-run`:
 quellis teach --finding "<final finding text>" --pack <target>
 ```
 
-The CLI writes the proposed trigger to the pack file (not to the live trigger array — the file's `[[proposed]]` section, per the CLI's contract). The trigger does NOT fire yet; the activation gate is a separate `quellis` command.
+The CLI writes the proposed guardrail to the pack file as a canonical entry (DON'T / TRIGGER / VERIFICATION / ORIGIN form). It does NOT fire yet; the activation gate runs separately, after the proposal has earned promotion through the four-condition deterministic gate.
 
-Confirm the write:
+Confirm the write by running:
 
 ```bash
-quellis pack list --status proposed
+quellis guardrail health
 ```
 
-If the new entry appears, the proposal is captured.
+The new proposal will appear in the health table with state `proposed`.
 
 ## Phase 4: Stop and hand off
 
 Tell the user:
 
 ```
-Proposed trigger captured in pack <target>:
+Proposed guardrail captured in pack <target>:
 
   id:       <id>
-  trigger:  <one-line summary>
+  rule:     <one-line summary>
   origin:   <origin text>
 
-It is NOT active yet — the activation gate runs separately, after the
-trigger has seen enough acceptance signal to justify promotion. Until
-then, the trigger lives in the pack as a proposal.
+It is NOT active yet — `quellis teach` only proposes. The four-
+condition activation gate runs via `quellis guardrail verify <id>`;
+the lifecycle transition that actually turns the gate on is
+`quellis guardrail transition <id> --to active`.
 
-Re-run /quellis-architect:teach for additional findings. Run
-`quellis pack proposals` to review pending triggers.
+For V1.2 personalization, the recommended flow is:
+  1. Let the proposal sit. The Stop hook records every fire and
+     suppression in .quellis/acceptance-log.jsonl.
+  2. After ~5-10 sessions of relevant work, run
+     `quellis review accepts` (plan §3.C.2) — the report shows
+     whether this proposal-shape has earned its place by observed
+     compliance.
+  3. If the compliance signal is strong, run
+     `quellis guardrail transition <id> --to active`. The trigger
+     then fires in the next session.
+
+Re-run /quellis-architect:teach for additional findings.
 ```
 
-Do not run activation. Do not advise the user to "force-activate" the trigger. The proposal-to-live transition is the compounding loop's whole point.
+Do not run activation. Do not advise the user to "force-activate" the trigger. The proposal-to-live transition is the compounding loop's whole point — V1.2 (§3.C.2 + §3.C.3) wires the path so the user can act on observed signal, not declaration.
 
 ## What makes this Quellis-shaped
 

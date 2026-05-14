@@ -19,6 +19,11 @@ type = "evidence"
 #     correctness)
 #   - hedge-aware lookbehind skips "I think tested", "probably safe", etc.
 claim_regex = "\\b(?<!I think )(?<!seems )(?<!probably )(?<!maybe )(?<!yet )(?:verified|tested|safe|production-ready|all (?:edge cases|tests passing))\\b"
+# 2026-05-14 strict variant (plan §3.B.2):
+#   - re-includes done/finished/complete/completed (no narrowing)
+#   - drops all hedge lookbehinds — "I think tested" still fires
+# Used only when .quellis/config.toml intensity = "strict".
+claim_regex_strict = "\\b(?:done|finished|complete|completed|verified|tested|safe|production-ready|all (?:edge cases|tests passing))\\b"
 requires = "test-run"
 block_reason = "Completion claim without test-run evidence — pause. Verified/tested/safe/production-ready needs a test invocation in this transcript. Show the run or restate as uncertain."
 

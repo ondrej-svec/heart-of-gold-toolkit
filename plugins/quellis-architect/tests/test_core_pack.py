@@ -276,6 +276,40 @@ class TestCorePackStop(unittest.TestCase):
             code, _msg, _ = stop_match.run(stdin, repo)
             self.assertEqual(code, 0)
 
+    def test_strict_intensity_fires_on_bare_done(self) -> None:
+        """§3.B.2: strict drops the §2.D.5 narrowing and the hedge lookbehinds."""
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = make_repo_with_core_pack(Path(tmp))
+            (repo / ".quellis" / "config.toml").write_text(
+                '[architect]\nintensity = "strict"\nschema_version = "v2.0"\n'
+            )
+            stdin = json.dumps({"message": "Done."})
+            code, msg, _ = stop_match.run(stdin, repo)
+            self.assertEqual(code, 2, "strict mode must fire on bare 'done'")
+            self.assertIn("completion-without-test-run", msg)
+
+    def test_strict_intensity_fires_on_hedged_tested(self) -> None:
+        """Strict mode ignores hedge lookbehinds."""
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = make_repo_with_core_pack(Path(tmp))
+            (repo / ".quellis" / "config.toml").write_text(
+                '[architect]\nintensity = "strict"\nschema_version = "v2.0"\n'
+            )
+            stdin = json.dumps({"message": "I think tested but worth a second look."})
+            code, _msg, _ = stop_match.run(stdin, repo)
+            self.assertEqual(code, 2, "strict mode fires even when standard would skip via hedge")
+
+    def test_standard_still_skips_bare_done(self) -> None:
+        """Regression: the §2.D.5 narrowing still holds at standard intensity."""
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = make_repo_with_core_pack(Path(tmp))
+            (repo / ".quellis" / "config.toml").write_text(
+                '[architect]\nintensity = "standard"\nschema_version = "v2.0"\n'
+            )
+            stdin = json.dumps({"message": "Done."})
+            code, _msg, _ = stop_match.run(stdin, repo)
+            self.assertEqual(code, 0)
+
     def test_completion_claim_with_test_run_does_not_fire(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             repo = make_repo_with_core_pack(Path(tmp))

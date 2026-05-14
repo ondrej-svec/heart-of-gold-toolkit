@@ -37,6 +37,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
+from checkpoint_reminder import maybe_render as maybe_checkpoint_reminder  # type: ignore  # noqa: E402
 from doctrine_loader import (  # type: ignore  # noqa: E402
     load_cards,
     select_for_tool_use,
@@ -98,21 +99,24 @@ def run(stdin: str, repo_root: Path) -> str:
     try:
         event = json.loads(stdin) if stdin.strip() else {}
     except json.JSONDecodeError:
-        return ""
+        event = {}
+
+    # Plan §3.C.4: checkpoint reminder runs independently of doctrine
+    # injection. Both can fire on the same PostToolUse; the reminder
+    # leads.
+    reminder = maybe_checkpoint_reminder(repo_root)
+
+    doctrine = ""
     tool = event.get("tool_name") or event.get("tool") or ""
     tool_input = event.get("tool_input") or event.get("input") or {}
-
     cards = load_cards(repo_root)
-    if not cards:
-        return ""
+    if cards and (tool or _extract_paths(tool_input) or _extract_content(tool_input)):
+        paths = _extract_paths(tool_input)
+        content = _extract_content(tool_input)
+        chosen = select_for_tool_use(cards, tool=tool, paths=paths, content=content)
+        doctrine = render(chosen)
 
-    paths = _extract_paths(tool_input)
-    content = _extract_content(tool_input)
-    if not tool and not paths and not content:
-        return ""
-
-    chosen = select_for_tool_use(cards, tool=tool, paths=paths, content=content)
-    return render(chosen)
+    return reminder + doctrine
 
 
 def main() -> int:

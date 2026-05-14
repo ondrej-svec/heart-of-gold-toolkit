@@ -89,7 +89,7 @@ def match_triggers(pack: dict, claim_text: str, intensity: str) -> dict | None:
     for trigger in raw:
         if not _trigger_applies_to_intensity(trigger, intensity):
             continue
-        pattern = trigger.get("claim_regex")
+        pattern = _pick_claim_regex(trigger, intensity)
         if not pattern:
             continue
         try:
@@ -98,6 +98,22 @@ def match_triggers(pack: dict, claim_text: str, intensity: str) -> dict | None:
         except re.error:
             continue
     return None
+
+
+def _pick_claim_regex(trigger: dict, intensity: str) -> str | None:
+    """Return the regex to match against for this trigger + intensity.
+
+    Plan §3.B.2: when intensity is `strict`, prefer the trigger's
+    `claim_regex_strict` field if set — that pattern typically drops
+    the §2.D.5 hedge lookbehinds and re-includes the bare done/
+    finished/complete/completed shapes the standard rubric ignores.
+    Falls back to `claim_regex` when no strict variant is declared.
+    """
+    if intensity == "strict":
+        strict = trigger.get("claim_regex_strict")
+        if isinstance(strict, str) and strict:
+            return strict
+    return trigger.get("claim_regex")
 
 
 def run(stdin: str, repo_root: Path) -> tuple[int, str, dict | None]:

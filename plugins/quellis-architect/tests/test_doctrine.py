@@ -488,6 +488,96 @@ class TestPostToolInject(unittest.TestCase):
             self.assertEqual(result.stdout, "")
 
 
+class TestCheckpointReminder(unittest.TestCase):
+    """3.C.4 — PostToolUse fires a reminder when commits have lagged."""
+
+    def setUp(self) -> None:
+        sys.path.insert(0, str(HOOKS_LIB))
+        import checkpoint_reminder  # type: ignore
+        self.cr = checkpoint_reminder
+
+    def test_disabled_when_threshold_zero(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = Path(tmp)
+            (repo / ".quellis").mkdir()
+            (repo / ".quellis" / "config.toml").write_text(
+                '[architect]\nintensity = "standard"\ncheckpoint_minutes = 0\n'
+            )
+            self.assertEqual(self.cr.maybe_render(repo), "")
+
+    def test_no_emit_when_commit_recent(self) -> None:
+        now = 1_700_000_000
+        result = self.cr.should_emit(
+            threshold_minutes=20,
+            last_commit_ts=now - 300,  # 5 min ago
+            last_reminder_ts=None,
+            now_ts=now,
+        )
+        self.assertFalse(result)
+
+    def test_emit_when_commit_stale_and_no_prior_reminder(self) -> None:
+        now = 1_700_000_000
+        result = self.cr.should_emit(
+            threshold_minutes=20,
+            last_commit_ts=now - 1800,  # 30 min ago
+            last_reminder_ts=None,
+            now_ts=now,
+        )
+        self.assertTrue(result)
+
+    def test_no_emit_when_prior_reminder_recent(self) -> None:
+        """Throttle: don't repeat-fire on every tool call."""
+        now = 1_700_000_000
+        result = self.cr.should_emit(
+            threshold_minutes=20,
+            last_commit_ts=now - 1800,
+            last_reminder_ts=now - 300,  # 5 min ago — within throttle
+            now_ts=now,
+        )
+        self.assertFalse(result)
+
+    def test_emit_when_prior_reminder_also_stale(self) -> None:
+        now = 1_700_000_000
+        result = self.cr.should_emit(
+            threshold_minutes=20,
+            last_commit_ts=now - 3600,  # 60 min ago
+            last_reminder_ts=now - 1800,  # 30 min ago — past throttle
+            now_ts=now,
+        )
+        self.assertTrue(result)
+
+    def test_no_emit_when_no_commit_history(self) -> None:
+        now = 1_700_000_000
+        result = self.cr.should_emit(
+            threshold_minutes=20,
+            last_commit_ts=None,
+            last_reminder_ts=None,
+            now_ts=now,
+        )
+        self.assertFalse(result, "fresh repo with no commits should not nag")
+
+    def test_threshold_read_from_config(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = Path(tmp)
+            (repo / ".quellis").mkdir()
+            (repo / ".quellis" / "config.toml").write_text(
+                '[architect]\nintensity = "standard"\ncheckpoint_minutes = 45\n'
+            )
+            self.assertEqual(self.cr.read_threshold_minutes(repo), 45)
+
+    def test_threshold_default_when_config_missing(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            self.assertEqual(
+                self.cr.read_threshold_minutes(Path(tmp)),
+                self.cr.DEFAULT_THRESHOLD_MINUTES,
+            )
+
+    def test_reminder_format_includes_minute_count(self) -> None:
+        msg = self.cr.format_reminder(20, 1830)  # 30.5 min
+        self.assertIn("30 minutes", msg)
+        self.assertIn("threshold 20", msg)
+
+
 class TestCoreDoctrinePackShipped(unittest.TestCase):
 
     def test_core_doctrine_pack_validates(self) -> None:

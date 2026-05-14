@@ -130,6 +130,20 @@ def validate_trigger(
                 findings.append(
                     f"trigger[{idx}] id={tid!r}: claim_regex does not compile ({exc})"
                 )
+        # Optional strict variant — used by stop_match when intensity == strict.
+        strict_pattern = trigger.get("claim_regex_strict")
+        if strict_pattern is not None:
+            if not isinstance(strict_pattern, str) or not strict_pattern:
+                findings.append(
+                    f"trigger[{idx}] id={tid!r}: claim_regex_strict must be a non-empty string"
+                )
+            else:
+                try:
+                    re.compile(strict_pattern)
+                except re.error as exc:
+                    findings.append(
+                        f"trigger[{idx}] id={tid!r}: claim_regex_strict does not compile ({exc})"
+                    )
         # `requires` is optional but must name a known evidence kind when set.
         requires = trigger.get("requires")
         if requires is not None:
