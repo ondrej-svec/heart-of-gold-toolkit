@@ -1,0 +1,254 @@
+# Quellis V1.1 core pack — doctrine cards (plan §2.C).
+#
+# Short context snippets the plugin injects when the agent touches a
+# known footgun. Each card body ≤ 500 chars. Up to 5 cards per session
+# inject; total injected text ≤ ~1500 tokens.
+#
+# Schema: ../../docs/doctrine.md (doctrine.v1).
+# Validate: python3 ../../hooks/lib/validate_pack.py doctrine.toml
+
+schema_version = "doctrine.v1"
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Migrations / database schema
+# ──────────────────────────────────────────────────────────────────────────────
+
+[[card]]
+id = "migration-backfill-discipline"
+title = "Migrations need a backfill plan"
+priority = 8
+inject_on_glob = "migrations/**/*.sql,prisma/migrations/**/*.sql,drizzle/migrations/**/*.sql,supabase/migrations/**/*.sql,alembic/versions/**/*.py,db/migrate/**/*.rb"
+inject_on_tool = "Write"
+body = """
+NOT NULL + DEFAULT applies to existing rows in the same ALTER on
+SQLite/Postgres/MySQL — no separate UPDATE. Annotate inline:
+
+    -- backfill: DEFAULT 'x' applies to existing rows in the same ALTER.
+
+NOT NULL without DEFAULT needs a three-step migration: add nullable,
+backfill via UPDATE, add NOT NULL constraint.
+"""
+
+[[card]]
+id = "sql-template-interpolation"
+title = "SQL `${}` interpolation is an injection class"
+priority = 9
+inject_on_content_match = "(?i)sql\\s*`[^`]*\\$\\{"
+body = """
+A tagged SQL template with `${...}` interpolates the value as-is. This
+is an injection class unless the interpolation is wrapped with
+`sql.identifier(...)`, `sql.raw(...)`, or `db.unsafe(...)`.
+
+Use parameterized queries (`?` placeholders) for any value coming from
+outside the immediate call site.
+"""
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Auth surfaces
+# ──────────────────────────────────────────────────────────────────────────────
+
+[[card]]
+id = "auth-needs-rationale"
+title = "Auth surfaces need a documented why"
+priority = 8
+inject_on_glob = "**/auth/**,**/authn/**,**/authz/**,**/clerk/**,**/session/**,**/jwt/**,**/oauth/**,**/saml/**,**/sso/**"
+body = """
+Auth code edits without a rationale rot fast. Each change needs:
+1. A one-line `// ADR-NNN` or `<!-- rationale: ... -->` marker in the
+   diff, OR
+2. A linked ADR / threat-model note explaining the why.
+
+The block_reason on `convention.auth-without-rationale-*` triggers will
+remind you when you forget — but the doctrine is to surface it upfront.
+"""
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Money paths
+# ──────────────────────────────────────────────────────────────────────────────
+
+[[card]]
+id = "scoring-payment-needs-test"
+title = "Scoring and payment paths need a failing test first"
+priority = 9
+inject_on_glob = "**/scoring/**,**/payment/**,**/billing/**,**/invoice/**,**/stripe/**,**/checkout/**,**/pricing/**"
+body = """
+Money paths and ranking logic are the highest-blast-radius surfaces in
+most codebases. The rule:
+
+* Write the failing test first (the test that captures the bug or the
+  new behavior).
+* Make the test pass with the minimum change.
+* If the change is a deliberate recalibration (not a bug fix), the
+  commit message should say so explicitly.
+"""
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Destructive ops
+# ──────────────────────────────────────────────────────────────────────────────
+
+[[card]]
+id = "git-reset-hard-discipline"
+title = "Hard reset throws away working state"
+priority = 7
+inject_on_content_match = "(?m)^\\s*git reset --hard\\b"
+body = """
+Before `git reset --hard`, name what is being discarded:
+
+* uncommitted edits in the working tree?
+* unpushed commits?
+* a stash that hasn't been popped?
+
+If you can't name what's at risk, do `git status` + `git stash` first.
+The reset isn't faster than the inspection that prevents the regret.
+"""
+
+[[card]]
+id = "env-file-write-discipline"
+title = "Never write `.env` directly"
+priority = 10
+inject_on_glob = "**/.env,**/.env.*"
+body = """
+.env files commit secrets if you're not careful. Rules:
+
+* Write only `.env.example`, `.env.template`, or `.env.sample` (which
+  are tracked) — never `.env` or environment-specific copies.
+* Real secrets live in 1Password, Doppler, Vercel env, or the
+  equivalent for the project.
+* Reference them by variable name in the diff, not value.
+"""
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Test discipline
+# ──────────────────────────────────────────────────────────────────────────────
+
+[[card]]
+id = "test-mocking-discipline"
+title = "Tests that mock the boundary hide real bugs"
+priority = 6
+inject_on_glob = "**/tests/**,**/*.test.*,**/*.spec.*,**/test_*.py,**/spec/**"
+body = """
+Default: integration tests hit the real boundary (DB, HTTP, filesystem)
+unless there's a specific reason to mock. Mocks that drift from the
+real surface are the most expensive bugs to debug — they pass in CI and
+fail in prod.
+
+Mock when:
+* The boundary is genuinely external (a third-party SaaS, a paid API).
+* The test is verifying error-path behavior that's hard to provoke.
+"""
+
+[[card]]
+id = "checkpoint-discipline"
+title = "Commit often, in logical units"
+priority = 5
+inject_on_tool = "Bash"
+inject_on_content_match = "(?i)\\bgit (?:add|commit)\\b"
+body = """
+A commit is a logical unit (a model, a service, a migration, a feature
+slice) — not a wall-clock interval. If the commit message would say
+"WIP", keep working until the unit closes. Atomic commits are
+reviewable, revertable, and bisectable.
+"""
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Stack-specific
+# ──────────────────────────────────────────────────────────────────────────────
+
+[[card]]
+id = "node-package-add-discipline"
+title = "Adding a top-level dependency is an architectural decision"
+priority = 7
+inject_on_glob = "**/package.json"
+inject_on_tool = "Edit"
+body = """
+Top-level deps in `package.json` carry transitive cost: bundle size,
+supply chain surface, maintenance load. Before adding:
+
+* Is there an existing dep that already does this?
+* Is the new code so small you could vendor or inline it?
+* What's the most recent security/abandonment signal on the package?
+
+If you can't answer those, the answer is to ask.
+"""
+
+[[card]]
+id = "react-use-effect-discipline"
+title = "useEffect for derived state is a smell"
+priority = 6
+inject_on_content_match = "(?m)^\\s*useEffect\\s*\\("
+body = """
+If the effect's job is to "sync state to other state," compute the
+derived state directly in render instead. Effects are for side-effects
+(subscriptions, mutations, externally-triggered updates) — not for
+keeping two pieces of React state in lockstep.
+
+The React docs call these "unnecessary effects" — they're a top source
+of subtle re-render bugs.
+"""
+
+[[card]]
+id = "rust-unwrap-discipline"
+title = "`.unwrap()` is for bin/main, not for library code"
+priority = 6
+inject_on_glob = "src/**/*.rs,crates/**/*.rs"
+inject_on_content_match = "(?m)\\.unwrap\\(\\)"
+body = """
+In a library crate, `.unwrap()` panics in the caller's binary. The
+library decides; the caller bears the cost.
+
+Replace with `?` for propagation, or `.ok_or_else(|| ...)?` for
+explicit errors. `.expect("static message")` is fine when the
+invariant is genuinely impossible to violate at runtime.
+"""
+
+[[card]]
+id = "python-bare-except-discipline"
+title = "Bare `except:` catches KeyboardInterrupt and SystemExit too"
+priority = 7
+inject_on_glob = "**/*.py"
+inject_on_content_match = "(?m)^\\s*except\\s*:"
+body = """
+Bare `except:` swallows everything — including Ctrl-C and SystemExit.
+This makes Python processes feel haunted.
+
+Catch specifically: `except (ValueError, KeyError) as e:` for the
+errors you can recover from. If you really want every Exception
+(rare), say so: `except Exception as e:`.
+"""
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Stop-time discipline
+# ──────────────────────────────────────────────────────────────────────────────
+
+[[card]]
+id = "completion-claim-discipline"
+title = "\"Done\" / \"tested\" / \"verified\" without evidence is dishonest"
+priority = 8
+inject_on_content_match = "(?i)\\b(?:verified|tested|safe|production-ready)\\b"
+body = """
+The Stop hook gates these claims unless transcript evidence is present
+(a test run, a verification query, a scan, a diff). The doctrine
+behind the gate:
+
+* The agent and the user have the same problem — claims that drift
+  from reality. Evidence is the cheapest forcing function.
+* If the evidence isn't there, restate the claim with the uncertainty
+  intact: "the implementation looks right, but I haven't run the
+  tests yet."
+"""
+
+[[card]]
+id = "force-push-discipline"
+title = "Force-push to shared branches needs explicit authorization"
+priority = 9
+inject_on_content_match = "(?m)\\bgit push\\b.*(?:--force|-f|\\+\\w)"
+body = """
+Force-push rewrites history other people may have pulled. Even on
+feature branches under solo work, double-check before pushing:
+
+* Is this branch tracked / used by CI?
+* Is the rewrite removing work someone else might want?
+
+Force-with-lease (`--force-with-lease`) is the safer default — it
+refuses the push if the remote moved since you last fetched.
+"""

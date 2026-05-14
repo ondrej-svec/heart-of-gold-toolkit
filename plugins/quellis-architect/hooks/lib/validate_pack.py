@@ -37,6 +37,7 @@ KNOWN_SCHEMAS = {
     "stop.v1": "stop",
     "contract.v1": "contract",
     "contract.pointer.v1": "contract-pointer",
+    "doctrine.v1": "doctrine",
 }
 
 TRIGGER_TYPES = {"non-negotiable", "convention", "evidence"}
@@ -177,6 +178,12 @@ def validate_pack(path: Path) -> list[str]:
         sys.path.insert(0, str(Path(__file__).parent))
         from contract_loader import validate_pointer_file  # type: ignore
         for f in validate_pointer_file(pack):
+            findings.append(f"{path}: {f}")
+        return findings
+    if kind == "doctrine":
+        sys.path.insert(0, str(Path(__file__).parent))
+        from doctrine_loader import validate_doctrine_pack  # type: ignore
+        for f in validate_doctrine_pack(pack):
             findings.append(f"{path}: {f}")
         return findings
     triggers = pack.get("trigger", []) or []

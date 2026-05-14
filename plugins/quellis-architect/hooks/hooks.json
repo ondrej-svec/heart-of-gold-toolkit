@@ -23,6 +23,17 @@
         ]
       }
     ],
+    "PostToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/posttool.sh"
+          }
+        ]
+      }
+    ],
     "Stop": [
       {
         "matcher": "*",

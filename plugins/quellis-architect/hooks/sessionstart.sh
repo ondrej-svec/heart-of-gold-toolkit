@@ -1,20 +1,22 @@
 #!/usr/bin/env bash
-# SessionStart hook — V1.0 wiring skeleton (plan 2026-05-13, task 1.C.3).
+# SessionStart hook (plan 2026-05-13, V1.0 task 1.C.3 + V1.1 task 2.C.2).
 #
-# At this stage the hook only proves the plugin is wired correctly. It reads
-# .quellis/config.toml if present and emits a single context line so the agent
-# session shows "Quellis active." No doctrine injection, no acceptance log
-# writes — those land in Phase 1.D and later.
+# At session start:
+#   1. If .quellis/config.toml is absent, emit nothing and exit 0.
+#   2. Otherwise, delegate to hooks/lib/sessionstart_inject.py which
+#      reads intensity + scans recent git activity + injects matched
+#      doctrine cards (max 5 cards, ~1500 tokens budget enforced in
+#      hooks/lib/doctrine_loader.py).
 #
 # Real wiring contract:
 #   - Hook receives no stdin input (per Claude Code's SessionStart contract).
 #   - cwd is the user's repo root at session start.
-#   - Anything written to stdout becomes session context (precious tokens —
-#     keep it terse).
+#   - Anything written to stdout becomes session context.
 #   - Exit 0 always; this hook must never break a session.
 
 set -u
 
+here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 repo_root="${CLAUDE_PROJECT_DIR:-$(pwd)}"
 config="${repo_root}/.quellis/config.toml"
 
@@ -23,15 +25,17 @@ if [[ ! -f "${config}" ]]; then
   exit 0
 fi
 
-# Cheap intensity extraction without taking a TOML dep: grep the line we wrote
-# in `quellis init`. Format is `intensity = "standard"` (or chill/strict).
-intensity=$(grep -E '^[[:space:]]*intensity[[:space:]]*=' "${config}" 2>/dev/null \
-  | head -n 1 \
-  | sed -E 's/.*"([^"]*)".*/\1/')
-intensity="${intensity:-standard}"
+if ! command -v python3 >/dev/null 2>&1; then
+  # Fallback to the V1.0 shell-only status line so a Python-less host
+  # still sees that Quellis is wired.
+  intensity=$(grep -E '^[[:space:]]*intensity[[:space:]]*=' "${config}" 2>/dev/null \
+    | head -n 1 \
+    | sed -E 's/.*"([^"]*)".*/\1/')
+  intensity="${intensity:-standard}"
+  printf 'Quellis active · intensity: %s · acceptance log: .quellis/acceptance-log.jsonl\n' \
+    "${intensity}"
+  exit 0
+fi
 
-# Single-line context emission. ≤ 200 chars per the Subjective Contract.
-printf 'Quellis active · intensity: %s · acceptance log: .quellis/acceptance-log.jsonl\n' \
-  "${intensity}"
-
+python3 "${here}/lib/sessionstart_inject.py"
 exit 0
