@@ -50,8 +50,19 @@ Resolve:
 2. **`topic`** — what the user (or calling skill) is grounding for. From the invocation arguments. Required; if absent, ask via AskUserQuestion.
 3. **`local_only`** — boolean flag. Default `false`. When `true`, skip Phase 4 (external grounding).
 4. **`force_refresh`** — boolean flag. Default `false`. When `true`, skip cache check in Phase 3.
+5. **`invocation_mode`** — `standalone` if a user invoked `/ground` directly (slash command); `embedded` if another skill or agent handed you this protocol via a Task/subagent call.
 
-**Exit:** Inputs resolved. Ready to survey.
+**Standalone self-dispatch:** if `invocation_mode = standalone` AND `local_only = false`, do **not** run Phases 1-6 in this context — the web research would bloat the user's main context, the exact thing this skill exists to prevent. Instead, spawn one subagent to do the work and return only the briefing:
+
+```
+Task grounder("Execute /marvin:ground Phases 1-6 inline as a subagent — survey, fingerprint, cache-check, external grounding, synthesize, write. Topic: <topic>. cwd: <cwd>. local_only=false. force_refresh=<flag>. Return the synthesized briefing.")
+```
+
+Take the returned briefing and skip straight to Phase 7. The explicit "inline as a subagent" instruction tells the spawned agent to run the phases directly and not re-dispatch.
+
+Run Phases 1-6 inline yourself only when `invocation_mode = embedded`, or when `invocation_mode = standalone` AND `local_only = true` (a local-only survey is cheap — nothing to isolate).
+
+**Exit:** Inputs resolved. Either a subagent has been dispatched (standalone path — proceed to Phase 7 with its briefing), or you run Phases 1-6 inline.
 
 ---
 
@@ -111,7 +122,11 @@ Look for `docs/ground/<fingerprint>.md` in `cwd`. If it exists, read its `last_g
 
 **If `local_only=true`** → skip this phase; produce a local-only briefing (Phase 5 with no external sources).
 
-Otherwise, route signals from Phase 1 + topic to external tools, in parallel, with a 30-second per-source timeout:
+Otherwise, route signals from Phase 1 + topic to external tools, in parallel where possible. **Keep grounding bounded:**
+- Wrap every `gh`/Bash call in `timeout 30 ...` — a real, enforceable limit.
+- WebSearch and WebFetch take no timeout argument, so bound them by *count*, not wall-clock: at most 2-3 WebSearch queries and 2-3 WebFetch URLs total. If a slow fetch is still pending after the others return, synthesize without it.
+
+Routing:
 
 | Signal | Tool | What to fetch |
 |---|---|---|
@@ -121,7 +136,7 @@ Otherwise, route signals from Phase 1 + topic to external tools, in parallel, wi
 | Specific URL in `topic` | WebFetch | The URL directly |
 | Manifest shows a tech with known recent release | WebSearch | `"<tech> changelog <last-30-days>"` or `<tech> release notes` |
 
-If a source times out, log it and continue. If ALL external sources fail → produce a local-only briefing and tag `confidence: low`.
+If a `gh`/Bash call hits its `timeout`, or a slow fetch is dropped, note it and continue. If ALL external sources fail → produce a local-only briefing and tag `confidence: low`.
 
 **Exit:** External research collected. Have: per-source raw output + URLs.
 
@@ -186,9 +201,9 @@ Section template (use these exact headings):
 
 ## Phase 7: Handoff (standalone invocation only)
 
-**Entry:** Skill was invoked as a slash command (not as a Task subagent call from another skill).
+**Entry:** `invocation_mode = standalone` (established in Phase 0). Skip this phase entirely when `invocation_mode = embedded` — control returns to the caller.
 
-Offer next steps. Skip this phase when invoked as a subagent — control returns to the caller.
+Offer next steps.
 
 - Prefer the harness's structured choice UI if available
 - Otherwise present plain-text options:
