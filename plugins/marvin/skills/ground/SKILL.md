@@ -3,7 +3,7 @@ name: ground
 description: >
   Survey a repo and ground externally on the relevant parts of the internet. Local manifest
   scan + CLAUDE.md/AGENTS.md + recent git activity, then external grounding via WebSearch,
-  WebFetch, context7, and gh — synthesized into a terse, dated, sourced briefing cached at
+  WebFetch, and gh — synthesized into a terse, dated, sourced briefing cached at
   docs/ground/<fingerprint>.md with a 7-day freshness window. Composable: invoked standalone
   or embedded as a pre-flight phase in other skills. Triggers: ground, ground yourself,
   ground myself, survey and ground, pre-flight grounding, research the stack, what's new in.
@@ -15,7 +15,6 @@ allowed-tools:
   - WebSearch
   - WebFetch
   - Write
-  - Edit
   - AskUserQuestion
 ---
 
@@ -80,9 +79,9 @@ If `cwd` has no manifest files AND no `CLAUDE.md`/`AGENTS.md` AND no git history
 Compute the cache key as `<repo-name>__<dominant-tech-or-topic>` (double underscore — single chars like `:` or `-` cause ambiguity with repo names containing hyphens):
 
 1. **`repo-name`**: basename of cwd, or `git remote get-url origin` parsed name if more authoritative.
-2. **`dominant-tech-or-topic`**: priority order:
-   - If `topic` is specific (mentions a feature/area like "auth", "billing"), slugify it: `auth-flow`, `payments`.
-   - Else if a single dominant framework is detectable from manifests: `nextjs`, `expo`, `rails`, `django`, etc.
+2. **`dominant-tech-or-topic`**: priority order — pick the *stablest* key that's still accurate, so briefings get reused instead of fragmenting:
+   - A single dominant framework detectable from manifests: `nextjs`, `expo`, `rails`, `django`, etc. **This is the default.** It stays stable across a repo's normal development, so the 7-day cache actually gets reused.
+   - A topic slug **only** when `topic` names a bounded, durable *sub-area* of the repo (`auth`, `billing`, `payments`, `migrations`) — never a one-off feature or task title. "Add CSV export" is a task, not a sub-area: it grounds under the framework key.
    - Else: `default`.
 
 File name on disk uses the fingerprint verbatim with `.md` suffix. Examples: `quellis-cor__expo.md`, `bobo__default.md`, `harness-lab__auth.md`, `aibility__rails.md`.
@@ -99,7 +98,7 @@ Look for `docs/ground/<fingerprint>.md` in `cwd`. If it exists, read its `last_g
 
 - If `force_refresh=true` → skip cache, go to Phase 4.
 - If file missing or unparseable → go to Phase 4.
-- If `last_grounded` is within 7 days of now → **return the cached briefing** to the caller; skip Phase 4-6.
+- If `last_grounded` is within 7 days of now → **return the cached briefing's summary** (everything below the frontmatter, capped at ≤1500 tokens — the same cap Phase 6 applies to fresh briefings) to the caller; skip Phase 4-6.
 - If `last_grounded` is older than 7 days → go to Phase 4 (refresh).
 
 **Exit:** Either cached briefing returned (skill ends here) OR proceed to fetch.
@@ -116,7 +115,7 @@ Otherwise, route signals from Phase 1 + topic to external tools, in parallel, wi
 
 | Signal | Tool | What to fetch |
 |---|---|---|
-| Each detected library/framework | context7 | Current version-aware docs for the relevant API surface |
+| Each detected library/framework | WebSearch (context7 too, if a context7 MCP server is available in this environment) | Version-aware docs / changelog for the relevant API surface — e.g. `"<lib> <version> docs"`, `"<lib> migration guide"` |
 | `topic` mentions "best practice", "current pattern", "recent" | WebSearch | 2-3 queries: `"<tech> best practices 2026"`, `"<tech> migration <version>"`, `"<topic> current approach"` |
 | `topic` is an error symptom or "known issue" | gh search + Grep on `docs/solutions/` | Recent issues in tech's GitHub repo + local prior-art matches |
 | Specific URL in `topic` | WebFetch | The URL directly |
@@ -214,7 +213,7 @@ Before returning, verify:
 
 ## What Makes This Heart of Gold
 
-- **AI-Augmented Discovery (1.3):** Surfaces relevant external signal automatically by routing repo-state and prompt-intent to the right tool — context7 for libraries, WebSearch for practices, gh for issues, WebFetch for URLs.
+- **AI-Augmented Discovery (1.3):** Surfaces relevant external signal automatically by routing repo-state and prompt-intent to the right tool — WebSearch for library docs and current practices, gh for issues, WebFetch for URLs (context7 too, when its MCP server is available).
 - **AI Curiosity (1.1):** Explores the repo first, then the world — local context disambiguates the external search. Generic queries return generic results; grounded queries return useful ones.
 - **Critical Trust (2.1):** Every claim cites a source. Briefings are fact-checkable artifacts, not authoritative-sounding wallpaper. When sources disagree, the briefing says so.
 - **Knowledge Compounding (3.2):** Cached briefings are reusable across sessions, promotable to `/compound` for permanent solutions, and inspectable as real artifacts.
