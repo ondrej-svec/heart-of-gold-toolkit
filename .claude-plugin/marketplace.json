@@ -14,14 +14,14 @@
     {
       "name": "deep-thought",
       "source": "./plugins/deep-thought",
-      "description": "The Answer Computer — reasoning tools for brainstorming, planning, and deep thinking",
-      "version": "0.2.11"
+      "description": "The Answer Computer — reasoning tools for brainstorming, planning, architecture design, and deep thinking",
+      "version": "0.3.0"
     },
     {
       "name": "marvin",
       "source": "./plugins/marvin",
-      "description": "The Paranoid Android — quality tools for code review, knowledge compounding, and work execution",
-      "version": "0.3.11"
+      "description": "The Paranoid Android — quality tools for code review, knowledge compounding, work execution, and grounding",
+      "version": "0.4.0"
     },
     {
       "name": "babel-fish",
@@ -34,12 +34,6 @@
       "source": "./plugins/quellis",
       "description": "AI Coaching Companion — ICF methodology, powerful questions, goal-setting, and reflection",
       "version": "0.3.0"
-    },
-    {
-      "name": "quellis-architect",
-      "source": "./plugins/quellis-architect",
-      "description": "Senior architect for coding agents — opinionated bootstrap, in-flight intercepts, evidence gates, paired with the `quellis` CLI",
-      "version": "0.5.0"
     }
   ]
 }

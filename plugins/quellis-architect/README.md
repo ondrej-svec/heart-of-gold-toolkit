@@ -1,8 +1,23 @@
 # Quellis Architect
 
+> **⚠️ ARCHIVED (2026-05-21) — dormant, not maintained.**
+>
+> This plugin reached v0.5.0 but was never wired into an active `settings.json`,
+> so its hooks have never fired in practice. It is delisted from the toolkit
+> marketplace (`.claude-plugin/marketplace.json`) and no longer maintained.
+>
+> Archived deliberately, not as cleanup. It does **not** duplicate
+> `deep-thought` — its `brainstorm`/`plan` skills produce evidence contracts,
+> not implementation plans (different scope, different artifacts). The decision
+> was simply to stop carrying an unused safety layer.
+>
+> The code, tests (58 passing), docs, and doctrine packs are kept intact. To
+> revive: re-add the entry to `.claude-plugin/marketplace.json` and run
+> `claude plugin install quellis-architect`.
+
 A Claude Code plugin that intercepts file-edit conventions and Stop-time evidence claims your `settings.json` allowlist and Auto Mode classifier cannot reach. Paired with the [`quellis`](https://github.com/ondrej-svec/conscience-harness) CLI.
 
-**Status:** V1.0 in build. See the [implementation plan](https://github.com/ondrej-svec/Bobo/blob/main/docs/plans/2026-05-13-feat-quellis-v2-senior-architect-plan.md).
+**Status:** Archived 2026-05-21 (dormant). Was: V1.0 / v0.5.0. See the [implementation plan](https://github.com/ondrej-svec/Bobo/blob/main/docs/plans/2026-05-13-feat-quellis-v2-senior-architect-plan.md).
 
 ## What it is
 
