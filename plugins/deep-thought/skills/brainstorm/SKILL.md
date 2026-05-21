@@ -102,6 +102,9 @@ Check the project's `CLAUDE.md` for a "Toolkit Output Paths" table. Use those pa
 Launch research agents **in parallel**:
 
 - Task researcher("Find existing patterns related to: <problem statement>. Search docs/brainstorms/, docs/solutions/, docs/plans/, and codebase for similar features, past decisions, and prior art.")
+- Task grounder("Follow /marvin:ground protocol for: <problem statement>. Survey the repo at <cwd> and ground externally. Return synthesized briefing.")
+
+The `researcher` agent covers internal prior art; the `grounder` agent covers external ecosystem state — recent releases, current best practices, known footguns. If `/ground` is unavailable or fails, proceed with the researcher's findings alone — grounding is advisory, never blocking.
 
 **Surface findings to the user:**
 ```

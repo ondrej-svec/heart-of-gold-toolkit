@@ -94,7 +94,15 @@ Launch research **in parallel**:
 - **Uncertain or unfamiliar territory:** Research externally.
 
 **If external research is needed:**
-Announce the decision and proceed: "This involves payment processing — researching current best practices before planning."
+Invoke `/ground` as a subagent rather than researching in-context — it surveys the repo and grounds via WebSearch/WebFetch/context7/gh, returning a terse, sourced briefing while keeping the heavy fetching out of the planning context.
+
+```
+Task grounder("Follow /marvin:ground protocol for: <feature description / high-risk area>. Survey the repo at <cwd> and ground externally. Return synthesized briefing.")
+```
+
+Announce the decision: "This involves payment processing — invoking /ground for current best practices."
+
+If `/ground` is unavailable or fails, fall back to researching in-context. Grounding is advisory, never blocking.
 
 ### Active Memory
 
