@@ -73,6 +73,15 @@ When a plan file is provided: **default to autonomous mode.** Plans are pre-appr
 - **Quality checks are never skipped** regardless of mode — Phase 3 always runs.
 - **After Phase 5 (Report):** If a novel pattern was encountered during work (new approach, unexpected gotcha, reusable technique), suggest `/marvin:compound` to capture it.
 - **Check `docs/solutions/` for the relevant domain** before starting implementation — avoid known pitfalls.
+- **Pre-flight grounding**: Before starting implementation, invoke `/ground` as a subagent for the plan's domain. The briefing it returns populates the implementation context with current ecosystem state — recent releases, known footguns, version-aware docs.
+
+  ```
+  Task grounder("Follow /marvin:ground protocol for: <plan title or topic>. Survey the repo at <cwd> and ground externally. Return synthesized briefing.")
+  ```
+
+  - **Skip** when the plan is `confidence: high` AND scoped to a single small fix — grounding overhead isn't worth a one-line change.
+  - When `docs/ground/<fingerprint>.md` is already fresh (<7d old), `/ground` returns the cached briefing itself — invoke it anyway; the freshness check lives inside `/ground`, not here.
+  - **Graceful degradation**: if `/ground` is unavailable or fails, proceed without grounding. It is advisory, never blocking.
 
 See `../knowledge/autonomy-modes.md` for confidence-gated escalation.
 
