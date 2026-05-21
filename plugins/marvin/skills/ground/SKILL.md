@@ -124,14 +124,14 @@ Look for `docs/ground/<fingerprint>.md` in `cwd`. If it exists, read its `last_g
 
 Otherwise, route signals from Phase 1 + topic to external tools, in parallel where possible. **Keep grounding bounded:**
 - Wrap every `gh`/Bash call in `timeout 30 ...` — a real, enforceable limit.
-- WebSearch and WebFetch take no timeout argument, so bound them by *count*, not wall-clock: at most 2-3 WebSearch queries and 2-3 WebFetch URLs total. If a slow fetch is still pending after the others return, synthesize without it.
+- WebSearch and WebFetch take no timeout argument. Bound them by *outcome*, not a fixed count: keep querying while each search surfaces fresh sourced facts; stop when it stops. A single-framework repo may need one or two searches; a multi-stack repo with several detected libraries needs more. Grounding runs in a disposable subagent (Phase 0), so depth is cheap — and the ≤1500-token output cap (Phase 5) keeps the *briefing* terse no matter how much was read. Safety stop (circuit breaker, not a target): if ~10 searches haven't converged, synthesize what you have at `confidence: medium`. If a slow fetch is still pending after the others return, synthesize without it.
 
 Routing:
 
 | Signal | Tool | What to fetch |
 |---|---|---|
 | Each detected library/framework | WebSearch (context7 too, if a context7 MCP server is available in this environment) | Version-aware docs / changelog for the relevant API surface — e.g. `"<lib> <version> docs"`, `"<lib> migration guide"` |
-| `topic` mentions "best practice", "current pattern", "recent" | WebSearch | 2-3 queries: `"<tech> best practices 2026"`, `"<tech> migration <version>"`, `"<topic> current approach"` |
+| `topic` mentions "best practice", "current pattern", "recent" | WebSearch | Queries like `"<tech> best practices 2026"`, `"<tech> migration <version>"`, `"<topic> current approach"` — as many as the topic needs |
 | `topic` is an error symptom or "known issue" | gh search + Grep on `docs/solutions/` | Recent issues in tech's GitHub repo + local prior-art matches |
 | Specific URL in `topic` | WebFetch | The URL directly |
 | Manifest shows a tech with known recent release | WebSearch | `"<tech> changelog <last-30-days>"` or `<tech> release notes` |
