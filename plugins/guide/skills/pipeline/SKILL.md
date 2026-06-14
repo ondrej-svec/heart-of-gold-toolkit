@@ -58,6 +58,18 @@ The fetch scripts live in this plugin's `scripts/` directory. Determine the scri
 6. **Read captures** from `content/captures/` (or configured `captures_dir`) — last 7 days of AM/PM captures
 7. **Read recent daily briefs** — last 3 briefs from `content/daily/` for deduplication context
 
+### Optional Social Exports
+
+If the user's config or project notes mention an X/Twitter export, read it only after confirming it was produced by an approved read-first tool such as Hermes Tweet. Treat each item as an external signal with:
+
+- source URL
+- fetched or exported date
+- public author or account
+- text or summary provided by the export
+- confidence marker for sentiment and engagement metrics
+
+Do not call social posting, engagement, or browser automation tools from Guide. Social items must pass the same generic content filter and deduplication rules as RSS, Gmail, HN, and Events.
+
 ### Edge Cases
 
 - **All fetch scripts fail** (runner exits 1): Notify user "no external signals today" and produce brief from captures only
