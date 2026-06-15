@@ -68,6 +68,11 @@ If the user's config or project notes mention an X/Twitter export, read it only 
 - text or summary provided by the export
 - confidence marker for sentiment and engagement metrics
 
+If `sources.web_search.include_social` is enabled but the export path is
+missing, unavailable, or empty, skip social ingestion and mention the missing
+export in the brief footer. Do not fail the pipeline when RSS, Gmail, HN,
+Events, or captures can still produce a useful brief.
+
 Do not call social posting, engagement, or browser automation tools from Guide. Social items must pass the same generic content filter and deduplication rules as RSS, Gmail, HN, and Events.
 
 ### Edge Cases
