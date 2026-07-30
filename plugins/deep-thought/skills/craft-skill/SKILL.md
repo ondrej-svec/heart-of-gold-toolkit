@@ -43,7 +43,7 @@ The question of how to write a good skill is, of course, merely a subset of the 
 
 **Entry:** Skill brief understood.
 
-Read `../knowledge/twelve-techniques.md` — this is the technique checklist you will apply in Phase 2.
+Read `${CLAUDE_PLUGIN_ROOT}/knowledge/twelve-techniques.md` — this is the technique checklist you will apply in Phase 2.
 
 Scan existing skills using **Glob** on `**/skills/*/SKILL.md`, then **Read** 2-3 structurally similar ones. Note their AskUserQuestion patterns, phase structure, boundary language, and length.
 
@@ -131,5 +131,5 @@ Before writing the file, verify:
 
 ## Knowledge References
 
-- `../knowledge/twelve-techniques.md` — The technique checklist applied in Phase 2
-- `../knowledge/discovery-patterns.md` — AskUserQuestion patterns and user intent disambiguation
+- `${CLAUDE_PLUGIN_ROOT}/knowledge/twelve-techniques.md` — The technique checklist applied in Phase 2
+- `${CLAUDE_PLUGIN_ROOT}/knowledge/discovery-patterns.md` — AskUserQuestion patterns and user intent disambiguation

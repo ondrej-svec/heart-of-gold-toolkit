@@ -73,7 +73,7 @@ Your senior CTO advisor. Structured workflows for the 7 operating modes, each pr
 - Route directly to that sub-command's workflow below
 
 **If invoked without a sub-command** (e.g., `/cto` or `/cto [description of problem]`):
-- Read the mode routing table from `../knowledge/cto-operating-modes.md`
+- Read the mode routing table from `${CLAUDE_PLUGIN_ROOT}/knowledge/cto-operating-modes.md`
 - Identify which mode(s) the user's challenge falls into
 - Use **AskUserQuestion** to confirm routing:
   - question: "Based on what you've described, which area do you want to work on?"
@@ -120,12 +120,12 @@ Follow up based on answer to gather: current direction, proposed change (if any)
 ### Phase 2: Apply Framework & Calculate
 **Entry:** Situation inputs from Phase 1 complete.
 
-From `../knowledge/cto-operating-modes.md` Mode 1 + `../knowledge/cto-ai-era.md`:
+From `${CLAUDE_PLUGIN_ROOT}/knowledge/cto-operating-modes.md` Mode 1 + `${CLAUDE_PLUGIN_ROOT}/knowledge/cto-ai-era.md`:
 - Apply Engineering Strategy framework (Larson): Diagnosis → Guiding policies → Coherent actions
 - Check for anti-patterns: architecture astronaut, resume-driven development, platform-before-product, "we can rebuild faster"
 - Include AI-era considerations: build/buy/generate, reversibility, strategy half-life
 
-If a pivot is being discussed, calculate costs from `../knowledge/cto-stakeholder.md`:
+If a pivot is being discussed, calculate costs from `${CLAUDE_PLUGIN_ROOT}/knowledge/cto-stakeholder.md`:
 - Wasted investment = (Engineers x Weeks x Cost) x (1 - Reusability)
 - Transition cost = Engineers x 1.5 weeks x Cost
 - Add qualitative costs: customer commitments, milestone impact, team morale
@@ -135,7 +135,7 @@ If a pivot is being discussed, calculate costs from `../knowledge/cto-stakeholde
 ### Phase 3: Produce Artifact
 **Entry:** Analysis complete from Phase 2.
 
-Write a Strategy Doc using the template from `../knowledge/cto-stakeholder.md`:
+Write a Strategy Doc using the template from `${CLAUDE_PLUGIN_ROOT}/knowledge/cto-stakeholder.md`:
 - **Diagnosis:** What's actually true (facts, not opinions)
 - **Direction:** What we're building (1-2 sentences)
 - **Cost of changing:** Concrete pivot cost if direction changes again
@@ -168,7 +168,7 @@ Follow up to gather: team size & structure, what's working, CTO time split, warn
 ### Phase 2: Assess
 **Entry:** Team data from Phase 1 complete.
 
-From `../knowledge/cto-org-design.md` + `../knowledge/cto-metrics.md`:
+From `${CLAUDE_PLUGIN_ROOT}/knowledge/cto-org-design.md` + `${CLAUDE_PLUGIN_ROOT}/knowledge/cto-metrics.md`:
 - **Team Topologies:** Are teams structured for cognitive load and flow?
 - **Staffing ratios:** Team sizes, manager-to-IC ratios (Larson: 6-8 optimal)
 - **DORA metrics:** Current vs. stage-appropriate targets
@@ -177,7 +177,7 @@ From `../knowledge/cto-org-design.md` + `../knowledge/cto-metrics.md`:
 - **CTO transition check:** Is the CTO at the right point on the transition curve?
 
 If assessment surfaces a skill gap or capacity gap:
-- Apply the "When to Hire" decision tree from `../knowledge/cto-org-design.md`
+- Apply the "When to Hire" decision tree from `${CLAUDE_PLUGIN_ROOT}/knowledge/cto-org-design.md`
 - Check: can AI tools or training close the gap?
 - Check: is the team structure the real problem (restructure, not hire)?
 
@@ -239,18 +239,18 @@ Follow up to gather: who's on the leadership team (titles vs. actual functions),
 ### Phase 2: Apply Framework
 **Entry:** Leadership context from Phase 1 complete.
 
-From `../knowledge/cto-org-design.md`:
+From `${CLAUDE_PLUGIN_ROOT}/knowledge/cto-org-design.md`:
 - Apply Owner/Support model (simplified from RACI)
 - Surface co-founder dynamics patterns if relevant (title-function mismatch, decision vacuum, commitment failure)
 - Apply one-way/two-way door classification to each decision area
-- From `../knowledge/cto-stakeholder.md`: disagree-and-commit protocol, commitment cycles
+- From `${CLAUDE_PLUGIN_ROOT}/knowledge/cto-stakeholder.md`: disagree-and-commit protocol, commitment cycles
 
 **Exit:** Decision areas identified, ownership patterns surfaced, agreements drafted.
 
 ### Phase 3: Produce Artifact
 **Entry:** Framework application from Phase 2 complete.
 
-Write a Decision Rights Map using the template from `../knowledge/cto-stakeholder.md`:
+Write a Decision Rights Map using the template from `${CLAUDE_PLUGIN_ROOT}/knowledge/cto-stakeholder.md`:
 - Decision areas with Owner/Support columns
 - Operating agreements (disagree-and-commit, one-way/two-way doors, commitment cycles, decision journal)
 - First review date
@@ -280,11 +280,11 @@ Follow up to gather: audience (board, investors, non-technical leadership), avai
 ### Phase 2: Apply Framework
 **Entry:** Context from Phase 1 complete.
 
-From `../knowledge/cto-stakeholder.md`:
+From `${CLAUDE_PLUGIN_ROOT}/knowledge/cto-stakeholder.md`:
 - Apply the language translation table (technical → business)
 - Frame investments as risk reduction (not "nice to have")
 - Use concrete metrics (before → after, or current → target)
-- From `../knowledge/cto-metrics.md`: DORA metrics, engineering cost models for quantification
+- From `${CLAUDE_PLUGIN_ROOT}/knowledge/cto-metrics.md`: DORA metrics, engineering cost models for quantification
 
 **Exit:** Key messages framed in business language with supporting metrics.
 
@@ -327,7 +327,7 @@ Follow up to gather: specific tools in use, who uses them (seniority pattern), m
 ### Phase 2: Assess
 **Entry:** AI state data from Phase 1 complete.
 
-From `../knowledge/cto-ai-era.md`:
+From `${CLAUDE_PLUGIN_ROOT}/knowledge/cto-ai-era.md`:
 - Apply the AI Readiness Assessment Framework (6 dimensions, 3 levels)
 - Check the 5 Key Shifts: how is the team positioned for each?
 - Identify helping vs. noise signals
@@ -413,9 +413,9 @@ Before delivering any artifact, verify:
 
 ## Knowledge References
 
-- `../knowledge/cto-canon.md` — Thought leaders, source attribution, voice-to-mode mapping
-- `../knowledge/cto-operating-modes.md` — Mode identification, decision trees, anti-patterns
-- `../knowledge/cto-ai-era.md` — AI-specific CTO challenges and approaches
-- `../knowledge/cto-org-design.md` — Team Topologies, hiring, co-founder dynamics
-- `../knowledge/cto-stakeholder.md` — Communication templates, translation frameworks
-- `../knowledge/cto-metrics.md` — DORA, team health, cost models, AI adoption metrics
+- `${CLAUDE_PLUGIN_ROOT}/knowledge/cto-canon.md` — Thought leaders, source attribution, voice-to-mode mapping
+- `${CLAUDE_PLUGIN_ROOT}/knowledge/cto-operating-modes.md` — Mode identification, decision trees, anti-patterns
+- `${CLAUDE_PLUGIN_ROOT}/knowledge/cto-ai-era.md` — AI-specific CTO challenges and approaches
+- `${CLAUDE_PLUGIN_ROOT}/knowledge/cto-org-design.md` — Team Topologies, hiring, co-founder dynamics
+- `${CLAUDE_PLUGIN_ROOT}/knowledge/cto-stakeholder.md` — Communication templates, translation frameworks
+- `${CLAUDE_PLUGIN_ROOT}/knowledge/cto-metrics.md` — DORA, team health, cost models, AI adoption metrics

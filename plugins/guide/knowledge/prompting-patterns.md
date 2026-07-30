@@ -188,7 +188,7 @@ The `## Output` section in a SKILL.md. Include field names, file paths, and YAML
 Explicit `Read` instructions in SKILL.md steps are RAG. Use them to pull in knowledge files, configs, and captures before generation begins. The `## Knowledge References` section at the bottom of a skill points to the documents that should be RAG'd.
 
 **Heart of Gold example:**
-`/guide:pipeline` — reads RSS signals, Gmail, HN, captures, and recent briefs before generating. `../knowledge/voice-guide.md` is RAG'd into voice-check phases.
+`/guide:pipeline` — reads RSS signals, Gmail, HN, captures, and recent briefs before generating. `${CLAUDE_PLUGIN_ROOT}/knowledge/voice-guide.md` is RAG'd into voice-check phases.
 
 ---
 

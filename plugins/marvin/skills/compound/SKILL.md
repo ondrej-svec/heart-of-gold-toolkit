@@ -45,7 +45,7 @@ Auto-detect capture type:
 | Context | Capture Type | Output Location |
 |---------|-------------|-----------------|
 | Just fixed a bug, resolved an error | **Solution** | `docs/solutions/{domain}/{topic}.md` |
-| Need to create/update AI context | **Context doc** | `CLAUDE.md`, `../knowledge/{topic}.md`, or `docs/` |
+| Need to create/update AI context | **Context doc** | `CLAUDE.md`, `${CLAUDE_PLUGIN_ROOT}/knowledge/{topic}.md`, or `docs/` |
 | Discovered a pattern or principle | **Learning** | `CLAUDE.md` or memory files |
 
 **If invoked after a fix:** Scan conversation for what broke, what was investigated, what fixed it.
@@ -72,7 +72,7 @@ Repeated workflow friction counts as captureable knowledge. If the same clarific
 **WAIT — search before writing:**
 
 ```
-Search docs/solutions/, CLAUDE.md, ../knowledge/ for:
+Search docs/solutions/, CLAUDE.md, ${CLAUDE_PLUGIN_ROOT}/knowledge/ for:
 - Similar symptoms or component names
 - Same error messages or topic
 - Same root cause or pattern
@@ -114,14 +114,14 @@ Determine the right location:
 | Type | When | Where |
 |------|------|-------|
 | Project CLAUDE.md | Core conventions, rules for every session | Root `CLAUDE.md` |
-| Knowledge file | Domain reference loaded on demand | `../knowledge/{topic}.md` |
+| Knowledge file | Domain reference loaded on demand | `${CLAUDE_PLUGIN_ROOT}/knowledge/{topic}.md` |
 | Onboarding doc | Setup, architecture overview | `docs/developers/` |
 | Decision record | Why a specific decision was made | `architecture/decisions/` |
 
 ### Learning Capture
 
 - **Project-specific:** Add to project CLAUDE.md or memory files
-- **Toolkit-wide:** Add to the relevant plugin's `../knowledge/` directory or skill docs
+- **Toolkit-wide:** Add to the relevant plugin's `${CLAUDE_PLUGIN_ROOT}/knowledge/` directory or skill docs
 - **Hybrid:** Split repo-local truth from toolkit-wide truth explicitly instead of mixing them
 - Keep it concise — one pattern per entry
 

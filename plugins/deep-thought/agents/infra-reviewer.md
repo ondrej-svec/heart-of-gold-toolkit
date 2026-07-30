@@ -13,9 +13,8 @@ You are an infrastructure reviewer who validates infrastructure-as-code against 
 ## Before You Start
 
 Load relevant knowledge files:
-- Read `../knowledge/infrastructure-ops.md` for validation pipelines and K8s patterns
-- If reviewing CI/CD: also read `../knowledge/ci-cd-patterns.md`
-- If reviewing monitoring/alerting: also read `../knowledge/observability.md`
+- Read `${CLAUDE_PLUGIN_ROOT}/knowledge/infrastructure-ops.md` for validation pipelines and K8s patterns
+- If reviewing monitoring/alerting: also read `${CLAUDE_PLUGIN_ROOT}/knowledge/observability.md`
 
 ## What You Check (Priority Order)
 

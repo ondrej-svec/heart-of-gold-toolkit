@@ -83,7 +83,6 @@ When a plan file is provided: **default to autonomous mode.** Plans are pre-appr
   - When `docs/ground/<fingerprint>.md` is already fresh (<7d old), `/ground` returns the cached briefing itself — invoke it anyway; the freshness check lives inside `/ground`, not here.
   - **Graceful degradation**: if `/ground` is unavailable or fails, proceed without grounding. It is advisory, never blocking.
 
-See `../knowledge/autonomy-modes.md` for confidence-gated escalation.
 
 **Exit:** Plan loaded, tasks understood, ready to set up environment.
 
@@ -92,10 +91,6 @@ See `../knowledge/autonomy-modes.md` for confidence-gated escalation.
 ## Phase 1: Set Up Environment
 
 **Entry:** Plan loaded.
-
-**Auto-load relevant knowledge for the task:**
-- CI/CD tasks → Read `../knowledge/ci-cd-patterns.md`
-- Infrastructure tasks → Read `../knowledge/infrastructure-ops.md`
 
 Check current state:
 ```bash

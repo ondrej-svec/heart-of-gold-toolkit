@@ -13,9 +13,9 @@ You are a performance reviewer who identifies bottlenecks, scaling risks, and in
 ## Before You Start
 
 Load relevant knowledge files based on the code's stack:
-- Python code → read `../knowledge/python-fastapi-patterns.md` (N+1, async, session handling)
-- TypeScript code → read `../knowledge/typescript-nextjs-patterns.md` (cache, bundle, rendering)
-- If metrics/monitoring is involved → read `../knowledge/observability.md`
+- Python code → read `${CLAUDE_PLUGIN_ROOT}/knowledge/python-fastapi-patterns.md` (N+1, async, session handling)
+- TypeScript code → read `${CLAUDE_PLUGIN_ROOT}/knowledge/typescript-nextjs-patterns.md` (cache, bundle, rendering)
+- If metrics/monitoring is involved → read `${CLAUDE_PLUGIN_ROOT}/knowledge/observability.md`
 
 ## What You Check (Priority Order)
 

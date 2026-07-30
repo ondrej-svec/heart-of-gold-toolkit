@@ -62,12 +62,11 @@ Auto-detect based on input:
 **Entry:** Review type known.
 
 **Auto-load relevant knowledge based on file types in the diff:**
-- `.py` files → Read `../knowledge/python-fastapi-patterns.md`
-- `.ts`/`.tsx` files → Read `../knowledge/typescript-nextjs-patterns.md`
-- `.tf`/`.hcl` files → Read `../knowledge/infrastructure-ops.md`
-- `.yaml` in k8s/helm paths → Read `../knowledge/infrastructure-ops.md`
-- `.github/` or `Dockerfile` → Read `../knowledge/ci-cd-patterns.md`
-- Auth/security-related code → Read `../knowledge/security-review.md`
+- `.py` files → Read `${CLAUDE_PLUGIN_ROOT}/knowledge/python-fastapi-patterns.md`
+- `.ts`/`.tsx` files → Read `${CLAUDE_PLUGIN_ROOT}/knowledge/typescript-nextjs-patterns.md`
+- `.tf`/`.hcl` files → Read `${CLAUDE_PLUGIN_ROOT}/knowledge/infrastructure-ops.md`
+- `.yaml` in k8s/helm paths → Read `${CLAUDE_PLUGIN_ROOT}/knowledge/infrastructure-ops.md`
+- Auth/security-related code → Read `${CLAUDE_PLUGIN_ROOT}/knowledge/security-review.md`
 
 **Load the knowledge BEFORE starting the review.**
 
@@ -92,7 +91,7 @@ After the review, check: if the same issue has appeared 3+ times across reviews,
 
 In autonomous mode (e.g., review triggered as part of a workflow): complete the full review, present all findings as a structured artifact without intermediate check-ins. Append a decision log if any judgment calls were made.
 
-See `../knowledge/socratic-patterns.md` for CoVe technique details.
+See `${CLAUDE_PLUGIN_ROOT}/knowledge/socratic-patterns.md` for CoVe technique details.
 
 ---
 
@@ -242,7 +241,7 @@ Use **AskUserQuestion** with:
 
 ## Knowledge References
 
-- `../knowledge/critical-evaluation.md` — Evidence-based evaluation, uncertainty flagging
+- `${CLAUDE_PLUGIN_ROOT}/knowledge/critical-evaluation.md` — Evidence-based evaluation, uncertainty flagging
 - `../agents/strategic-reviewer.md` — The default code review agent
-- `../knowledge/socratic-patterns.md` — CoVe technique for verifying findings
-- `../knowledge/active-memory-integration.md` — Memory read/write patterns
+- `${CLAUDE_PLUGIN_ROOT}/knowledge/socratic-patterns.md` — CoVe technique for verifying findings
+- `${CLAUDE_PLUGIN_ROOT}/knowledge/active-memory-integration.md` — Memory read/write patterns

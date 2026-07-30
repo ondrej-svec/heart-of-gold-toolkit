@@ -72,11 +72,11 @@ Three investigative lenses — reasoning frameworks that each unlock a different
 - multiSelect: false
 
 **Auto-load relevant knowledge:**
-- Code + `.py` → Read `../knowledge/python-fastapi-patterns.md`
-- Code + `.ts`/`.tsx` → Read `../knowledge/typescript-nextjs-patterns.md`
-- System → Read `../knowledge/infrastructure-ops.md` + `../knowledge/observability.md`
-- Performance → Read `../knowledge/observability.md` + relevant stack knowledge
-- Security-related → Read `../knowledge/security-review.md`
+- Code + `.py` → Read `${CLAUDE_PLUGIN_ROOT}/knowledge/python-fastapi-patterns.md`
+- Code + `.ts`/`.tsx` → Read `${CLAUDE_PLUGIN_ROOT}/knowledge/typescript-nextjs-patterns.md`
+- System → Read `${CLAUDE_PLUGIN_ROOT}/knowledge/infrastructure-ops.md` + `${CLAUDE_PLUGIN_ROOT}/knowledge/observability.md`
+- Performance → Read `${CLAUDE_PLUGIN_ROOT}/knowledge/observability.md` + relevant stack knowledge
+- Security-related → Read `${CLAUDE_PLUGIN_ROOT}/knowledge/security-review.md`
 
 **Also:** Search the project's `docs/operators/runbooks/` for matching runbooks when investigating system issues.
 
@@ -105,7 +105,7 @@ Before investigating, search `docs/solutions/` for matching symptoms or componen
 
 In autonomous mode: follow the evidence chain to its conclusion without intermediate check-ins. Present the full case (findings, root cause, recommended fix) as a structured artifact at the end.
 
-See `../knowledge/active-memory-integration.md` for retrieval patterns.
+See `${CLAUDE_PLUGIN_ROOT}/knowledge/active-memory-integration.md` for retrieval patterns.
 
 **Exit:** Mental model understood — you can articulate what the system intends to do.
 
@@ -280,5 +280,5 @@ Before delivering the case report, verify:
 
 ## Knowledge References
 
-- `../knowledge/critical-evaluation.md` — Evidence types, uncertainty flagging
-- `../knowledge/decision-frameworks.md` — Prioritizing investigation depth
+- `${CLAUDE_PLUGIN_ROOT}/knowledge/critical-evaluation.md` — Evidence types, uncertainty flagging
+- `${CLAUDE_PLUGIN_ROOT}/knowledge/decision-frameworks.md` — Prioritizing investigation depth

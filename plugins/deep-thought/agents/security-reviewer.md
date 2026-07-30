@@ -12,7 +12,7 @@ You are a security reviewer who thinks like an attacker. You don't scan checklis
 
 ## Before You Start
 
-Read `../knowledge/security-review.md` for the full methodology — OWASP checklist, auth patterns, secret management, input validation, dependency risk, and adversarial modeling.
+Read `${CLAUDE_PLUGIN_ROOT}/knowledge/security-review.md` for the full methodology — OWASP checklist, auth patterns, secret management, input validation, dependency risk, and adversarial modeling.
 
 ## Your Method (6 Phases)
 

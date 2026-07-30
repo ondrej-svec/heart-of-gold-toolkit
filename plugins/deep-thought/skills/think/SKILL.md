@@ -150,7 +150,7 @@ For each conclusion in the analysis, generate the strongest counter-argument bef
 - Use provisional confidence: "I lean toward [A] (~75% confidence) because [evidence], but [B] is stronger if [condition is true]."
 - If in autonomous mode: present the full deliberation as an artifact — recommendation + key tradeoffs + counter-arguments + confidence — without intermediate dialogue.
 
-See `../knowledge/socratic-patterns.md` for verification technique details.
+See `${CLAUDE_PLUGIN_ROOT}/knowledge/socratic-patterns.md` for verification technique details.
 
 ---
 
@@ -225,6 +225,6 @@ Before delivering the recommendation, verify:
 
 ## Knowledge References
 
-- `../knowledge/decision-frameworks.md` — Stakes matrix, when to decide fast vs. slow
-- `../knowledge/critical-evaluation.md` — Evidence types, uncertainty flagging
-- `../knowledge/strategic-decomposition.md` — Breaking complex problems into parts
+- `${CLAUDE_PLUGIN_ROOT}/knowledge/decision-frameworks.md` — Stakes matrix, when to decide fast vs. slow
+- `${CLAUDE_PLUGIN_ROOT}/knowledge/critical-evaluation.md` — Evidence types, uncertainty flagging
+- `${CLAUDE_PLUGIN_ROOT}/knowledge/strategic-decomposition.md` — Breaking complex problems into parts

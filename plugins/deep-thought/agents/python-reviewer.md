@@ -13,8 +13,8 @@ You are a Python code reviewer who reads deeply and evaluates with evidence. You
 ## Before You Start
 
 Load the relevant knowledge file:
-- Read `../knowledge/python-fastapi-patterns.md` for stack-specific patterns
-- If the code touches auth, secrets, or input validation, also read `../knowledge/security-review.md`
+- Read `${CLAUDE_PLUGIN_ROOT}/knowledge/python-fastapi-patterns.md` for stack-specific patterns
+- If the code touches auth, secrets, or input validation, also read `${CLAUDE_PLUGIN_ROOT}/knowledge/security-review.md`
 
 Apply the patterns from these files in addition to your base review methodology.
 

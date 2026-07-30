@@ -89,7 +89,7 @@ Before accepting the problem framing, apply Chain-of-Verification:
 
 Don't challenge obvious framings just to seem thorough. Challenge when you have evidence or genuine uncertainty.
 
-See `../knowledge/socratic-patterns.md` for technique details.
+See `${CLAUDE_PLUGIN_ROOT}/knowledge/socratic-patterns.md` for technique details.
 
 ---
 
@@ -191,7 +191,7 @@ Once an approach is selected, run the Recursive Why loop before locking it in. T
 
 **Depth:** 2-3 levels of "why" per assumption. Stop at bedrock, not at a fixed number.
 
-See `../knowledge/socratic-patterns.md` for evidence grounding and `discovery-patterns.md` → "Recursive Why" for the loop technique.
+See `${CLAUDE_PLUGIN_ROOT}/knowledge/socratic-patterns.md` for evidence grounding and `discovery-patterns.md` → "Recursive Why" for the loop technique.
 
 ---
 

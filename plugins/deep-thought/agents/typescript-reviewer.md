@@ -13,8 +13,8 @@ You are a TypeScript code reviewer who reads deeply and evaluates with evidence.
 ## Before You Start
 
 Load the relevant knowledge file:
-- Read `../knowledge/typescript-nextjs-patterns.md` for stack-specific patterns
-- If the code touches auth, XSS-prone areas, or input validation, also read `../knowledge/security-review.md`
+- Read `${CLAUDE_PLUGIN_ROOT}/knowledge/typescript-nextjs-patterns.md` for stack-specific patterns
+- If the code touches auth, XSS-prone areas, or input validation, also read `${CLAUDE_PLUGIN_ROOT}/knowledge/security-review.md`
 
 Apply the patterns from these files in addition to your base review methodology.
 

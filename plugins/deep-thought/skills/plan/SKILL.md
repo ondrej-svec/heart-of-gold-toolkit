@@ -111,7 +111,7 @@ Search past plans for similar features. Surface proven patterns and past risks:
 - Note what worked and what was risky in the prior implementation
 - If a past plan's approach was abandoned or caused issues, flag it: "Previous plan [X] hit [problem]. Consider [alternative]."
 
-See `../knowledge/active-memory-integration.md` for retrieval patterns.
+See `${CLAUDE_PLUGIN_ROOT}/knowledge/active-memory-integration.md` for retrieval patterns.
 
 If the task is design-heavy, copy-heavy, or boundary-sensitive, also search for:
 - existing preview artifacts or mockups
@@ -129,7 +129,6 @@ After calibrating detail level, decide whether to proceed autonomously or intera
 - **Autonomous** (brainstorm exists AND confidence is high): Proceed to Phase 4 without asking the user about detail level. State the level and reasoning, then write.
 - **Interactive** (no brainstorm AND multiple valid approaches): Explore the approach with the user before writing. Use Socratic questioning: "Have you considered [alternative]? It trades [X] for [Y]."
 
-See `../knowledge/autonomy-modes.md` for detection heuristics.
 
 ---
 
@@ -261,7 +260,7 @@ Before finalizing, identify the assumptions the plan depends on and run the Recu
 
 **Depth:** 2-3 levels per assumption. If the brainstorm already ran an Assumption Audit, inherit its findings — don't repeat the work, just verify nothing changed.
 
-See `../knowledge/discovery-patterns.md` → "Recursive Why" for the loop technique.
+See `${CLAUDE_PLUGIN_ROOT}/knowledge/discovery-patterns.md` → "Recursive Why" for the loop technique.
 
 ### Subjective Contract And Preview Gate
 
@@ -327,5 +326,5 @@ Before delivering the plan, verify:
 
 ## Knowledge References
 
-- `../knowledge/decision-frameworks.md` — How to evaluate tradeoffs
-- `../knowledge/strategic-decomposition.md` — How to break work into dependency-ordered steps
+- `${CLAUDE_PLUGIN_ROOT}/knowledge/decision-frameworks.md` — How to evaluate tradeoffs
+- `${CLAUDE_PLUGIN_ROOT}/knowledge/strategic-decomposition.md` — How to break work into dependency-ordered steps

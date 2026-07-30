@@ -2,7 +2,7 @@
 
 > "Here I am, brain the size of a planet, and they ask me to review your code. Call that job satisfaction? 'Cause I don't."
 
-A quality plugin for Claude Code. Ten skills for the unglamorous work that compounds: executing plans, reviewing code, documenting solutions, scaffolding projects, writing failing tests, adversarial review, keeping copy clean, publishing browser-viewable artifacts, and controlling the local share server lifecycle.
+A quality plugin for Claude Code. Thirteen skills for the unglamorous work that compounds: executing plans, reviewing code, documenting solutions, scaffolding projects, writing failing tests, adversarial review, keeping copy clean, grounding work in current reality, installing and replicating harness doctrine, publishing browser-viewable artifacts, and controlling the local share server lifecycle.
 
 ## Skills
 
@@ -29,6 +29,15 @@ Write failing tests from user stories and architecture docs. Behavioral tests ve
 ### `/marvin:copy-editor`
 Two-layer copy editor. Layer 1 is a deterministic typography audit (regex-level, auto-closeable). Layer 2 is LLM judgment — reject-list hits, nominal-style detection, clarity/ambiguity pass for participant-facing content, voice/register check, and spoken-readability read. Loads repo-local `.copy-editor.yaml` to compose the baked-in language profile with the repo's style guide.
 
+### `/marvin:ground`
+Survey a repo, then ground externally on the parts of the internet that matter to it. Local manifest scan plus recent git activity, then WebSearch/WebFetch/`gh`, synthesized into a terse, dated, sourced briefing cached at `docs/ground/<fingerprint>.md` with a 7-day freshness window. Runs as a subagent so the web research never lands in the caller's context. Composable — other skills invoke it as a pre-flight phase.
+
+### `/marvin:harness-up`
+Install harness-engineering doctrine into a repository: a short root `AGENTS.md`, a `docs/` taxonomy (plans, ADRs, solutions), verification rules, and project-scoped Claude Code settings. Surveys before it generates. Works on empty repos, existing repos, and ports. Distinct from `scaffold`, which installs dependencies rather than doctrine.
+
+### `/marvin:harness-sync`
+Replicate a `~/.claude` harness from one machine to another and check that two machines still match. Has an explicit travels/never-travels split, so machine-local state and credentials stay put.
+
 ### `/marvin:share-server-setup`
 Set up or adopt a local share server for browser-viewable coding-agent artifacts. Supports configuring an existing compatible server, installing the Heart of Gold reference share server, adding macOS LaunchAgent persistence, and optionally exposing only the viewer surface over `tailscale serve`.
 
@@ -44,6 +53,7 @@ Control the local share server after setup. Use it to check status, start or sto
 |-------|-------|
 | `knowledge-architect` | Builds and maintains structured knowledge docs — CLAUDE.md files, onboarding guides |
 | `skill-reviewer` | Reviews SKILL.md files against quality criteria, grades A-F |
+| `harness-author` | Drafts repo doctrine — root and subtree `AGENTS.md` — adapted to a repo's mission, stack, and verification surfaces. Called by `harness-up`. |
 
 ## Knowledge
 

@@ -6,7 +6,6 @@ description: >
   project-scoped Claude Code plugins. Works on empty repos (greenfield
   scaffold), existing repos (survey + upgrade), and ports of existing systems.
   Distinct from `marvin:scaffold` (which installs deps and configs); distinct
-  from `cc-lab:cc-lab-diagnose` (which observes but doesn't change anything).
   Triggers: harness up, harness this repo, set up AGENTS.md, agent doctrine,
   make this repo agent-ready, init harness, scaffold agent context.
 allowed-tools:
@@ -28,7 +27,7 @@ A repository that confuses an agent confuses a teammate too. The fix isn't a lon
 
 **This skill MAY:** read repo state, ask scoping questions, write doctrine docs (`AGENTS.md`, `CLAUDE.md`, `docs/agents-md-standard.md`, `docs/plans/README.md`, ADR/solutions templates), create `.claude/settings.json` (or merge), record marketplace add commands in a setup section, scaffold empty `docs/` subdirectories with README stubs.
 
-**This skill MAY NOT:** write application source code, write tests, install npm/pnpm/pip dependencies (that is `marvin:scaffold`'s job), run tests or builds, deploy, modify production state, overwrite an existing `AGENTS.md` without merging, replicate `cc-lab:cc-lab-diagnose`'s observation logic.
+**This skill MAY NOT:** write application source code, write tests, install npm/pnpm/pip dependencies (that is `marvin:scaffold`'s job), run tests or builds, deploy, modify production state, overwrite an existing `AGENTS.md` without merging.
 
 **You install doctrine. You do not write the application.**
 
@@ -43,7 +42,6 @@ A repository that confuses an agent confuses a teammate too. The fix isn't a lon
 
 ## When NOT to Use
 
-- The repo already has a passing `cc-lab:cc-lab-diagnose` and the user wants a targeted fix, not a doctrine refresh — edit directly instead.
 - Application scaffolding (deps, source, tests) is what's actually needed — use `marvin:scaffold`.
 - A single section needs a rewrite — edit that file; running the full skill is overkill.
 - The repo is a one-off prototype with no team or future maintainers — doctrine is overhead it won't pay back.
@@ -76,7 +74,7 @@ A doctrine without a mission is filler. **AskUserQuestion** (header: "Mission") 
 
 **Entry:** Mode + mission known.
 
-Inventory without re-implementing `cc-lab:cc-lab-diagnose`: read any existing `AGENTS.md` / `CLAUDE.md` fully (never overwrite blindly), detect framework from `package.json`, note `docs/` shape and `.claude/settings.json` state, note git remote. Produce a one-paragraph "what exists / what's missing / what conflicts" report. If `cc-lab:cc-lab-diagnose` is installed and this is brownfield, suggest running it first for deeper observations.
+Inventory the repo: read any existing `AGENTS.md` / `CLAUDE.md` fully (never overwrite blindly), detect framework from `package.json`, note `docs/` shape and `.claude/settings.json` state, note git remote. Produce a one-paragraph "what exists / what's missing / what conflicts" report.
 
 **Exit:** Inventory surfaced to the user.
 
@@ -101,7 +99,6 @@ Use **AskUserQuestion** with `multiSelect: true` (header: "Doctrine", question: 
 Then **AskUserQuestion** with `multiSelect: true` (header: "Plugins", question: "Which Claude Code plugins should be project-scoped? Project-scoped means anyone cloning the repo gets them, regardless of their global setup."):
 
 1. **heart-of-gold-toolkit** — deep-thought, marvin, babel-fish, guide, quellis
-2. **cc-lab** — `/cc-lab-diagnose` for ongoing setup checks
 3. **compound-engineering** — review/plan/work agents
 4. **vercel** — for Next.js / Vercel-hosted projects (auto-suggest if Next.js detected)
 5. **chrome-devtools-mcp** — required by the UI-testing surface above
@@ -143,7 +140,7 @@ Plugin scoping: for project scope, merge `.claude/settings.json`. Marketplace `a
 
 **Entry:** Files written.
 
-Print a manifest grouped by surface — every file created or modified, with a one-line purpose. Suggest a single branch (`harness-up/scaffold`) so the doctrine lands as one reviewable diff. Then **AskUserQuestion** (header: "Next"): *done — commit*, *run `/cc-lab:cc-lab-diagnose`* (if cc-lab was selected), *adjust a section*, *generate a subtree AGENTS.md*, *open a brainstorm for an unfilled section*.
+Print a manifest grouped by surface — every file created or modified, with a one-line purpose. Suggest a single branch (`harness-up/scaffold`) so the doctrine lands as one reviewable diff. Then **AskUserQuestion** (header: "Next"): *done — commit*, *adjust a section*, *generate a subtree AGENTS.md*, *open a brainstorm for an unfilled section*.
 
 **Exit:** Manifest delivered, next move chosen.
 
@@ -166,14 +163,13 @@ Before delivering, verify each:
 
 - `../agents/harness-author.md` — dedicated drafting agent dispatched in Phase 4 for AGENTS.md generation. Already loads the harness-engineering rubric.
 - `${CLAUDE_PLUGIN_ROOT}/knowledge/harness-doctrine.md` — AGENTS.md shape and anti-goals, the 12 PASS/FAIL checks, plan lifecycle, the AGENTS.md↔CLAUDE.md bridge. Shipped with the plugin; always present.
-- `${CLAUDE_PLUGIN_ROOT}/../../CONVENTIONS.md` — authoring standard, when writing skills or agents into the target repo.
+- `${CLAUDE_PLUGIN_ROOT}/knowledge/conventions.md` — authoring standard, when writing skills or agents into the target repo.
 
 Never cache generated templates inside the plugin directory: the installed tree
 at `~/.claude/plugins/cache/<marketplace>/<plugin>/<version>/` is replaced
 wholesale on every version bump, so anything written there is destroyed by the
 next update. Write to the target repo instead.
-- Sibling skill: `cc-lab:cc-lab-diagnose` — use it to *observe* before this skill *changes*.
 
 ## What Makes This Heart of Gold
 
-The smallest durable surface, not the longest prompt. Surveys before generating. Matches harness-engineering vocabulary exactly so `/cc-lab-diagnose` and `marvin:compound` work the day after install.
+The smallest durable surface, not the longest prompt. Surveys before generating. Matches harness-engineering vocabulary exactly so `marvin:compound` works the day after install.

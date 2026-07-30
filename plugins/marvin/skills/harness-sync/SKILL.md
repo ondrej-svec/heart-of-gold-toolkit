@@ -183,9 +183,8 @@ here — `claude` login, and any API keys the skills expect in `secrets/`.
 
 - **Installing doctrine into a project repo** — that is `marvin:harness-up`.
 - **Installing project dependencies** — that is `marvin:scaffold`.
-- **Auditing whether a harness is any good** — that is
-  `cc-lab:cc-lab-diagnose`. This skill checks that two machines *match*, not
-  that the thing they match on is well designed.
+- **Auditing whether a harness is any good** — this skill checks that two
+  machines *match*, not that the thing they match on is well designed.
 
 ## What Makes This Heart of Gold
 

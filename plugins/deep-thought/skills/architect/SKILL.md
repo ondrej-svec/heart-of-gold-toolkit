@@ -216,5 +216,5 @@ Before delivering, verify:
 - `./architecture-template.md` — Full architecture doc template
 - `./adr-format.md` — ADR structure reference
 - `./story-format.md` — Story format with examples
-- `../knowledge/strategic-decomposition.md` — How to break work into units
-- `../knowledge/decision-frameworks.md` — How to evaluate tradeoffs
+- `${CLAUDE_PLUGIN_ROOT}/knowledge/strategic-decomposition.md` — How to break work into units
+- `${CLAUDE_PLUGIN_ROOT}/knowledge/decision-frameworks.md` — How to evaluate tradeoffs

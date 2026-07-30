@@ -256,7 +256,7 @@ Produce four (sometimes five) frontmatter blocks:
 - **`naming_landscape`** — competing vocabularies positioned (include when the category is mid-naming-fight).
 - **`visual_brief`** — directive header listing required components.
 
-**See `../knowledge/strategy-dashboard-spec.md`** for the exact YAML shape of each block, tradeoff-vs-feature examples, and the reasoning behind each field. That knowledge file is the authoritative spec; the skill must produce frontmatter that matches it.
+**See `${CLAUDE_PLUGIN_ROOT}/knowledge/strategy-dashboard-spec.md`** for the exact YAML shape of each block, tradeoff-vs-feature examples, and the reasoning behind each field. That knowledge file is the authoritative spec; the skill must produce frontmatter that matches it.
 
 **Exit:** Seven internal drafts ready plus the structured visual blocks above. Nothing written yet.
 
@@ -442,7 +442,7 @@ The visual is a first-class part of this skill, not an option. Do not ask whethe
 
 ### Step 1 — invoke visualize with the strategy-dashboard brief
 
-Call the Skill tool with `babel-fish:visualize`. Pass the output path as the primary argument and append the **strategy-dashboard brief from `../knowledge/strategy-dashboard-spec.md`** as additional context (concatenate verbatim to the args string after the path).
+Call the Skill tool with `babel-fish:visualize`. Pass the output path as the primary argument and append the **strategy-dashboard brief from `${CLAUDE_PLUGIN_ROOT}/knowledge/strategy-dashboard-spec.md`** as additional context (concatenate verbatim to the args string after the path).
 
 Why the brief: the visualizer is a generalist. Without explicit direction it produces "prose with one decorative SVG." The knowledge file tells it exactly which components to build, enforces the UI quality rules (no label collisions, colour consistency, 760px mobile behaviour, danger-colour reserved for risk), and includes a browser-self-verification protocol for agents with Chrome tooling available. Read the knowledge file and pass it along.
 
@@ -506,8 +506,8 @@ Before delivering the map, verify:
 
 ## Knowledge References
 
-- `../knowledge/strategy-dashboard-spec.md` — **authoritative spec for Phase 5h structured data and the Phase 8 visual brief.** Referenced by both phases; the skill will not produce a coherent dashboard without it.
-- `../knowledge/discovery-patterns.md` — AskUserQuestion usage, thin-context handling, goal articulation
-- `../knowledge/socratic-patterns.md` — evidence grounding for Phase 6 self-review
-- `../knowledge/twelve-techniques.md` — technique checklist this skill applies (few-shot examples, negative prompting, format specification, reflection, RAG via Phase 4 research)
-- `../knowledge/strategic-decomposition.md` — strategy-thesis framing (referenced by Phase 5b)
+- `${CLAUDE_PLUGIN_ROOT}/knowledge/strategy-dashboard-spec.md` — **authoritative spec for Phase 5h structured data and the Phase 8 visual brief.** Referenced by both phases; the skill will not produce a coherent dashboard without it.
+- `${CLAUDE_PLUGIN_ROOT}/knowledge/discovery-patterns.md` — AskUserQuestion usage, thin-context handling, goal articulation
+- `${CLAUDE_PLUGIN_ROOT}/knowledge/socratic-patterns.md` — evidence grounding for Phase 6 self-review
+- `${CLAUDE_PLUGIN_ROOT}/knowledge/twelve-techniques.md` — technique checklist this skill applies (few-shot examples, negative prompting, format specification, reflection, RAG via Phase 4 research)
+- `${CLAUDE_PLUGIN_ROOT}/knowledge/strategic-decomposition.md` — strategy-thesis framing (referenced by Phase 5b)

@@ -512,6 +512,6 @@ Before delivering the report:
 
 ## Knowledge References
 
-- `../knowledge/critical-evaluation.md` — Evidence-based evaluation, uncertainty flagging
-- `../knowledge/socratic-patterns.md` — CoVe technique for verifying findings
-- `../knowledge/decision-frameworks.md` — Tradeoff evaluation for the prioritized action list
+- `${CLAUDE_PLUGIN_ROOT}/knowledge/critical-evaluation.md` — Evidence-based evaluation, uncertainty flagging
+- `${CLAUDE_PLUGIN_ROOT}/knowledge/socratic-patterns.md` — CoVe technique for verifying findings
+- `${CLAUDE_PLUGIN_ROOT}/knowledge/decision-frameworks.md` — Tradeoff evaluation for the prioritized action list
