@@ -134,10 +134,21 @@ else.
 
 ## 6. Plugin packaging
 
-- `.claude-plugin/plugin.json` — bump `version` in the same commit as the change
-  it describes. A commit claiming a version the manifest does not carry makes
-  every downstream cache ambiguous.
-- Register in the root `.claude-plugin/marketplace.json`.
+- Manifest location is `plugins/<name>/.claude-plugin/plugin.json`. Keep every
+  plugin consistent; a manifest at the plugin root is a portability gamble on
+  which location the host reads.
+- **The version appears twice** — in `plugin.json` and again in the plugin's
+  entry in the root `.claude-plugin/marketplace.json`. Both must be updated
+  together. They had already drifted (`0.4.3` vs `0.4.4`) before anyone
+  noticed, because nothing checks.
+- Bump the version **in the same commit** as the change it describes. A commit
+  message announcing a version the manifest does not carry makes every
+  downstream cache ambiguous, and `claude plugin update` will report the plugin
+  already current while shipping the old code.
+- After pushing, verify installation actually took: refresh the marketplace,
+  update the plugin, then confirm the new file exists under
+  `~/.claude/plugins/cache/<marketplace>/<plugin>/<version>/`. A push is not a
+  release.
 - Delisted plugins get removed from `marketplace.json` **and** deleted from the
   tree. A full plugin directory that is not installable is dead code.
 

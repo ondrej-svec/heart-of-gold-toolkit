@@ -1,7 +1,7 @@
 {
   "name": "marvin",
-  "version": "0.4.4",
-  "description": "The Paranoid Android — quality tools for code review, knowledge compounding, work execution, and grounding",
+  "version": "0.5.0",
+  "description": "The Paranoid Android \u2014 quality tools for code review, knowledge compounding, work execution, and grounding",
   "author": {
     "name": "ondrej-svec",
     "url": "https://github.com/ondrej-svec"
