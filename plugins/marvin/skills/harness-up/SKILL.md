@@ -39,7 +39,7 @@ A repository that confuses an agent confuses a teammate too. The fix isn't a lon
 | "Skip the survey — drop in the template" | Templates bury real conventions; downstream links go dead | AGENTS.md routes agents to files that don't exist; the first session breaks on a 404 |
 | "Add every plugin — they're free" | Each plugin loads on every session; cognitive load compounds | Slow starts, abandoned skills, contributors disabling the lot |
 | "Empty repo, no brainstorm — fill in later" | Doctrine without mission reads generic | Agent has no routing anchor; produces boilerplate every invocation |
-| "Mirror harness-lab 1:1" | That repo is a workshop; yours probably isn't | Sections nobody owns rot into doctrine debt within weeks |
+| "Copy the reference shape 1:1" | The doctrine describes a shape, not a section list; every repo owns different surfaces | Sections nobody owns rot into doctrine debt within weeks |
 
 ## When NOT to Use
 
@@ -121,7 +121,7 @@ Then **AskUserQuestion** with `multiSelect: false` (header: "Scope", question: "
 
 **Entry:** Decisions captured.
 
-Source templates from `../knowledge/harness-doctrine.md` if it exists; otherwise synthesize from the reference repos (`~/projects/Bobo/harness-lab/AGENTS.md`, `docs/agents-md-standard.md`, `docs/plan-lifecycle-standard.md`). Substitute mission and stack from Phases 1-2. Cap AGENTS.md at ~180 lines (the `map_not_dump` heuristic).
+Source templates from `${CLAUDE_PLUGIN_ROOT}/knowledge/harness-doctrine.md` — the shipped standard: five jobs of a root AGENTS.md, the anti-goals, the PASS/FAIL scoring appendix, and the plan lifecycle. Substitute mission and stack from Phases 1-2. Cap AGENTS.md at ~180 lines (the `map_not_dump` heuristic).
 
 Write in this order — each step depends on the prior:
 
@@ -165,9 +165,13 @@ Before delivering, verify each:
 ## Knowledge References
 
 - `../agents/harness-author.md` — dedicated drafting agent dispatched in Phase 4 for AGENTS.md generation. Already loads the harness-engineering rubric.
-- `../knowledge/harness-doctrine.md` — AGENTS.md shape, plan lifecycle, ADR template, solutions format. Create on first run if missing.
-- `../knowledge/plugin-catalog.md` — marketplaces, install commands, project-vs-user scoping rules. Create on first run if missing.
-- Reference repos for templates: `~/projects/Bobo/harness-lab/AGENTS.md`, `~/projects/Bobo/harness-lab/docs/agents-md-standard.md`, `~/projects/Bobo/harness-lab/docs/plan-lifecycle-standard.md`.
+- `${CLAUDE_PLUGIN_ROOT}/knowledge/harness-doctrine.md` — AGENTS.md shape and anti-goals, the 12 PASS/FAIL checks, plan lifecycle, the AGENTS.md↔CLAUDE.md bridge. Shipped with the plugin; always present.
+- `${CLAUDE_PLUGIN_ROOT}/../../CONVENTIONS.md` — authoring standard, when writing skills or agents into the target repo.
+
+Never cache generated templates inside the plugin directory: the installed tree
+at `~/.claude/plugins/cache/<marketplace>/<plugin>/<version>/` is replaced
+wholesale on every version bump, so anything written there is destroyed by the
+next update. Write to the target repo instead.
 - Sibling skill: `cc-lab:cc-lab-diagnose` — use it to *observe* before this skill *changes*.
 
 ## What Makes This Heart of Gold
