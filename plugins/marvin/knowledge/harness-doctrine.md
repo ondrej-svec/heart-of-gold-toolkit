@@ -67,6 +67,17 @@ canonical doctrine lives in `AGENTS.md`, bridge explicitly:
 Never maintain two divergent copies. One file is the source of truth; the other
 is a pointer.
 
+**Which one is canonical is a per-repo question, not a rule.** AGENTS.md-primary
+is the default because it is tool-agnostic. But a repo whose only agent is Claude
+Code — a personal harness, most obviously — is better served by CLAUDE.md-primary
+with a one-line `AGENTS.md` pointing at it: the canonical file is then the one the
+tool loads natively every session, with no bridge to forget. The failure mode this
+rule exists to prevent is two divergent copies, and either direction prevents it.
+
+When a repo already has a working CLAUDE.md and no AGENTS.md, do not relocate its
+doctrine to satisfy the default. Ask first. Moving a file that is already loading
+correctly buys nothing and risks a session where neither file is found.
+
 ## Maintenance triggers
 
 Update `AGENTS.md` or its linked docs when:

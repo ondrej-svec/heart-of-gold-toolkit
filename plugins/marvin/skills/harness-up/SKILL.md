@@ -88,6 +88,17 @@ Use **AskUserQuestion** with `multiSelect: true` (header: "Doctrine", question: 
 
 1. **Root AGENTS.md** — operating map: mission, read-first, task routing, verification, done — *recommended for every repo*
 2. **CLAUDE.md mirror** — single-line `@AGENTS.md` for tools that look there
+
+   *Direction matters.* Default is AGENTS.md-primary with CLAUDE.md as the
+   mirror. But if the repo already has a substantial CLAUDE.md and no
+   AGENTS.md — a personal Claude Code harness, most commonly — invert it:
+   keep CLAUDE.md as the real document and make AGENTS.md the one-line
+   pointer. Do not relocate a doctrine file that is already working and
+   already loaded every session; ask before flipping an existing repo.
+
+3. **Bespoke reviewers** (`.claude/agents/`) — one or two project-specific
+   review agents, named for this repo's actual failure modes rather than
+   generic categories. See Phase 4.
 3. **`docs/agents-md-standard.md`** — what AGENTS.md commits to (the 12 PASS/FAIL checks)
 4. **`docs/plans/`** — plan lifecycle (`approved | in_progress | complete | superseded | captured`) with archive rules
 5. **`docs/adr/`** — architecture decision records template
@@ -126,7 +137,33 @@ Write in this order — each step depends on the prior:
 2. `CLAUDE.md` mirror (`@AGENTS.md`) if selected
 3. `docs/` skeleton — `plans/`, `adr/`, `solutions/` as empty directories with `README.md` stubs that carry only lifecycle rules
 4. `docs/agents-md-standard.md` if selected
-5. `.claude/settings.json` — last, references everything above. Merge into an existing file when present; never replace it
+5. `.claude/agents/*.md` — bespoke reviewers, if selected. See below.
+6. `.claude/settings.json` — last, references everything above. Merge into an existing file when present; never replace it
+
+### Bespoke reviewers
+
+The highest-value thing this skill installs, and the least obvious. Measured
+across one power user's 90 days of transcripts, project-specific review agents
+were dispatched 60+ times while a 43-agent library of generic personas was
+dispatched 4 times. Specific beats comprehensive, reliably.
+
+Derive one or two from what Phases 1-2 actually found — never from a menu of
+categories. Good ones read like a bug report the repo has already filed:
+
+- a workshop-material repo → a reviewer for participant-facing tone and reading level
+- a repo with a client-side encryption boundary → a reviewer that checks nothing
+  plaintext crosses it
+- a repo whose canvas rendering breaks subtly → a reviewer for its draw-order rules
+
+If Phases 1-2 surfaced no such failure mode, write none. An invented reviewer is
+the 14-archived-skills mistake with extra steps.
+
+Each generated agent must carry: an explicit `model` (never inherit — routing
+downward is the point), `tools` restricted to read-only (`Read, Grep, Glob`)
+unless it demonstrably needs more, a description naming *this repo's* failure
+mode, and two or three concrete examples drawn from real code in the repo. Cap
+at ~80 lines. Register them in `AGENTS.md`'s task-routing table so they are
+discoverable without being always-on.
 
 For the AGENTS.md drafting (root and any subtree), use **Agent** with `subagent_type: harness-author` — the dedicated agent loads the harness-engineering standard and verifies its output against the 12-check rubric before returning. Pass mission, target path, and the survey output. The skill writes the body to disk; the agent does not write files itself. For unrelated tasks beyond doctrine adaptation (e.g. content scraping a port source), fall back to `general-purpose`.
 

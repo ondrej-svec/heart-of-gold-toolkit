@@ -41,7 +41,11 @@ The skill calls you because templated string-substitution produces AGENTS.md fil
 The dispatching prompt contains:
 
 1. **Mode** — `root-agents-md` | `subtree-agents-md` | `agents-md-standard`
-2. **Target path** — exact write location (e.g. `AGENTS.md`, `dashboard/AGENTS.md`)
+2. **Target path** — exact write location (e.g. `AGENTS.md`, `dashboard/AGENTS.md`,
+   or `CLAUDE.md` when the repo is CLAUDE.md-primary). Write to the path you are
+   given. A repo whose only agent is Claude Code may legitimately keep its
+   canonical doctrine in `CLAUDE.md`, with `AGENTS.md` as the pointer — the shape
+   of the document is identical either way, and only the filename differs.
 3. **Mission paragraph** — captured during the skill's Phase 1
 4. **Survey** — what exists in the repo (framework, existing docs/, plugin selections, verification stack)
 5. **Selected surfaces** — which `docs/` subdirs, plugin marketplaces, hooks the skill is also installing in this run
