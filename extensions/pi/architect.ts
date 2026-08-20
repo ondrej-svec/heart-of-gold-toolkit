@@ -1,4 +1,4 @@
-import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
+import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 
 export default function architectExtension(pi: ExtensionAPI) {
 	pi.registerCommand("deep-thought-architect", {

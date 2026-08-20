@@ -145,3 +145,14 @@ export function coerceExtractedPrompt(workflow, extracted) {
     confidence: extracted.confidence,
   };
 }
+
+export async function requestStandardDialog(prompt, ui) {
+  const title = prompt.context ? `${prompt.question}\n\n${prompt.context}` : prompt.question;
+  if (prompt.kind === "single_choice") {
+    const answer = await ui.select(title, (prompt.options ?? []).map((option) => option.label));
+    return typeof answer === "string" && answer.trim() ? answer.trim() : null;
+  }
+
+  const answer = await ui.editor(title, "");
+  return typeof answer === "string" && answer.trim() ? answer.trim() : null;
+}

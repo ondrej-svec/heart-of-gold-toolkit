@@ -1,4 +1,4 @@
-import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
+import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 
 const PROTECTED_PATHS = [".env", ".git/", "node_modules/"];
 const CONFIRM_COMMANDS = [/\bgit\s+push\b/i, /\bnpm\s+publish\b/i, /\bbun\s+publish\b/i, /\bgh\s+pr\s+create\b/i];

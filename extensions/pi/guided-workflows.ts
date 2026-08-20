@@ -1,5 +1,5 @@
-import { complete, type Api, type Model, type UserMessage } from "@mariozechner/pi-ai";
-import { BorderedLoader, type ExtensionAPI, type ExtensionContext, type ModelRegistry } from "@mariozechner/pi-coding-agent";
+import { complete, type Api, type Model, type UserMessage } from "@earendil-works/pi-ai";
+import { BorderedLoader, type ExtensionAPI, type ExtensionContext, type ModelRegistry } from "@earendil-works/pi-coding-agent";
 import {
 	type Component,
 	Editor,
@@ -10,13 +10,14 @@ import {
 	type TUI,
 	visibleWidth,
 	wrapTextWithAnsi,
-} from "@mariozechner/pi-tui";
+} from "@earendil-works/pi-tui";
 import {
 	RESET_COMMAND_PATTERN,
 	coerceExtractedPrompt,
 	detectWorkflow,
 	heuristicExtractPrompt,
 	parseExtractionEnvelope,
+	requestStandardDialog,
 } from "./guided-workflows-core.js";
 
 type WorkflowName = "brainstorm" | "plan" | "architect";
@@ -327,21 +328,29 @@ async function showExtractionLoaderAndPrompt(
 ): Promise<{ prompt: GuidedPrompt | null; source: string; reason?: string }> {
 	if (!ctx.hasUI) return { prompt: null, source: "disabled", reason: "ui unavailable" };
 
-	const extracted = await ctx.ui.custom<{ result: ExtractedPromptEnvelope | null; source: string } | null>((tui, theme, _kb, done) => {
-		const loader = new BorderedLoader(tui, theme, `Heart of Gold: extracting ${workflow} prompt...`);
-		loader.onAbort = () => done(null);
+	const run = async () => {
+		const modelResult = await extractPromptWithModel(ctx, workflow, assistantText);
+		if (modelResult && modelResult.kind !== "none" && modelResult.confidence !== "low") {
+			return { result: modelResult, source: "model" };
+		}
+		return { result: heuristicExtractPrompt(assistantText) as ExtractedPromptEnvelope, source: "heuristic" };
+	};
 
-		const run = async () => {
-			const modelResult = await extractPromptWithModel(ctx, workflow, assistantText);
-			if (modelResult && modelResult.kind !== "none" && modelResult.confidence !== "low") {
-				return { result: modelResult, source: "model" };
-			}
-			return { result: heuristicExtractPrompt(assistantText) as ExtractedPromptEnvelope, source: "heuristic" };
-		};
-
-		run().then(done).catch(() => done({ result: heuristicExtractPrompt(assistantText) as ExtractedPromptEnvelope, source: "heuristic" }));
-		return loader;
-	});
+	let extracted: { result: ExtractedPromptEnvelope | null; source: string } | null;
+	if (ctx.mode === "tui") {
+		extracted = await ctx.ui.custom<{ result: ExtractedPromptEnvelope | null; source: string } | null>((tui, theme, _kb, done) => {
+			const loader = new BorderedLoader(tui, theme, `Heart of Gold: extracting ${workflow} prompt...`);
+			loader.onAbort = () => done(null);
+			run().then(done).catch(() => done({ result: heuristicExtractPrompt(assistantText) as ExtractedPromptEnvelope, source: "heuristic" }));
+			return loader;
+		});
+	} else {
+		try {
+			extracted = await run();
+		} catch {
+			extracted = { result: heuristicExtractPrompt(assistantText) as ExtractedPromptEnvelope, source: "heuristic" };
+		}
+	}
 
 	if (!extracted) return { prompt: null, source: "cancelled", reason: "user cancelled extraction" };
 	const prompt = coerceExtractedPrompt(workflow, extracted.result) as GuidedPrompt | null;
@@ -354,7 +363,10 @@ async function showExtractionLoaderAndPrompt(
 
 async function promptForAnswer(pi: ExtensionAPI, ctx: ExtensionContext, prompt: GuidedPrompt): Promise<boolean> {
 	if (!ctx.hasUI) return false;
-	const answer = await ctx.ui.custom<string | null>((tui, _theme, _kb, done) => new GuidedPromptComponent(prompt, tui, done));
+	const answer =
+		ctx.mode === "tui"
+			? await ctx.ui.custom<string | null>((tui, _theme, _kb, done) => new GuidedPromptComponent(prompt, tui, done))
+			: await requestStandardDialog(prompt, ctx.ui);
 	if (!answer) return false;
 	if (ctx.isIdle()) {
 		pi.sendUserMessage(answer);
