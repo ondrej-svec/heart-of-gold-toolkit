@@ -79,6 +79,14 @@ Walk through each source type:
 **Web search:**
 > "Any specific topics you'd like web-searched daily? (optional)"
 
+**X/Twitter signals:**
+> "Do you want public X/Twitter signals in your brief? Guide does not fetch or post on social networks directly, but it can use a vetted export."
+
+- If yes, recommend a read-first source such as Hermes Tweet and ask for the export path
+- Require public-only signals with source URLs
+- Keep posting, replying, liking, and follow actions outside Guide
+- Tell the user the export must be prepared before `/guide:pipeline` runs
+
 ### Step 5: Content Cadence
 
 Ask:

@@ -114,11 +114,17 @@ Full schema in `defaults/config.yaml`. Key sections:
 | `sources.rss` | RSS/Atom feeds with freshness windows |
 | `sources.gmail` | Gmail label, max items (uses `gws` CLI) |
 | `sources.hackernews` | Top stories limit |
-| `sources.web_search` | Search keywords (optional) |
+| `sources.web_search` | Search keywords and optional social export context |
 | `agents` | Model assignments per pipeline phase (scout: sonnet, creator: opus, etc.) |
 | `cadence` | LinkedIn 3x/week, blog biweekly targets |
 | `notifications` | iMessage recipient, Slack webhook |
 | `output` | Directory paths for briefs, drafts, pipeline state, captures |
+
+### Optional X/Twitter Signals
+
+Guide does not post, reply, like, or fetch social feeds by itself. If you want X/Twitter signals in the brief, use a read-first source such as [Hermes Tweet](https://github.com/Xquik-dev/hermes-tweet) to prepare a vetted export, then treat those items like any other external signal during analysis.
+
+Keep the export public-only, cite source URLs, and mark sentiment or engagement as unverified unless the source data includes it. The pipeline should still prefer personal themes and captures over generic social noise.
 
 ## Running on a Schedule
 
