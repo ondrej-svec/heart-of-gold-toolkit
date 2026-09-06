@@ -7,7 +7,7 @@ This module's offline reference CLI requires **Node.js 22+**, not Bun, Pi, or mo
 | Component | Classification | Installation / verification boundary |
 | --- | --- | --- |
 | Node.js 22+ | Required for the direct guide and backup | Install through the user's chosen Node distribution; verify `node --version`. |
-| Neovim 0.11.x | Required only for editor integration | Independently installed editor; verify `nvim --version`. Shell reference still works without it. |
+| Neovim 0.11.x | Optional Markdown reader; required for later editor integration | Interactive lessons prefer isolated Neovim; missing editor or `--plain` retains terminal reference. No live configuration is loaded by the reader. |
 | zsh | Optional shell integration | Opt-in wrapper only; never source an unknown `.zshrc` to inspect it. Other shells use the direct CLI. |
 | tmux | Optional workspace integration | Verify `tmux -V`; executable presence does not prove prefix, menus, session manager or cockpit configuration. |
 | fzf | Optional picker and shell hooks | Verify executable presence/version separately from Ctrl-T/Ctrl-R hook configuration. The guide must fall back to plain output. |

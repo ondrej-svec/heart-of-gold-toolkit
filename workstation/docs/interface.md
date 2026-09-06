@@ -10,7 +10,7 @@
 
 Errors with `--json` return `{schemaVersion:1, ok:false, error:{code:"GUIDE_ERROR",message}}` on stdout and exit 1. No matches returns an empty card list with exit 0. Ordinary success exits 0. Interrupted owned subprocesses return 130/143 for SIGINT/SIGTERM; Esc in the picker is a normal cancellation. `--help`/`--version` are plain text. `cmd` exposes the external client's output/exit status, not this JSON contract.
 
-Reference JSON can contain private **binding labels**, never source file bodies, credentials or profile contents. Treat an exported resolved card accordingly. No files, prompts, events or usage history are logged by reference browsing.
+Reference JSON can contain private **binding labels**, never source file bodies, credentials or profile contents. Treat an exported resolved card accordingly. No prompts, events or usage history are logged. Interactive Neovim reading creates private temporary Markdown copies as described below; plain and JSON output do not.
 
 ## Private profile v1
 
@@ -61,10 +61,22 @@ Every body needs **When**, **Try**, **Why** sections. Effect and recovery render
 
 To add an ordinary concept, add metadata and prose, then run tests. No backend function, prompt, model setting or UI code is necessary.
 
+## Search → Markdown files in Neovim
+
+Interactive `show`, a unique task-query result or a picker selection opens Neovim by default. The reader assembles **complete regular `.md` files** from the same body/metadata/profile renderer: operating layer, tool presence, explanation, expected effect, recovery, sources and related-file links are preserved. The raw authored body is not opened alone, because it lacks some of that context and can contain unresolved binding tokens. No duplicate authored cheatsheet or second catalog is introduced.
+
+All lessons plus a six-chapter `index.md` are created under an owned `workstation-reader-*` temporary directory (0700; files 0600). Resolved private labels remain local. They are reading copies, not the source of truth; editing/saving them does not update the catalog. They and isolated editor state are removed only after the reader closes, including forwarded cancellation and ordinary error exits. SIGKILL or an OS crash can leave a private directory; there is no broad automatic cleanup of other invocations.
+
+Use ordinary `j/k`, `/word` and `n`. Put the cursor on the filename part of a Markdown link and press `gf`; `Ctrl-O` returns. `:q` returns to the picker immediately, without an extra confirmation prompt. For a direct lookup it returns to the shell. `:q!` discards accidental edits to a copy. No custom key mappings, executable Markdown actions or URL opener are installed.
+
+Neovim starts with `-u NONE -i NONE -n -R --noplugin`, plus pre-file `nomodeline nomodelineexpr noexrc noundofile noswapfile`. Only bundled filetype detection/syntax is enabled, with line numbers/wrapped text. HOME, XDG config/data/state/cache/runtime and temporary paths are private to the reader; `NVIM_LOG_FILE=/dev/null`. Inherited editor init/server variables are dropped. This deliberately does **not** load the user's live plugins/theme, perform installs or reuse a remote Neovim server. The future `:WorkstationHelp` split in an existing editor is a separate adapter, not installed by this change. Neovim 0.11.6 is locally tested.
+
+`-R` guards accidental writes; it is not a sandbox and does not prohibit intentional `:w!`/shell commands. File examples are never executed by opening help. `--plain`, `--glow`, non-TTY and JSON bypass Neovim. Missing/failed Neovim gets a clear notice and full terminal Markdown fallback, so ordinary help remains available without the editor. The no-history guarantee does not claim the absence of these explicitly scoped temporary reading files.
+
 ## Process and presentation boundary
 
 The Node core performs no network requests and reads no Pi/Fabric/auth configuration. Optional executables are trusted local tools, **not an OS sandbox**. PATH entries must be absolute; commands spawn without a shell. Child environments retain only HOME/PATH/terminal/locale plus each adapter's deliberate variables. This removes inherited FZF hooks, pagers, shell startup files, Node injection, credentials and agent/session metadata.
 
 fzf receives catalog records on stdin with no shell preview/execute/reload bindings. Its result must match an offered record. Glow is explicit, receives stdin, uses a built-in style, and runs with an owned temporary HOME/cwd/config/cache scope because Glow 2.1.1 can create configuration on startup. No external pager is enabled. Rendering failure falls back to Markdown. Captured stdout is capped at 1 MiB, noninteractive tools time out after 10 seconds, signals are forwarded, termination escalates after 500 ms (the outer host wrapper allows 1500 ms for the inner CLI to reap its child), and child closure is awaited. Trusted external stderr goes directly to the terminal; it is not persisted or interpreted as a guide result.
 
-Interactive fzf and the host delegation wait for the user rather than time out. These processes do not deliberately start descendants; this is not the future AI process-group isolation boundary. Plain reference and non-TTY output avoid presentation subprocesses entirely. Bun may read `.env` before the host wrapper starts; `bun --no-env-file …` or the direct Node executable is necessary if dotenv access is unwanted.
+Interactive fzf, Neovim and the host delegation wait for the user rather than time out. These processes do not deliberately start descendants; this is not the future AI process-group isolation boundary. Plain reference and non-TTY output avoid presentation subprocesses entirely. Bun may read `.env` before the host wrapper starts; `bun --no-env-file …` or the direct Node executable is necessary if dotenv access is unwanted.

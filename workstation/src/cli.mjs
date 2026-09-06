@@ -3,6 +3,7 @@ import { CHAPTERS, TOOLS, loadCatalog, search } from './catalog.mjs';
 import { BINDINGS, loadProfile, bindingStatus, interpolate, readBounded, sha256 } from './profile.mjs';
 import { executable, toolEnv, runProcess } from './process.mjs';
 import { pick, present } from './presentation.mjs';
+import { readLesson, renderCard } from './reader.mjs';
 
 const VERSION = '0.1.0-proof';
 const USAGE = `workstation-guide — Learn your whole workstation, offline
@@ -14,11 +15,13 @@ Usage: workstation-guide [task query]
   doctor [--json]                 Read-only presence/profile checks
   cmd <command> [subcommand]      Reviewed tldr C 1.6.1, cache-only
 
-Options: --plain (no picker/Glow), --glow (opt-in isolated formatting),
+Options: --plain (terminal text; no picker/editor/Glow), --glow (terminal formatting),
          --profile /absolute/profile.json, --json, --help, --version
 Use -- to treat remaining arguments as literal search text.
-Non-TTY output never waits. In the picker: Enter reads, Esc quits.
-No AI runner or live integration is installed in this proof.
+Interactive lessons open as Markdown files in an isolated Neovim reader.
+Use j/k, /word, gf on a filename, Ctrl-O to go back; :q returns to the picker.
+Non-TTY/JSON output never opens an editor or waits. Esc quits the picker.
+No live editor configuration, AI runner or shell alias is installed.
 `;
 function parse(argv) {
   const options = { words: [], json: false, plain: false, glow: false, hint: 0 };
@@ -50,9 +53,6 @@ function tools(env) {
 function viewCard(card, state, installed) {
   return { ...card, content: interpolate(card.content, state.profile, state.configRoot),
     tools: installed.filter(tool => card.requirements.includes(tool.name)) };
-}
-function renderCard(card) {
-  return `# ${card.title}\n\nWHERE  ${card.layer}\nSETUP  ${card.tools.map(tool => `${tool.name}: ${tool.status}`).join(' · ') || 'No tool required to read or understand this lesson'}\n\n${card.content}\n## Expected effect\n\n${card.effect}\n\n## Exit / undo\n\n${card.recovery}\n\nRelated: ${card.related.join(' · ')}\nSource: ${card.source.label} — ${card.source.revision}\n${card.source.url}\n\nRead another card: workstation-guide show <id>\n`;
 }
 function rootText(cards) {
   let number = 0;
@@ -108,7 +108,18 @@ export async function main(argv = process.argv.slice(2), env = process.env) {
     const [first, ...rest] = options.words;
     const command = options.queryOnly && first !== undefined ? '__literal_query__' : first;
     const tty = !!(process.stdin.isTTY && process.stdout.isTTY);
-    const display = async card => output(await present(renderCard(card), { env, glow: options.glow, tty }));
+    const display = async card => {
+      if (tty && !options.plain && !options.glow) {
+        const result = await readLesson(cards, card.id, { env, tty });
+        if (result.interrupted) { process.exitCode = result.code; return true; }
+        if (result.opened) return true;
+        console.error(result.reason === 'missing'
+          ? 'Neovim is unavailable; showing terminal text. Use --plain to keep this mode.'
+          : 'Neovim could not display the guide; showing terminal text instead.');
+      }
+      output(await present(renderCard(card), { env, glow: options.glow, tty }));
+      return false;
+    };
     const diagnosis = () => ({ profile: state.status, tools: installed,
       bindings: Object.keys(BINDINGS).map(name => ({ name, ...bindingStatus(name, state.profile, state.configRoot) })),
       notice: 'Presence and recorded fingerprints only; no tool execution, auth checks, shell sourcing or runtime integration verification.' });
@@ -177,8 +188,8 @@ export async function main(argv = process.argv.slice(2), env = process.env) {
         }
         if (!chosen) { output('Choose a listed number or search by task.'); continue; }
       }
-      await display(chosen);
-      if (process.exitCode || await ask('Enter or q: back to guide · Ctrl-C: quit > ') === null) break;
+      const openedInEditor = await display(chosen);
+      if (process.exitCode || !openedInEditor && await ask('Enter or q: back to guide · Ctrl-C: quit > ') === null) break;
       offered = matches;
     }
     return process.exitCode || 0;

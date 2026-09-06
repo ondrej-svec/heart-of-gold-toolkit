@@ -72,6 +72,18 @@ test('read-only doctor checks presence, not tool execution or auth', t => {
   assert.deepEqual(readdirSync(root), ['bin']);
 });
 
+test('piped lessons, queries and JSON never launch Neovim even when it is installed', t => {
+  const { root, env } = home(t);
+  const marker = join(root, 'editor-ran');
+  fake(root, 'nvim', `require('node:fs').writeFileSync(${JSON.stringify(marker)}, 'bad');`);
+  for (const args of [['show', 'nvim.modes'], ['show', 'nvim.modes', '--json'], ['find a file'], ['list', '--json'], ['show', 'nvim.modes', '--plain']]) {
+    const result = run(env, args);
+    assert.equal(result.status, 0, result.stderr);
+    assert.equal(existsSync(marker), false);
+  }
+  assert.deepEqual(readdirSync(root), ['bin']);
+});
+
 test('invalid profile errors redact private JSON snippets and do not fall back silently', t => {
   const { root, env } = home(t);
   const file = join(root, 'bad.json');
