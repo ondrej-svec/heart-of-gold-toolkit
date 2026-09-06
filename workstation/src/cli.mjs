@@ -9,7 +9,7 @@ const VERSION = '0.1.0-proof';
 const USAGE = `workstation-guide — Learn your whole workstation, offline
 
 Usage: workstation-guide [task query]
-  list [--json]                   All reference cards
+  list [--json]                   All reference cards (also -l or --list)
   show <id> [--json]              Read a card; never execute its examples
   learn [id] [--hint N]           Manual practice; no tracking
   doctor [--json]                 Read-only presence/profile checks
@@ -30,7 +30,8 @@ function parse(argv) {
     const arg = argv[i];
     if (literal) { options.words.push(arg); continue; }
     if (arg === '--') { literal = true; options.queryOnly = options.words.length === 0; continue; }
-    if (['--json', '--plain', '--glow'].includes(arg)) options[arg.slice(2)] = true;
+    if (arg === '-l' || arg === '--list') options.list = true;
+    else if (['--json', '--plain', '--glow'].includes(arg)) options[arg.slice(2)] = true;
     else if (arg === '--help' || arg === '-h') options.help = true;
     else if (arg === '--version') options.version = true;
     else if (arg === '--profile') {
@@ -41,6 +42,10 @@ function parse(argv) {
       options.hint = Number(argv[++i]); options.hintSet = true;
     } else if (arg.startsWith('-')) throw new Error('Unknown option; use --help or -- before a literal query');
     else options.words.push(arg);
+  }
+  if (options.list) {
+    if (options.words.length) throw new Error('-l/--list takes no query or subcommand; use list by itself');
+    options.words.push('list');
   }
   if (options.plain) options.glow = false;
   return options;

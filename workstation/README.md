@@ -25,7 +25,22 @@ The direct runtime needs **Node 22+**, no dependencies, Bun, Pi, credentials or 
 - `cmd` delegates only to an explicitly reviewed, fingerprinted **tldr C client 1.6.1**, with automatic updates disabled. Unknown clients fail closed. A missing/stale cache is not silently downloaded.
 - The host exports `workstation-guide` as a Node binary and `heart-of-gold workstation …` as a convenience wrapper. From source, use `bun --no-env-file src/index.ts workstation …` to avoid Bun's automatic `.env` loading. The host's normal Bun shebang does not promise dotenv isolation; use direct Node for that boundary.
 
-**Proof status:** eight authored cards in six populated chapters, catalog/profile/search, read-only doctor, search → Neovim Markdown reading, safe terminal fallbacks, two manual exercises and host/package integration. AI-writing content is reference-only. Pi execution, vendored Fabric prompts, Neovim review/Apply, the shell `help` wrapper, live migration/install, portable skill/Pi command and release are later gated slices. No existing `help`, `cheat`, tmux or editor mapping changes just by running this code.
+**Proof status:** eight authored cards in six populated chapters, catalog/profile/search, read-only doctor, search → Neovim Markdown reading, safe terminal fallbacks, two manual exercises and host/package integration. AI-writing content is reference-only. An opt-in zsh `help` wrapper is available below. Pi execution, vendored Fabric prompts, Neovim review/Apply, general installation/restore, portable skill/Pi command and release are later gated slices. No existing `help`, `cheat`, tmux or editor mapping changes just by running this code.
+
+## Make `help` your front door (zsh, opt-in)
+
+After reviewing the wrapper, source it from your shell configuration or a small private snippet:
+
+```sh
+source /absolute/path/to/workstation/integrations/zsh/help.zsh
+help
+help -l                     # list this guide's cards, not tldr's pages
+help "tmux prefix"
+```
+
+The wrapper replaces only the `help` alias/function, safely forwards arguments and resolves its Node entry relative to its own location. It can be sourced repeatedly. It does not install anything, start an agent or execute tldr. Missing Node or a moved/deleted entry produces a short diagnostic rather than falling back to a different tool. New shells load your chosen declaration; already-running shells need to source just that wrapper/snippet once.
+
+Keep `tldr` directly available if useful: `tldr tar` or `tldr git` gives a handful of generic examples, whereas this guide teaches workstation workflows and setup. A tldr client may download/update its cache; running it directly follows that client's policy. There is no requirement to use it. `cheat` and other aliases are not changed by this wrapper.
 
 ## Development
 

@@ -6,6 +6,6 @@
   "description": "Independently runnable offline guide module; distributed only through Heart of Gold",
   "license": "MIT",
   "engines": { "node": ">=22" },
-  "files": ["bin/", "src/", "catalog/", "docs/", "scripts/backup.mjs", "README.md"],
+  "files": ["bin/", "src/", "catalog/", "docs/", "scripts/backup.mjs", "integrations/zsh/help.zsh", "README.md"],
   "scripts": { "test": "node --test tests/*.test.mjs" }
 }

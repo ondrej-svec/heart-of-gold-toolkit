@@ -23,7 +23,7 @@ const run = (binary, args, env, cwd) => spawnSync(binary, args, { env, cwd, inpu
 test('host forwards raw arguments before citty help interception, with direct output/exit parity', { skip: !bun }, t => {
   const { home, env } = fixture(t);
   writeFileSync(join(home, '.env'), 'NODE_OPTIONS=--require /invalid/dotenv/injection\n');
-  for (const args of [[], ['--help'], ['--version'], ['list', '--json'], ['show', 'shell.find-file', '--json'],
+  for (const args of [[], ['--help'], ['--version'], ['list', '--json'], ['-l', '--json'], ['--list'], ['show', 'shell.find-file', '--json'],
     ['return to my workspace'], ['--', '--help'], ['--json', '--', 'doctor'], ['show', 'invalid'], ['--', '$(touch nope); & |'], ['--wat']]) {
     const direct = run(process.execPath, [CLI, ...args], env, home);
     const host = run(bun, ['--no-env-file', HOST, 'workstation', ...args], env, home);

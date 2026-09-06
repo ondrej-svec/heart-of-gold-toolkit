@@ -58,6 +58,21 @@ test('queries search intentions; opening reference and JSON need no optional bin
   assert.equal(JSON.parse(card.stdout).card.tools[0].status, 'missing');
 });
 
+test('-l and --list are local guide-list shortcuts, not tldr options', t => {
+  const { root, env } = home(t);
+  const marker = join(root, 'tldr-ran');
+  fake(root, 'tldr', `require('node:fs').writeFileSync(${JSON.stringify(marker)}, 'bad');`);
+  const expected = run(env, ['list', '--json']);
+  for (const flag of ['-l', '--list']) {
+    const result = run(env, [flag, '--json']);
+    assert.equal(result.status, 0, result.stderr);
+    assert.equal(result.stdout, expected.stdout);
+    assert.equal(run(env, [flag, 'ignored']).status, 1);
+    assert.equal(run(env, ['--', flag]).status, 0);
+  }
+  assert.equal(existsSync(marker), false);
+});
+
 test('read-only doctor checks presence, not tool execution or auth', t => {
   const { root, env } = home(t);
   const marker = join(root, 'executed');

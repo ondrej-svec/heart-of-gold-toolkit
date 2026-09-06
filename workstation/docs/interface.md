@@ -2,7 +2,7 @@
 
 ## CLI and JSON v1
 
-`workstation-guide [task query]` searches locally across titles, authored synonyms, explanations and effects. Reserved commands are `list`, `show`, `learn`, `doctor`, `cmd` and the currently unimplemented `ai`. Options are parsed before literal text; `--` ends option parsing. A query beginning with a reserved command is not execution and cannot start an AI job; reserved argument errors explain usage.
+`workstation-guide [task query]` searches locally across titles, authored synonyms, explanations and effects. Reserved commands are `list`, `show`, `learn`, `doctor`, `cmd` and the currently unimplemented `ai`. `-l` and `--list` are shorthand for `list` and take no positional query/subcommand. Options are parsed before literal text; `--` ends option parsing. A query beginning with a reserved command is not execution and cannot start an AI job; reserved argument errors explain usage.
 
 `list --json` and a query with `--json` return `{schemaVersion:1, ok:true, chapters, cards}`. `show <id> --json` returns `{schemaVersion:1, ok:true, card}`. A card includes its stable metadata, interpolated `content` and dependency `tools` statuses. Reference cards have no executable step or AI model/prompt fields. Future action support will require an explicit validated extension, not inferred execution from prose.
 

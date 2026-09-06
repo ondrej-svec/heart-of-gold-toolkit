@@ -71,7 +71,7 @@ node workstation/bin/workstation-guide.mjs "find a file"
 node workstation/bin/workstation-guide.mjs doctor
 ```
 
-The [workstation module](workstation/README.md) is Node-only and independently runnable. Search with optional fzf, then read complete Markdown lessons in Neovim; `--plain`/missing-editor fallbacks keep reference available everywhere. Opening a card never runs its examples. The host also delegates through `heart-of-gold workstation …`. This proof does not install a shell `help` alias, change editor bindings or execute AI writing actions.
+The [workstation module](workstation/README.md) is Node-only and independently runnable. Search with optional fzf, then read complete Markdown lessons in Neovim; `--plain`/missing-editor fallbacks keep reference available everywhere. Opening a card never runs its examples. The host also delegates through `heart-of-gold workstation …`. An opt-in zsh `help` wrapper is included; sourcing it replaces that alias explicitly. Running the guide itself does not install aliases, change editor bindings or execute AI writing actions.
 
 ## Security & Trust
 

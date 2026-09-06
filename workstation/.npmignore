@@ -12,3 +12,6 @@
 !docs/**
 !scripts/
 !scripts/backup.mjs
+!integrations/
+!integrations/zsh/
+!integrations/zsh/help.zsh

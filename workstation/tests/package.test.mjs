@@ -19,9 +19,10 @@ test('exact host package payload allows only module assets and runs independentl
   const moduleFiles = files.filter(file => file.startsWith('workstation/'));
   assert.ok(moduleFiles.includes('workstation/bin/workstation-guide.mjs'));
   assert.ok(moduleFiles.includes('workstation/docs/interface.md'));
+  assert.ok(moduleFiles.includes('workstation/integrations/zsh/help.zsh'));
   assert.ok(files.includes('src/commands/workstation.ts'));
   for (const file of moduleFiles) {
-    assert.match(file, /^workstation\/(?:package\.json|README\.md|(?:bin|src)\/[a-z-]+\.mjs|catalog\/(?:index\.json|cards\/[a-z-]+\.md)|docs\/[a-z-]+\.md|scripts\/backup\.mjs)$/);
+    assert.match(file, /^workstation\/(?:package\.json|README\.md|(?:bin|src)\/[a-z-]+\.mjs|catalog\/(?:index\.json|cards\/[a-z-]+\.md)|docs\/[a-z-]+\.md|integrations\/zsh\/help\.zsh|scripts\/backup\.mjs)$/);
     assert.doesNotMatch(file, /(?:auth|profile\.json|sessions|backups|state|tests|fixtures|\.env)/);
     assert.equal(isAbsolute(file), false);
     const target = join(home, 'payload', file);
@@ -36,4 +37,12 @@ test('exact host package payload allows only module assets and runs independentl
   assert.equal(result.status, 0, result.stderr);
   assert.equal(JSON.parse(result.stdout).card.id, 'tmux.workspaces');
   assert.equal(JSON.parse(result.stdout).card.tools[0].status, 'missing');
+  const zsh = executable('zsh');
+  if (zsh) {
+    const shell = spawnSync(zsh, ['-f', '-c', 'source "$1"\nhelp -l --json', 'packaged-guide', join(home, 'payload/workstation/integrations/zsh/help.zsh')], {
+      env: { HOME: home, PATH: dirname(process.execPath) }, cwd: home, encoding: 'utf8', timeout: 5000,
+    });
+    assert.equal(shell.status, 0, shell.stderr);
+    assert.equal(JSON.parse(shell.stdout).cards[0].id, 'shell.build-command');
+  }
 });
