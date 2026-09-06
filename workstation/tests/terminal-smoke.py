@@ -140,6 +140,43 @@ with tempfile.TemporaryDirectory(prefix='workstation-real-tools-') as home:
          ('shell.build-command.md', b':q\r'), ('synthetic-source.txt', b':lua assert(vim.api.nvim_buf_get_lines(0,0,-1,false)[1]=="source-fixture unchanged"); vim.cmd("qall!")\r')],
         launcher=[NVIM])
     print('PASS real in-editor native chooser/read-only split/:q/source preservation; network denied')
+    # Real editor interaction, fake Pi only. TMPDIR confines the synthetic package
+    # beneath this already-owned temporary home; no canonical credentials are read.
+    fixture_url = (ROOT / 'tests/writing-fixture.mjs').as_uri()
+    fixture_js = ('import {fixture} from ' + json.dumps(fixture_url) + ';'
+        + 'const f=fixture({after(){}},{text:"A clearer synthetic paragraph."});'
+        + 'console.log(JSON.stringify({root:f.root,env:f.env}));')
+    built = subprocess.run(SANDBOX + [NODE, '--input-type=module', '-e', fixture_js],
+        env={**env, 'TMPDIR': home}, cwd=home, capture_output=True, text=True, timeout=5, check=True)
+    writing = json.loads(built.stdout)
+    assert pathlib.Path(writing['root']).resolve().is_relative_to(pathlib.Path(home).resolve())
+    writing_env = {**writing['env'], 'TERM': 'xterm-256color', 'NVIM_LOG_FILE': '/dev/null'}
+    ai_init = pathlib.Path(home) / 'editor-writing.lua'
+    ai_init.write_text('local options={node=' + json.dumps(NODE) + ',entry=' + json.dumps(CLI) + '}\n'
+        + 'assert(dofile(' + json.dumps(str(ROOT / 'integrations/nvim/workstation-help.lua')) + ').setup(options))\n'
+        + 'assert(dofile(' + json.dumps(str(ROOT / 'integrations/nvim/workstation-ai.lua')) + ').setup(options))\n'
+        + 'vim.g.writing_source=vim.api.nvim_get_current_buf()\n'
+        + 'vim.api.nvim_buf_set_name(0,"writing-source.txt")\n'
+        + 'vim.api.nvim_buf_set_lines(0,0,-1,false,{"Original synthetic paragraph.","","Untouched second paragraph."})\n'
+        + 'vim.o.laststatus=2; vim.o.statusline="%t"\n')
+    terminal(writing_env, ['-u','NONE','-i','NONE','-n','--noplugin','-c','luafile ' + str(ai_init)], [
+        ('writing-source.txt', b':WorkstationHelp writing.review\r'),
+        ('writing.review.md', b':q\r'),
+        ('writing-source.txt', b':WorkstationAI\r'),
+        ('Type number and <Enter>', b'1\r'),
+        ('Exact selected source', b'G\x0c'),
+        ('Nothing sent yet', b':WorkstationAISend\r'),
+        ('Result ready', b':WorkstationAIApply\r'),
+        ('A clearer synthetic paragraph.', b'u\x0c'),
+        ('Original synthetic paragraph.', b':WorkstationAI!\r:WorkstationAI analyze-prose\r'),
+        ('Exact selected source', b'G\x0c'),
+        ('Nothing sent yet', b':WorkstationAISend\r'),
+        ('Result ready', b':lua assert(vim.fn.exists(":WorkstationAIApply")==0)\r:q\r:WorkstationAI improve-writing\r'),
+        ('Exact selected source', b'G\x0c'),
+        ('Nothing sent yet', b':q\r'),
+        ('writing-source.txt', b':lua assert(vim.api.nvim_buf_get_lines(0,0,1,false)[1]=="Original synthetic paragraph."); vim.cmd("qall!")\r'),
+    ], launcher=[NVIM])
+    print('PASS real editor help/chooser/disclosure/send/review/Apply/undo/feedback/cancel; fake Pi, network denied')
     # Without the editor, TTY reading still falls back. --plain and --glow above
     # are tested while Neovim is present, so neither may accidentally launch it.
     (bindir / 'nvim').unlink()

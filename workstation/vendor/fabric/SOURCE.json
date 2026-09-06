@@ -1,0 +1,27 @@
+{
+  "repository": "https://github.com/danielmiessler/Fabric",
+  "revision": "6b0914d1bb0dbf54facec1743838c7312e945634",
+  "license": "MIT",
+  "files": {
+    "LICENSE": {
+      "upstreamPath": "LICENSE",
+      "sha256": "42b554b17b8fd7ae4d6bc488f0857ae91d9179f04db3da466c2fc5425686f4f9",
+      "bytes": 1084
+    },
+    "improve_writing/system.md": {
+      "upstreamPath": "data/patterns/improve_writing/system.md",
+      "sha256": "98288d12a0aa175b91582dc7d750378a3a219330a0ee7b2719556dd3263c87e8",
+      "bytes": 705
+    },
+    "analyze_prose/system.md": {
+      "upstreamPath": "data/patterns/analyze_prose/system.md",
+      "sha256": "9b2d62fcd2b1973cc19f0142b5b7a43a2ade90b1d248a2b66d48bfec62de86bf",
+      "bytes": 4944
+    },
+    "summarize_micro/system.md": {
+      "upstreamPath": "data/patterns/summarize_micro/system.md",
+      "sha256": "860d44e44534b269e889eed01a59265357972bb6834628c4082287c5713a5c8b",
+      "bytes": 968
+    }
+  }
+}

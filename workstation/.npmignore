@@ -17,3 +17,14 @@
 !integrations/zsh/help.zsh
 !integrations/nvim/
 !integrations/nvim/workstation-help.lua
+!integrations/nvim/workstation-ai.lua
+!vendor/
+!vendor/fabric/
+!vendor/fabric/LICENSE
+!vendor/fabric/SOURCE.json
+!vendor/fabric/improve_writing/
+!vendor/fabric/improve_writing/system.md
+!vendor/fabric/analyze_prose/
+!vendor/fabric/analyze_prose/system.md
+!vendor/fabric/summarize_micro/
+!vendor/fabric/summarize_micro/system.md

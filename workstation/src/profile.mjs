@@ -54,7 +54,7 @@ export function readBounded(file, max = 256 * 1024) {
   return bytes;
 }
 export function validateProfile(profile) {
-  keys(profile, ['schemaVersion', 'bindings', 'tldr'], 'profile');
+  keys(profile, ['schemaVersion', 'bindings', 'tldr', 'ai'], 'profile');
   if (profile.schemaVersion !== 1) throw new Error('Unsupported profile schemaVersion');
   const bindings = profile.bindings ?? {};
   keys(bindings, Object.keys(BINDINGS), 'bindings');
@@ -70,6 +70,14 @@ export function validateProfile(profile) {
     keys(profile.tldr, ['client', 'sha256'], 'tldr');
     if (profile.tldr.client !== 'tldr-c-1.6.1' || !/^[a-f0-9]{64}$/.test(profile.tldr.sha256 ?? '')) {
       throw new Error('Command examples require a reviewed, fingerprinted tldr C client 1.6.1');
+    }
+  }
+  if (profile.ai !== undefined) {
+    keys(profile.ai, ['provider', 'model', 'thinking'], 'AI preferences');
+    if (profile.ai.provider !== 'openai-codex'
+      || typeof profile.ai.model !== 'string' || !/^[a-z0-9][a-z0-9._-]{0,119}$/.test(profile.ai.model)
+      || !['off', 'minimal', 'low', 'medium', 'high', 'xhigh', 'max'].includes(profile.ai.thinking)) {
+      throw new Error('AI preferences require explicit supported provider, model and thinking values');
     }
   }
   return { ...profile, bindings };

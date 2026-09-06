@@ -15,7 +15,7 @@ node workstation/bin/workstation-guide.mjs learn shell.find-file --hint 1
 node workstation/bin/workstation-guide.mjs doctor
 ```
 
-The direct runtime needs **Node 22+**, no dependencies, Bun, Pi, credentials or network. In a terminal, optional fzf selects a lesson; otherwise a numbered prompt works. **Enter opens a complete Markdown file in Neovim.** `:q` returns directly to the picker (or shell for a direct lookup), without an extra viewer prompt. Missing/failed Neovim falls back to terminal text. Piped/JSON output never launches an editor or waits. `--plain` avoids all presentation tools; `--glow` explicitly chooses terminal Markdown formatting instead of Neovim.
+Ordinary reference needs **Node 22+**, no dependencies, Bun, Pi, credentials or network. In a terminal, optional fzf selects a lesson; otherwise a numbered prompt works. **Enter opens a complete Markdown file in Neovim.** `:q` returns directly to the picker (or shell for a direct lookup), without an extra viewer prompt. Missing/failed Neovim falls back to terminal text. Piped/JSON output never launches an editor or waits. `--plain` avoids all presentation tools; `--glow` explicitly chooses terminal Markdown formatting instead of Neovim.
 
 - In Neovim: `j/k` move, `/word` then `n` searches, `gf` on a `.md` filename follows a related guide, `Ctrl-O` goes back. Each lesson links to `index.md` with all six chapters. These are ordinary files and native keys, not custom mappings. `:q!` discards accidental edits to a reading copy.
 - The reader uses isolated startup, not your live plugins or editor state. Its owned styling follows your terminal's Rosé Pine color roles; no live Neovim colorscheme is loaded. Complete `.md` copies include metadata, resolved bindings, recovery and links. They have private permissions and are removed after the reader exits; the authored source stays untouched. There is no persistent copy/export command in this slice.
@@ -25,7 +25,7 @@ The direct runtime needs **Node 22+**, no dependencies, Bun, Pi, credentials or 
 - `cmd` delegates only to an explicitly reviewed, fingerprinted **tldr C client 1.6.1**, with automatic updates disabled. Unknown clients fail closed. A missing/stale cache is not silently downloaded.
 - The host exports `workstation-guide` as a Node binary and `heart-of-gold workstation …` as a convenience wrapper. From source, use `bun --no-env-file src/index.ts workstation …` to avoid Bun's automatic `.env` loading. The host's normal Bun shebang does not promise dotenv isolation; use direct Node for that boundary.
 
-**Proof status:** sixteen authored cards in six populated chapters, catalog/profile/search, read-only doctor, search → Neovim Markdown reading, an opt-in in-editor help split, safe terminal fallbacks, two manual exercises and host/package integration. AI-writing content is reference-only. An opt-in zsh `help` wrapper is available below. Pi execution, vendored Fabric prompts, Neovim review/Apply, general installation/restore, portable skill/Pi command and release are later gated slices. No existing `help`, `cheat`, tmux or editor mapping changes just by running this code.
+**Proof status:** sixteen authored cards in six populated chapters, catalog/profile/search, read-only doctor, search → Neovim Markdown reading, an opt-in in-editor help split, safe terminal fallbacks, two manual exercises and host/package integration. A separate explicit [writing runner](docs/writing-runner.md) provides three pinned Fabric actions through Pi; reading cards still never sends text. An opt-in zsh `help` wrapper is available below. An opt-in [Neovim review/Apply adapter](docs/neovim-ai.md) is tested separately without live installation. General installation/restore, portable skill/Pi command and release remain later gated slices. No existing `help`, `cheat`, tmux or editor mapping changes just by running this code.
 
 ## Rosé Pine consistency
 
@@ -77,7 +77,7 @@ npm run test:workstation
 
 Tests use synthetic profiles and temporary homes. Optional host tests require an already-installed Bun; packaging tests require already-installed npm. Neither installs anything. For the opt-in real-terminal smoke on macOS, inspect `tests/terminal-smoke.py --help`; it uses Python's standard library, already-installed fzf/Glow/Neovim and an explicitly reviewed tldr C 1.6.1 binary, with disposable homes and OS-denied network access. Node 24/25 macOS are locally exercised; Node 22 and Linux are CI targets, not claimed local results.
 
-The module is private package metadata, **not a separate npm product**. Its parent is `@heart-of-gold/toolkit`; a nested payload allowlist excludes tests, private profiles and state. There are no imports from the host installer, private personal packages or agent runtimes. Root MIT terms apply. No Fabric prompt bytes are distributed in this proof.
+The module is private package metadata, **not a separate npm product**. Its parent is `@heart-of-gold/toolkit`; a nested payload allowlist excludes tests, private profiles and state. There are no imports from the host installer, private personal packages or agent runtimes. Root MIT terms apply. Three unmodified Fabric prompts are distributed with their upstream MIT license and exact revision/hash provenance; no Fabric runtime is required.
 
 ## Boundaries and references
 
@@ -85,5 +85,7 @@ The module is private package metadata, **not a separate npm product**. Its pare
 - [Dependencies, scoped backup and proposed private integration paths](docs/dependencies-and-backup.md)
 - [Neovim/tmux reference coverage and source caveats](docs/reference-coverage.md)
 - [Optional in-editor help and its safety boundary](docs/neovim-help.md)
+- [Explicit Pi writing runner, consent and limits](docs/writing-runner.md)
+- [Opt-in Neovim writing preview, Send, Apply and undo](docs/neovim-ai.md)
 
 Toolkit implementation started from host commit `5f7c19708658f3afe3f69c57422601ec15fc0b80`. Existing publish-safety, security, compatibility and Pi test gates remain intact; workstation tests are additive. Source work, live installation, off-machine backup, publication and second-device verification are separate milestones.

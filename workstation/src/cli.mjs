@@ -15,6 +15,11 @@ Usage: workstation-guide [task query]
   learn [id] [--hint N]           Manual practice; no tracking
   doctor [--json]                 Read-only presence/profile checks
   cmd <command> [subcommand]      Reviewed tldr C 1.6.1, cache-only
+  ai list                        List writing actions; no model call
+  ai prepare <action>            Preview pinned prompt/settings; no model call
+  ai run <action> --send --expect <fingerprint>
+                                 Explicit provider call; source text on stdin
+                                 AI subcommands return versioned JSON
 
 Options: --plain (terminal text; no picker/editor/Glow), --glow (terminal formatting),
          --profile /absolute/profile.json, --json, --help, --version
@@ -23,7 +28,7 @@ Interactive lessons open as Markdown files in an isolated Neovim reader.
 Use j/k, /word, gf on a filename, Ctrl-O to go back; :q returns to the picker.
 Colors follow the active terminal palette (Rosé Pine when configured).
 --plain, NO_COLOR or TERM=dumb selects uncolored terminal presentation.
-Non-TTY/JSON output never opens an editor or waits. Esc quits the picker.
+Non-TTY/JSON reference output never opens an editor or waits. Esc quits the picker.
 No live editor configuration, AI runner or shell alias is installed.
 `;
 function parse(argv) {
@@ -37,6 +42,11 @@ function parse(argv) {
     else if (['--json', '--plain', '--glow'].includes(arg)) options[arg.slice(2)] = true;
     else if (arg === '--help' || arg === '-h') options.help = true;
     else if (arg === '--version') options.version = true;
+    else if (arg === '--send') options.send = true;
+    else if (arg === '--expect') {
+      if (!/^[a-f0-9]{64}$/.test(argv[i + 1] ?? '')) throw new Error('--expect requires the fingerprint from ai prepare');
+      options.expect = argv[++i];
+    }
     else if (arg === '--profile') {
       if (!argv[i + 1] || argv[i + 1].startsWith('--')) throw new Error('--profile requires an absolute filename');
       options.profile = argv[++i];
@@ -145,11 +155,16 @@ export async function main(argv = process.argv.slice(2), env = process.env) {
       if (options.json) json(status);
       else print(`SETUP CHECK — read only\nProfile: ${status.profile}\n\n${status.tools.map(tool => `${tool.name}: ${tool.status} — ${tool.role}`).join('\n')}\n\n${status.bindings.map(binding => `${binding.name}: ${binding.status}`).join('\n')}\n\n${status.notice}\n`);
     };
+    if ((options.send || options.expect) && command !== 'ai') throw new Error('--send and --expect are only for ai run');
     if (options.hintSet && command !== 'learn') throw new Error('--hint is only for learn');
     if (['list', 'doctor'].includes(command) && rest.length) throw new Error(`${command} takes no positional arguments`);
     if (command === 'doctor') { doctor(); return 0; }
     if (command === 'cmd') return await commandExamples(rest, options, state, env);
-    if (command === 'ai') throw new Error('AI execution is not implemented in this offline proof. Read: show writing.review');
+    if (command === 'ai') {
+      const { writingCommand } = await import('./writing-cli.mjs');
+      // Color opt-outs select reference presentation, not AI execution policy.
+      return await writingCommand(rest, { ...options, plain: argv.includes('--plain'), glow: argv.includes('--glow') }, state, env);
+    }
     if (command === 'show') {
       if (rest.length !== 1) throw new Error('show requires exactly one card ID');
       const card = byId(rest[0]);
