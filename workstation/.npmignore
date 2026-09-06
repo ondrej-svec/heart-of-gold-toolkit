@@ -1,0 +1,14 @@
+# Explicit module payload within the existing host package. No private state/tests.
+*
+!package.json
+!README.md
+!bin/
+!bin/**
+!src/
+!src/**
+!catalog/
+!catalog/**
+!docs/
+!docs/**
+!scripts/
+!scripts/backup.mjs

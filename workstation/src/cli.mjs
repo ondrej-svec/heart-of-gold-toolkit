@@ -1,0 +1,193 @@
+import { createInterface } from 'node:readline';
+import { CHAPTERS, TOOLS, loadCatalog, search } from './catalog.mjs';
+import { BINDINGS, loadProfile, bindingStatus, interpolate, readBounded, sha256 } from './profile.mjs';
+import { executable, toolEnv, runProcess } from './process.mjs';
+import { pick, present } from './presentation.mjs';
+
+const VERSION = '0.1.0-proof';
+const USAGE = `workstation-guide — Learn your whole workstation, offline
+
+Usage: workstation-guide [task query]
+  list [--json]                   All reference cards
+  show <id> [--json]              Read a card; never execute its examples
+  learn [id] [--hint N]           Manual practice; no tracking
+  doctor [--json]                 Read-only presence/profile checks
+  cmd <command> [subcommand]      Reviewed tldr C 1.6.1, cache-only
+
+Options: --plain (no picker/Glow), --glow (opt-in isolated formatting),
+         --profile /absolute/profile.json, --json, --help, --version
+Use -- to treat remaining arguments as literal search text.
+Non-TTY output never waits. In the picker: Enter reads, Esc quits.
+No AI runner or live integration is installed in this proof.
+`;
+function parse(argv) {
+  const options = { words: [], json: false, plain: false, glow: false, hint: 0 };
+  let literal = false;
+  for (let i = 0; i < argv.length; i++) {
+    const arg = argv[i];
+    if (literal) { options.words.push(arg); continue; }
+    if (arg === '--') { literal = true; options.queryOnly = options.words.length === 0; continue; }
+    if (['--json', '--plain', '--glow'].includes(arg)) options[arg.slice(2)] = true;
+    else if (arg === '--help' || arg === '-h') options.help = true;
+    else if (arg === '--version') options.version = true;
+    else if (arg === '--profile') {
+      if (!argv[i + 1] || argv[i + 1].startsWith('--')) throw new Error('--profile requires an absolute filename');
+      options.profile = argv[++i];
+    } else if (arg === '--hint') {
+      if (!/^\d+$/.test(argv[i + 1] ?? '') || Number(argv[i + 1]) > 10) throw new Error('--hint needs a number from 0 to 10');
+      options.hint = Number(argv[++i]); options.hintSet = true;
+    } else if (arg.startsWith('-')) throw new Error('Unknown option; use --help or -- before a literal query');
+    else options.words.push(arg);
+  }
+  if (options.plain) options.glow = false;
+  return options;
+}
+const output = value => process.stdout.write(value.endsWith('\n') ? value : value + '\n');
+const json = data => output(JSON.stringify({ schemaVersion: 1, ok: true, ...data }, null, 2));
+function tools(env) {
+  return Object.entries(TOOLS).map(([name, role]) => ({ name, role, status: name === 'node' || executable(name, env) ? 'present' : 'missing' }));
+}
+function viewCard(card, state, installed) {
+  return { ...card, content: interpolate(card.content, state.profile, state.configRoot),
+    tools: installed.filter(tool => card.requirements.includes(tool.name)) };
+}
+function renderCard(card) {
+  return `# ${card.title}\n\nWHERE  ${card.layer}\nSETUP  ${card.tools.map(tool => `${tool.name}: ${tool.status}`).join(' · ') || 'No tool required to read or understand this lesson'}\n\n${card.content}\n## Expected effect\n\n${card.effect}\n\n## Exit / undo\n\n${card.recovery}\n\nRelated: ${card.related.join(' · ')}\nSource: ${card.source.label} — ${card.source.revision}\n${card.source.url}\n\nRead another card: workstation-guide show <id>\n`;
+}
+function rootText(cards) {
+  let number = 0;
+  return `HEART OF GOLD — Your workstation\nHow do I…?\nNothing runs when you open a guide.\n\n` + CHAPTERS.map(chapter =>
+    `${chapter.title}\n` + cards.filter(card => card.chapter === chapter.id).map(card => `  ${++number}. ${card.title}  (${card.id})`).join('\n')
+  ).join('\n\n') + `\n\nPractise a workflow: learn · Check my setup: doctor · Command examples: cmd\nSearch by intention: workstation-guide "find a file"\nRead: workstation-guide show <id> · Options: --help\n`;
+}
+function listText(cards) {
+  return cards.length ? cards.map((card, i) => `${i + 1}. ${card.title}  (${card.id})`).join('\n') : 'No matching cards. Try "find a file", "return to my workspace", or list.';
+}
+function exerciseText(card, count) {
+  return `# Practise: ${card.title}\n\n${card.exercise.goal}\n\n` + card.exercise.hints.slice(0, count).map((hint, i) => `Hint ${i + 1}: ${hint}`).join('\n') +
+    `\n\nSelf-check: ${card.exercise.success}\nNo tracking. Stop whenever you like; nothing has been launched.\nRead the steps: workstation-guide show ${card.id}\nNext hint: workstation-guide learn ${card.id} --hint ${Math.min(count + 1, card.exercise.hints.length)}\n`;
+}
+function ask(prompt) {
+  return new Promise(resolve => {
+    const reader = createInterface({ input: process.stdin, output: process.stdout });
+    let answered = false;
+    reader.once('close', () => { if (!answered) resolve(null); });
+    reader.once('SIGINT', () => { process.exitCode = 130; reader.close(); });
+    reader.question(prompt, answer => { answered = true; reader.close(); resolve(answer.trim()); });
+  });
+}
+async function commandExamples(words, options, state, env) {
+  if (options.json || !words.length || words.length > 3 || words.some(word => !/^[a-z0-9][a-z0-9-]*$/.test(word))) {
+    throw new Error('cmd takes a command name and up to two subcommand words, not options; JSON is unavailable for external examples');
+  }
+  const binary = executable('tldr', env);
+  if (!binary) throw new Error('tldr is missing. The bundled guide works without it; see list. No installation was attempted.');
+  if (!state.profile.tldr || sha256(readBounded(binary, 64 * 1024 * 1024)) !== state.profile.tldr.sha256) {
+    throw new Error('tldr client is unreviewed or changed. Cache-only delegation requires a profile-pinned tldr C 1.6.1. Use tldr directly only if you accept its network/cache behavior.');
+  }
+  const result = await runProcess(binary, [words.join('-')], { env: { ...toolEnv(env), TLDR_AUTO_UPDATE_DISABLED: '1' } });
+  if (result.stdout) process.stdout.write(result.stdout);
+  if (result.code && !result.interrupted) console.error('Cached command examples unavailable; no update was requested.');
+  return result.code;
+}
+export async function main(argv = process.argv.slice(2), env = process.env) {
+  let options;
+  try {
+    options = parse(argv);
+    if (options.help) { output(USAGE); return 0; }
+    if (options.version) { output(VERSION); return 0; }
+    const data = loadCatalog();
+    const state = loadProfile(env, options.profile);
+    const installed = tools(env);
+    const cards = data.cards.map(card => viewCard(card, state, installed));
+    const byId = id => {
+      const card = cards.find(card => card.id === id);
+      if (!card) throw new Error('Unknown card ID; use list to see stable IDs');
+      return card;
+    };
+    const [first, ...rest] = options.words;
+    const command = options.queryOnly && first !== undefined ? '__literal_query__' : first;
+    const tty = !!(process.stdin.isTTY && process.stdout.isTTY);
+    const display = async card => output(await present(renderCard(card), { env, glow: options.glow, tty }));
+    const diagnosis = () => ({ profile: state.status, tools: installed,
+      bindings: Object.keys(BINDINGS).map(name => ({ name, ...bindingStatus(name, state.profile, state.configRoot) })),
+      notice: 'Presence and recorded fingerprints only; no tool execution, auth checks, shell sourcing or runtime integration verification.' });
+    const doctor = () => {
+      const status = diagnosis();
+      if (options.json) json(status);
+      else output(`SETUP CHECK — read only\nProfile: ${status.profile}\n\n${status.tools.map(tool => `${tool.name}: ${tool.status} — ${tool.role}`).join('\n')}\n\n${status.bindings.map(binding => `${binding.name}: ${binding.status}`).join('\n')}\n\n${status.notice}\n`);
+    };
+    if (options.hintSet && command !== 'learn') throw new Error('--hint is only for learn');
+    if (['list', 'doctor'].includes(command) && rest.length) throw new Error(`${command} takes no positional arguments`);
+    if (command === 'doctor') { doctor(); return 0; }
+    if (command === 'cmd') return await commandExamples(rest, options, state, env);
+    if (command === 'ai') throw new Error('AI execution is not implemented in this offline proof. Read: show writing.review');
+    if (command === 'show') {
+      if (rest.length !== 1) throw new Error('show requires exactly one card ID');
+      const card = byId(rest[0]);
+      if (options.json) json({ card }); else await display(card);
+      return process.exitCode || 0;
+    }
+    if (command === 'learn') {
+      if (rest.length > 1) throw new Error('learn takes at most one card ID');
+      if (!rest.length) {
+        const exercises = cards.filter(card => card.exercise);
+        if (options.json) json({ cards: exercises });
+        else output('MANUAL PRACTICE — opt in; nothing launches or records progress\n\n' + listText(exercises) + '\n\nStart: workstation-guide learn <id> · Reveal: --hint 1');
+      } else {
+        const card = byId(rest[0]);
+        if (!card.exercise) throw new Error('This card has no exercise yet');
+        if (options.json) json({ id: card.id, ...card.exercise, hints: card.exercise.hints.slice(0, options.hint) });
+        else output(exerciseText(card, options.hint));
+      }
+      return 0;
+    }
+    const matches = command === 'list' ? cards : search({ cards }, options.words.join(' '));
+    if (options.json) { json({ chapters: CHAPTERS, cards: matches }); return 0; }
+    if (command === 'list') { output(listText(matches)); return 0; }
+    if (!tty) { output(command ? listText(matches) : rootText(cards)); return 0; }
+    if (command && matches.length === 1) { await display(matches[0]); return process.exitCode || 0; }
+    if (!matches.length) { output(listText(matches)); return 0; }
+    // Reuse the same authored cards in both the optional picker and numbered UI.
+    let offered = matches;
+    while (!process.exitCode) {
+      output(!command && offered === matches ? rootText(cards) : listText(offered));
+      let chosen;
+      if (!options.plain) chosen = await pick([...offered,
+        { id: 'menu.learn', title: 'Practise a workflow', chapter: 'guide' },
+        { id: 'menu.doctor', title: 'Check my setup', chapter: 'guide' },
+      ], env);
+      if (chosen === null) break;
+      if (chosen?.id === 'menu.doctor' || chosen?.id === 'menu.learn') {
+        if (chosen.id === 'menu.doctor') doctor();
+        else output(listText(cards.filter(card => card.exercise)) + '\nUse: workstation-guide learn <id>');
+        if (await ask('Enter: back · Ctrl-C: quit > ') === null) break;
+        continue;
+      }
+      if (!chosen) {
+        const answer = await ask('Number or task · l: practise · d: doctor · q/Esc: quit > ');
+        if (answer === null || answer === 'q' || answer === '\x1b') break;
+        if (answer === 'd' || answer === 'doctor') { doctor(); continue; }
+        if (answer === 'l' || answer === 'learn') { output(listText(cards.filter(card => card.exercise)) + '\nUse: workstation-guide learn <id>'); continue; }
+        if (/^\d+$/.test(answer)) chosen = offered[Number(answer) - 1];
+        else {
+          offered = search({ cards }, answer);
+          if (offered.length === 1) chosen = offered[0];
+          else { output(listText(offered)); if (!offered.length) offered = matches; continue; }
+        }
+        if (!chosen) { output('Choose a listed number or search by task.'); continue; }
+      }
+      await display(chosen);
+      if (process.exitCode || await ask('Enter or q: back to guide · Ctrl-C: quit > ') === null) break;
+      offered = matches;
+    }
+    return process.exitCode || 0;
+  } catch (error) {
+    // Errors from authored runtime operations are intentionally generic where
+    // private files are involved. No raw child stderr/profile snippets are saved.
+    const message = error.code ? 'A required local file could not be read; check the installation and profile.' : error.message;
+    if (options?.json || argv.includes('--json')) output(JSON.stringify({ schemaVersion: 1, ok: false, error: { code: 'GUIDE_ERROR', message } }));
+    else console.error(`workstation-guide: ${message}`);
+    return 1;
+  }
+}

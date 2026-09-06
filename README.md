@@ -62,6 +62,17 @@ The work extension also provides always-on guardrails that protect `.env`, `.git
 bunx @heart-of-gold/toolkit list
 ```
 
+## Offline workstation guide — proof slice
+
+Learn shell commands, finding, tmux, Neovim and writing workflows without an AI call:
+
+```sh
+node workstation/bin/workstation-guide.mjs "find a file"
+node workstation/bin/workstation-guide.mjs doctor
+```
+
+The [workstation module](workstation/README.md) is Node-only and independently runnable. Optional fzf/Glow enhance presentation; opening a card never runs its examples. The host also delegates through `heart-of-gold workstation …`. This proof does not install a shell `help` alias, change editor bindings or execute AI writing actions.
+
 ## Security & Trust
 
 Some skills in this repository can, when configured by the user, interact with personal services and local tooling such as:

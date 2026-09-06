@@ -1,0 +1,79 @@
+{
+  "schemaVersion": 1,
+  "cards": [
+    {
+      "id": "shell.build-command", "chapter": "shell", "title": "Build a command without surprises",
+      "synonyms": ["quote spaces", "arguments", "pipes and redirection", "what does the vertical bar do", "connect commands", "local versus remote"],
+      "kind": "reference", "layer": "Shell prompt — before pressing Enter", "requirements": [],
+      "body": "cards/build-command.md", "effect": "Understand what the shell passes to each program; examples only print synthetic text.",
+      "recovery": "Ctrl-C cancels the current input or interrupts a foreground command. It cannot undo an overwrite or a remote action.",
+      "related": ["shell.find-file", "shell.history"],
+      "source": {"label": "zsh manual", "url": "https://zsh.sourceforge.io/Doc/Release/Shell-Grammar.html", "revision": "zsh 5.9 concepts; generic, not local bindings"}
+    },
+    {
+      "id": "shell.find-file", "chapter": "finding", "title": "Find a file without typing its path",
+      "synonyms": ["find a file", "without typing a path", "insert a filename", "fuzzy find files", "open a file by name"],
+      "kind": "keys", "layer": "Interactive shell prompt — not inside Neovim", "requirements": ["fzf"],
+      "body": "cards/find-file.md", "effect": "A configured file picker inserts a path into the command line; it does not run that command.",
+      "recovery": "Esc cancels the picker. Inspect the resulting shell line; Ctrl-C clears it before execution.",
+      "related": ["shell.build-command", "shell.history", "nvim.modes"],
+      "source": {"label": "fzf shell integration", "url": "https://junegunn.github.io/fzf/shell-integration/", "revision": "fzf 0.74.3 reference; shell hooks must be checked separately"},
+      "exercise": {"goal": "Insert a disposable file's path without typing the full path. Do not execute the completed command.", "hints": ["Start at your shell prompt, in a small directory you know.", "Type nvim followed by a space. Check the file-picker binding in this card.", "Select a filename, inspect the inserted path, then Ctrl-C to discard the line."], "success": "You can explain why choosing a file and running the completed command are two separate actions."}
+    },
+    {
+      "id": "shell.history", "chapter": "finding", "title": "Recall a command without running it blindly",
+      "synonyms": ["recall a command", "search history", "past commands", "find that command again", "reverse history search"],
+      "kind": "keys", "layer": "Interactive shell prompt", "requirements": ["fzf"],
+      "body": "cards/history.md", "effect": "Recall text for inspection before execution; this guide never reads your shell history.",
+      "recovery": "Esc cancels a configured fzf picker; Ctrl-C discards a recalled line. Previous commands may have effects that cannot be undone.",
+      "related": ["shell.build-command", "shell.find-file"],
+      "source": {"label": "fzf shell integration", "url": "https://junegunn.github.io/fzf/shell-integration/", "revision": "fzf 0.74.3 reference; recorded shell hooks are not runtime verification"}
+    },
+    {
+      "id": "tmux.workspaces", "chapter": "tmux", "title": "Return to a workspace without closing your work",
+      "synonyms": ["return to my workspace", "get back to my session", "detach and attach", "sessions windows panes", "leave terminal running", "switch workspace"],
+      "kind": "reference", "layer": "tmux session / shell outside tmux", "requirements": ["tmux"],
+      "body": "cards/workspaces.md", "effect": "Detaching leaves the session running on its host. Reattaching shows the same workspace; reboot survival needs separate configuration.",
+      "recovery": "Use detach, not exit or kill-session, to leave work running. Cancel a tmux chooser with Esc. Reattach from the same host.",
+      "related": ["tmux.key-layers", "personal.cockpit"],
+      "source": {"label": "tmux manual", "url": "https://man.openbsd.org/tmux", "revision": "tmux 3.6a concepts; commands rather than guessed keybindings"},
+      "exercise": {"goal": "Detach from a disposable tmux workspace and return to the same pane.", "hints": ["Choose an expendable session, not a production process or unfamiliar remote host.", "From its shell, run tmux detach-client. From the outer shell, run tmux list-sessions.", "Run tmux attach-session -t '=YOUR_EXACT_SESSION_NAME', replacing the quoted placeholder with the listed name."], "success": "Your pane remains and you can distinguish detach from terminating a session. No progress is stored."}
+    },
+    {
+      "id": "tmux.key-layers", "chapter": "tmux", "title": "Work out which layer receives a shortcut",
+      "synonyms": ["tmux prefix", "why does this key not work", "terminal shortcuts", "key layers", "tmux menu"],
+      "kind": "reference", "layer": "Terminal → tmux → application", "requirements": ["tmux"],
+      "body": "cards/key-layers.md", "effect": "Identify the receiver before trying a shortcut; terminal settings can intercept keys before tmux or Neovim sees them.",
+      "recovery": "Esc usually cancels an application picker; it is not a universal undo. Return to the shell before testing shell-specific shortcuts.",
+      "related": ["tmux.workspaces", "nvim.modes"],
+      "source": {"label": "tmux manual", "url": "https://man.openbsd.org/tmux", "revision": "tmux 3.6a; private prefix/menu intentionally unresolved without profile"}
+    },
+    {
+      "id": "nvim.modes", "chapter": "nvim", "title": "Edit, select and undo without losing the file",
+      "synonyms": ["undo an edit", "normal insert visual", "get out of insert mode", "buffer versus file", "Neovim basics", "select whole lines"],
+      "kind": "keys", "layer": "Neovim — mode matters", "requirements": ["nvim"],
+      "body": "cards/nvim-modes.md", "effect": "Edits change the buffer first. Only an explicit write such as :write changes the file on disk.",
+      "recovery": "Esc returns to Normal mode; u undoes an edit, Ctrl-R redoes it (default mappings). :quit refuses unsaved changes; :quit! discards them deliberately.",
+      "related": ["shell.find-file", "tmux.key-layers", "writing.review"],
+      "source": {"label": "Neovim user manual", "url": "https://neovim.io/doc/user/usr_02.html", "revision": "Neovim 0.11 standard defaults; custom mappings may override them"}
+    },
+    {
+      "id": "writing.review", "chapter": "writing", "title": "Choose between a rewrite and feedback",
+      "synonyms": ["improve a paragraph", "AI writing", "review before applying", "critique prose", "Fabric patterns", "keep my voice", "summarize text"],
+      "kind": "reference", "layer": "Writing workflow — reference only, not an AI action", "requirements": [],
+      "body": "cards/writing-review.md", "effect": "Decide the input scope and desired result before using an AI tool. Opening this card sends nothing.",
+      "recovery": "Keep the original. Discard an unwanted proposal; never paste a critique over the prose. Existing editor AI routes retain their own behavior.",
+      "related": ["nvim.modes", "shell.build-command"],
+      "source": {"label": "Fabric patterns used independently", "url": "https://github.com/danielmiessler/Fabric#just-use-the-patterns", "revision": "research snapshot 6b0914d1bb0dbf54facec1743838c7312e945634; prompts not yet vendored or executable"}
+    },
+    {
+      "id": "personal.cockpit", "chapter": "personal", "title": "Know when to use a cockpit instead of another shell",
+      "synonyms": ["my cockpit", "custom commands", "personal dashboard", "where are my tools", "open the cockpit", "leave the cockpit"],
+      "kind": "reference", "layer": "Personal tools — availability and bindings vary by machine", "requirements": ["cockpit"],
+      "body": "cards/cockpit.md", "effect": "A cockpit groups personal workflows; a shell builds arbitrary commands. This guide explains the distinction without opening either.",
+      "recovery": "Use the application's documented quit/back key, or switch tmux windows to leave it running. Do not assume Ctrl-C safely cancels a task already submitted.",
+      "related": ["tmux.workspaces", "tmux.key-layers"],
+      "source": {"label": "Shell executable discovery", "url": "https://zsh.sourceforge.io/Doc/Release/Shell-Builtin-Commands.html", "revision": "generic discovery only; private cockpit source/distribution intentionally not included"}
+    }
+  ]
+}

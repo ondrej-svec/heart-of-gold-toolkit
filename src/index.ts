@@ -17,7 +17,17 @@ const main = defineCommand({
     list: listCommand,
     targets: targetsCommand,
     "share-server": shareServerCommand,
+    workstation: {
+      meta: { name: "workstation", description: "Learn your workstation — offline reference, not a launcher" },
+    },
   },
 });
 
-runMain(main);
+// citty consumes --help even after --. Forward this command's untouched tail
+// before its parser; lazy import keeps unrelated commands independent of setup.
+if (process.argv[2] === "workstation") {
+  const { runWorkstation } = await import("./commands/workstation");
+  process.exitCode = await runWorkstation(process.argv.slice(3));
+} else {
+  runMain(main);
+}

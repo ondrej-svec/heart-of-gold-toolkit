@@ -1,0 +1,24 @@
+name: Offline workstation guide
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  workstation:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        node: [22, 24]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      - uses: oven-sh/setup-bun@v2
+      - name: Existing host dependencies (no lifecycle scripts)
+        run: bun install --frozen-lockfile --ignore-scripts
+      - name: Offline module and host boundary tests (no AI credentials)
+        run: npm run test:workstation

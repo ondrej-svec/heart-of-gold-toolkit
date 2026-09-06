@@ -1,0 +1,11 @@
+{
+  "name": "@heart-of-gold/workstation-internal",
+  "version": "0.1.0-proof",
+  "private": true,
+  "type": "module",
+  "description": "Independently runnable offline guide module; distributed only through Heart of Gold",
+  "license": "MIT",
+  "engines": { "node": ">=22" },
+  "files": ["bin/", "src/", "catalog/", "docs/", "scripts/backup.mjs", "README.md"],
+  "scripts": { "test": "node --test tests/*.test.mjs" }
+}
