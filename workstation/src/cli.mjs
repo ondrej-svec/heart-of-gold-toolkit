@@ -3,7 +3,7 @@ import { CHAPTERS, TOOLS, loadCatalog, search } from './catalog.mjs';
 import { BINDINGS, loadProfile, bindingStatus, interpolate, readBounded, sha256 } from './profile.mjs';
 import { executable, toolEnv, runProcess } from './process.mjs';
 import { pick, present } from './presentation.mjs';
-import { readLesson, renderCard } from './reader.mjs';
+import { readLesson, renderCard, renderIndex, EDITOR_READING } from './reader.mjs';
 
 const VERSION = '0.1.0-proof';
 const USAGE = `workstation-guide — Learn your whole workstation, offline
@@ -56,8 +56,9 @@ function tools(env) {
   return Object.entries(TOOLS).map(([name, role]) => ({ name, role, status: name === 'node' || executable(name, env) ? 'present' : 'missing' }));
 }
 function viewCard(card, state, installed) {
-  return { ...card, content: interpolate(card.content, state.profile, state.configRoot),
+  const view = { ...card, content: interpolate(card.content, state.profile, state.configRoot),
     tools: installed.filter(tool => card.requirements.includes(tool.name)) };
+  return { ...view, markdown: renderCard(view, { files: true, reading: EDITOR_READING }) };
 }
 function rootText(cards) {
   let number = 0;
@@ -104,7 +105,10 @@ export async function main(argv = process.argv.slice(2), env = process.env) {
     const data = loadCatalog();
     const state = loadProfile(env, options.profile);
     const installed = tools(env);
-    const cards = data.cards.map(card => viewCard(card, state, installed));
+    // The numbered root and its offered records must use the same chapter order,
+    // even when authors append a card elsewhere in the catalog file.
+    const cards = CHAPTERS.flatMap(chapter => data.cards.filter(card => card.chapter === chapter.id))
+      .map(card => viewCard(card, state, installed));
     const byId = id => {
       const card = cards.find(card => card.id === id);
       if (!card) throw new Error('Unknown card ID; use list to see stable IDs');
@@ -159,7 +163,11 @@ export async function main(argv = process.argv.slice(2), env = process.env) {
       return 0;
     }
     const matches = command === 'list' ? cards : search({ cards }, options.words.join(' '));
-    if (options.json) { json({ chapters: CHAPTERS, cards: matches }); return 0; }
+    if (options.json) {
+      json({ chapters: CHAPTERS, cards: matches, indexMarkdown: renderIndex(cards, { reading: EDITOR_READING }),
+        documents: Object.fromEntries(cards.map(card => [card.id, card.markdown])) });
+      return 0;
+    }
     if (command === 'list') { output(listText(matches)); return 0; }
     if (!tty) { output(command ? listText(matches) : rootText(cards)); return 0; }
     if (command && matches.length === 1) { await display(matches[0]); return process.exitCode || 0; }

@@ -1,6 +1,6 @@
 # Your workstation — How do I…?
 
-A learning-first, offline guide and growing quick reference inside Heart of Gold. **Read explanations, not run actions.** Shell, finding, tmux, Neovim, writing decisions and personal tools share one small catalog. Search by intention or a command/key concept; these eight starter cards are not yet a comprehensive cheatsheet.
+A learning-first, offline guide and growing quick reference inside Heart of Gold. **Read explanations, not run actions.** Shell, finding, tmux, Neovim, writing decisions and personal tools share one small catalog. Search by intention or a command/key concept; sixteen cards now include compact Neovim/tmux cheatsheets and practical editor workflows, not yet comprehensive workstation coverage.
 
 ## Try the proof without installing anything
 
@@ -25,7 +25,7 @@ The direct runtime needs **Node 22+**, no dependencies, Bun, Pi, credentials or 
 - `cmd` delegates only to an explicitly reviewed, fingerprinted **tldr C client 1.6.1**, with automatic updates disabled. Unknown clients fail closed. A missing/stale cache is not silently downloaded.
 - The host exports `workstation-guide` as a Node binary and `heart-of-gold workstation …` as a convenience wrapper. From source, use `bun --no-env-file src/index.ts workstation …` to avoid Bun's automatic `.env` loading. The host's normal Bun shebang does not promise dotenv isolation; use direct Node for that boundary.
 
-**Proof status:** eight authored cards in six populated chapters, catalog/profile/search, read-only doctor, search → Neovim Markdown reading, safe terminal fallbacks, two manual exercises and host/package integration. AI-writing content is reference-only. An opt-in zsh `help` wrapper is available below. Pi execution, vendored Fabric prompts, Neovim review/Apply, general installation/restore, portable skill/Pi command and release are later gated slices. No existing `help`, `cheat`, tmux or editor mapping changes just by running this code.
+**Proof status:** sixteen authored cards in six populated chapters, catalog/profile/search, read-only doctor, search → Neovim Markdown reading, an opt-in in-editor help split, safe terminal fallbacks, two manual exercises and host/package integration. AI-writing content is reference-only. An opt-in zsh `help` wrapper is available below. Pi execution, vendored Fabric prompts, Neovim review/Apply, general installation/restore, portable skill/Pi command and release are later gated slices. No existing `help`, `cheat`, tmux or editor mapping changes just by running this code.
 
 ## Make `help` your front door (zsh, opt-in)
 
@@ -41,6 +41,23 @@ help "tmux prefix"
 The wrapper replaces only the `help` alias/function, safely forwards arguments and resolves its Node entry relative to its own location. It can be sourced repeatedly. It does not install anything, start an agent or execute tldr. Missing Node or a moved/deleted entry produces a short diagnostic rather than falling back to a different tool. New shells load your chosen declaration; already-running shells need to source just that wrapper/snippet once.
 
 Keep `tldr` directly available if useful: `tldr tar` or `tldr git` gives a handful of generic examples, whereas this guide teaches workstation workflows and setup. A tldr client may download/update its cache; running it directly follows that client's policy. There is no requirement to use it. `cheat` and other aliases are not changed by this wrapper.
+
+## Remember Neovim and tmux
+
+```sh
+help "nvim cheatsheet"
+help "tmux cheatsheet"
+help "go to definition"
+help "find text in project"
+help "switch buffers"
+help "run nearest test"
+help "split terminal"
+help "copy terminal output"
+```
+
+Without the zsh wrapper, use `node workstation/bin/workstation-guide.mjs` instead of `help`. Keys distinguish stock defaults from source-fingerprinted local mappings; no private profile means local keys remain **unknown**, not guessed. The [coverage note](docs/reference-coverage.md) reconciles the old sheet without removing access to unmigrated material. It also flags an existing clipboard-paste configuration defect; browsing does not fix or execute that action.
+
+For help beside an open source buffer, the optional [Neovim adapter](docs/neovim-help.md) adds only `:WorkstationHelp [task or ID]`. Shared Markdown opens in a read-only memory-buffer split with native `gf`, Ctrl-O and `:q`; `:WorkstationHelp!` cancels/closes it. No keybindings, source edits, AI calls or live installation. Review the opt-in instructions before loading it in your real editor.
 
 ## Development
 
@@ -58,5 +75,7 @@ The module is private package metadata, **not a separate npm product**. Its pare
 
 - [Interface, profile, safety and authoring](docs/interface.md)
 - [Dependencies, scoped backup and proposed private integration paths](docs/dependencies-and-backup.md)
+- [Neovim/tmux reference coverage and source caveats](docs/reference-coverage.md)
+- [Optional in-editor help and its safety boundary](docs/neovim-help.md)
 
 Toolkit implementation started from host commit `5f7c19708658f3afe3f69c57422601ec15fc0b80`. Existing publish-safety, security, compatibility and Pi test gates remain intact; workstation tests are additive. Source work, live installation, off-machine backup, publication and second-device verification are separate milestones.

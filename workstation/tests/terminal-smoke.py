@@ -32,7 +32,7 @@ def terminal(env, args, stages, launcher=None):
                     raise AssertionError('terminal stage not reached: ' + needle + '\n' + repr(data[-1500:]))
                 if select.select([fd], [], [], .1)[0]:
                     chunk = os.read(fd, 65536)
-                    if not chunk: raise AssertionError('terminal closed early')
+                    if not chunk: raise AssertionError('terminal closed before stage: ' + needle + '\n' + repr(data[-2000:]))
                     data += chunk
                     if b'\x1b[6n' in chunk: os.write(fd, b'\x1b[1;1R')
             time.sleep(.2)
@@ -52,6 +52,9 @@ def terminal(env, args, stages, launcher=None):
                 except OSError: pass
         raise AssertionError('terminal did not exit')
     finally:
+        if not reaped:
+            done, _ = os.waitpid(pid, os.WNOHANG)
+            reaped = bool(done)
         if not reaped:
             # pty.fork owns a new session/process group. Allow the CLI to reap
             # its editor and remove private files before escalating a failed test.
@@ -78,18 +81,31 @@ with tempfile.TemporaryDirectory(prefix='workstation-real-tools-') as home:
     env = {'HOME': home, 'PATH': str(bindir), 'TERM':'xterm-256color', 'LANG':'en_US.UTF-8',
            'FZF_DEFAULT_OPTS': '--bind=start:execute(touch '+marker+')', 'PAGER': 'touch '+marker}
     terminal(env, ['--plain'], [('Number or task', b'return to my workspace\n'), ('# Return to a workspace', b'\n'), ('Number or task', b'q\n')])
-    print('PASS numbered intention search/read/back/quit, network denied')
-    terminal(env, ['--glow'], [('How do I', b'find a file'), ('find a file', b'\r'), ('Enter or q: back', b'q\n'), ('Type a task', b'\x1b')])
-    terminal(env, [], [('How do I', b'get back to my session'), ('get back to my session', b'\r'), ('Read-only guide copy', b':q\r'), ('Type a task', b'\x1b')])
-    terminal(env, [], [('How do I', b'find a file'), ('find a file', b'\r'), ('Read-only guide copy', b'/shell.history.md\r'), ('/shell.history.md', b'gf'), ('Recall a command', b'\x0f'), ('find-file.md', b':q\r'), ('Type a task', b'\x1b')])
+    terminal(env, ['--plain'], [('Number or task', b'6\n'), ('# Split terminal panes', b'\n'), ('Number or task', b'q\n')])
+    print('PASS numbered intention search and expanded tmux card/read/back/quit, network denied')
+    # Wait for fzf's own ready header, not the earlier Node root heading.
+    terminal(env, ['--glow'], [('Type a task', b'find a file'), ('find a file', b'\r'), ('Enter or q: back', b'q\n'), ('Type a task', b'\x1b')])
+    terminal(env, [], [('Type a task', b'get back to my session'), ('get back to my session', b'\r'), ('Read-only guide copy', b':q\r'), ('Type a task', b'\x1b')])
+    terminal(env, [], [('Type a task', b'find a file'), ('find a file', b'\r'), ('Read-only guide copy', b'/shell.history.md\r'), ('/shell.history.md', b'gf'), ('Recall a command', b'\x0f'), ('find-file.md', b':q\r'), ('Type a task', b'\x1b')])
     terminal(env, ['show', 'nvim.modes'], [('Read-only guide copy', b':q\r')])
     bun = shutil.which('bun')
     if bun:
         terminal(env, ['show', 'nvim.modes'], [('Read-only guide copy', b':q\r')], launcher=[bun, '--no-env-file', str(ROOT.parent / 'src/index.ts'), 'workstation'])
+    editor_init = pathlib.Path(home) / 'editor-help.lua'
+    editor_init.write_text('local guide=dofile(' + json.dumps(str(ROOT / 'integrations/nvim/workstation-help.lua')) + ')\n'
+        + 'assert(guide.setup({node=' + json.dumps(NODE) + ',entry=' + json.dumps(CLI) + '}))\n'
+        + 'vim.api.nvim_buf_set_name(0,"synthetic-source.txt")\n'
+        + 'vim.api.nvim_buf_set_lines(0,0,-1,false,{"source-fixture unchanged"})\n'
+        + 'vim.o.laststatus=2; vim.o.statusline="%t"\n')
+    terminal(env, ['-u', 'NONE', '-i', 'NONE', '-n', '--noplugin', '-c', 'luafile ' + str(editor_init)],
+        [('source-fixture', b':WorkstationHelp\r'), ('Type number and <Enter>', b'1\r'),
+         ('shell.build-command.md', b':q\r'), ('synthetic-source.txt', b':lua assert(vim.api.nvim_buf_get_lines(0,0,-1,false)[1]=="source-fixture unchanged"); vim.cmd("qall!")\r')],
+        launcher=[NVIM])
+    print('PASS real in-editor native chooser/read-only split/:q/source preservation; network denied')
     # Without the editor, TTY reading still falls back. --plain and --glow above
     # are tested while Neovim is present, so neither may accidentally launch it.
     (bindir / 'nvim').unlink()
-    terminal(env, [], [('How do I', b'find a file'), ('find a file', b'\r'), ('Enter or q: back', b'q\n'), ('Type a task', b'\x1b')])
+    terminal(env, [], [('Type a task', b'find a file'), ('find a file', b'\r'), ('Enter or q: back', b'q\n'), ('Type a task', b'\x1b')])
     assert not pathlib.Path(marker).exists()
     print('PASS real fzf/Neovim search/gf/Ctrl-O/:q/return, host handoff, missing-editor/plain/Glow fallbacks; network denied')
     binary = pathlib.Path(args.tldr).resolve()

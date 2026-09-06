@@ -53,6 +53,14 @@ test('task synonyms find shell and tmux by intention with deterministic ranking'
     ['find a file', 'shell.find-file'], ['without typing a path', 'shell.find-file'],
     ['return to my workspace', 'tmux.workspaces'], ['get back to my session', 'tmux.workspaces'],
     ['undo an edit', 'nvim.modes'], ['recall a command', 'shell.history'],
+    ['go to definition', 'nvim.code-navigation'],
+    ['find text in project', 'nvim.find-project'],
+    ['switch buffers', 'nvim.buffers-windows'],
+    ['split terminal', 'tmux.panes'],
+    ['copy terminal output', 'tmux.copy-mode'],
+    ['run nearest test', 'nvim.tests'],
+    ['nvim cheatsheet', 'nvim.quick-reference'],
+    ['tmux cheatsheet', 'tmux.quick-reference'],
   ]) assert.equal(search(data, query)[0]?.id, expected, query);
   assert.deepEqual(search(data, '  FILE  '), search(data, 'file'));
   assert.deepEqual(search(data, '$(touch /tmp/no); | &'), []);

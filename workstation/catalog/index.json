@@ -58,6 +58,78 @@
       "source": {"label": "Neovim user manual", "url": "https://neovim.io/doc/user/usr_02.html", "revision": "Neovim 0.11 standard defaults; custom mappings may override them"}
     },
     {
+      "id": "nvim.find-project", "chapter": "nvim", "title": "Find files and text in a project",
+      "synonyms": ["find text in project", "find in files", "Quick Open", "project explorer", "recent files", "grep project", "search code", "Oil directory"],
+      "kind": "keys", "layer": "Neovim Normal mode → picker or directory buffer", "requirements": ["nvim"],
+      "body": "cards/nvim-find-project.md", "effect": "Distinguish filename, content and recent-file search; Oil can apply filesystem changes if you explicitly save them.",
+      "recovery": "Cancel a picker with Ctrl-C in Insert or Esc to Normal then Esc. Ctrl-O returns after a jump. Do not write unwanted Oil changes.",
+      "related": ["nvim.buffers-windows", "nvim.code-navigation", "nvim.quick-reference", "shell.find-file"],
+      "source": {"label": "Authored snacks.lua / oil.lua and Neovim quickfix manual", "url": "https://neovim.io/doc/user/quickfix.html", "revision": "Authored source and installed plugin docs inspected 2026-09-06; local bindings require a separate profile"}
+    },
+    {
+      "id": "nvim.code-navigation", "chapter": "nvim", "title": "Go to definition and navigate code with LSP",
+      "synonyms": ["go to definition", "find usages", "find references", "hover documentation", "rename symbol", "quick fix", "format document", "jump back"],
+      "kind": "keys", "layer": "Neovim Normal mode; buffer-local LspAttach mappings", "requirements": ["nvim"],
+      "body": "cards/nvim-code-navigation.md", "effect": "Navigation requests information; rename, format and code actions can change buffers or trigger server commands.",
+      "recovery": "Ctrl-O returns after a jump. Review every affected buffer after edits; undo is buffer-local, not atomic multi-file rollback.",
+      "related": ["nvim.find-project", "nvim.buffers-windows", "nvim.quick-reference"],
+      "source": {"label": "Authored lsp-config.lua and Neovim LSP manual", "url": "https://neovim.io/doc/user/lsp.html", "revision": "Authored source and installed lsp.txt inspected 2026-09-06; requires attached capable server"}
+    },
+    {
+      "id": "nvim.buffers-windows", "chapter": "nvim", "title": "Switch buffers and arrange editor windows",
+      "synonyms": ["switch buffers", "open documents", "editor tabs", "split editor", "two files side by side", "move between splits", "close editor view"],
+      "kind": "keys", "layer": "Neovim Normal mode; navigator may hand off to tmux", "requirements": ["nvim"],
+      "body": "cards/nvim-buffers-windows.md", "effect": "Switch documents or views without confusing a buffer, editor window, tab page or terminal pane.",
+      "recovery": "Return with :buffer # or Ctrl-W then p. Respect unsaved-change refusals; closing a view does not delete a disk file.",
+      "related": ["nvim.find-project", "nvim.modes", "tmux.panes", "nvim.quick-reference"],
+      "source": {"label": "Authored snacks.lua / nvim-tmux-navigation.lua and Neovim windows manual", "url": "https://neovim.io/doc/user/windows.html", "revision": "Authored source and installed windows.txt inspected 2026-09-06; navigator counterpart must be loaded"}
+    },
+    {
+      "id": "nvim.tests", "chapter": "nvim", "title": "Run nearest test, file or suite deliberately",
+      "synonyms": ["run nearest test", "test at cursor", "test this file", "run test suite", "rerun last test", "visit last test", "test gutter button", "vimux runner"],
+      "kind": "keys", "layer": "Neovim Normal mode → vim-test → vimux tmux runner pane", "requirements": ["nvim", "tmux"],
+      "body": "cards/nvim-test-runner.md", "effect": "An intentional test run executes project code with possible side effects; TestVisit only navigates. The guide runs nothing.",
+      "recovery": "Interrupt only the identified runner with Ctrl-C or :VimuxInterruptRunner. Interruption cannot undo test side effects.",
+      "related": ["nvim.code-navigation", "tmux.panes", "nvim.quick-reference"],
+      "source": {"label": "Authored vim-test.lua; installed test.txt and vimux.txt", "url": "https://neovim.io/doc/user/terminal.html", "revision": "Plugin commands/strategy inspected 2026-09-06; native terminal reference supplies context, not plugin key defaults"}
+    },
+    {
+      "id": "nvim.quick-reference", "chapter": "nvim", "title": "Neovim quick reference for everyday editing",
+      "synonyms": ["nvim cheatsheet", "neovim cheatsheet", "nvim cheat sheet", "neovim quick reference", "editor shortcuts", "IDE to Neovim", "which key menu"],
+      "kind": "reference", "layer": "Neovim modes, native commands and separately recorded local keys", "requirements": ["nvim"],
+      "body": "cards/nvim-quick-reference.md", "effect": "Recall everyday editing and IDE equivalents while keeping stock defaults separate from personal bindings.",
+      "recovery": "Esc returns to Normal; u undoes buffer edits. :quit refuses unsaved loss; :quit! deliberately discards it.",
+      "related": ["nvim.modes", "nvim.find-project", "nvim.code-navigation", "nvim.buffers-windows", "nvim.tests", "tmux.quick-reference"],
+      "source": {"label": "Neovim manual and inspected authored editor mappings", "url": "https://neovim.io/doc/user/usr_02.html", "revision": "Reference reconciliation 2026-09-06; private sheet not exported, native help unchanged"}
+    },
+    {
+      "id": "tmux.panes", "chapter": "tmux", "title": "Split terminal panes and move between them",
+      "synonyms": ["split terminal", "split down", "split right", "new terminal tab", "new window", "move between panes", "zoom pane"],
+      "kind": "keys", "layer": "tmux prefix table, before the shell or editor", "requirements": ["tmux"],
+      "body": "cards/tmux-panes.md", "effect": "Splits and windows start shells; focus and zoom change the view without terminating existing processes.",
+      "recovery": "Toggle zoom again or move focus back. Detach to preserve work; killing a pane is destructive, not split undo.",
+      "related": ["tmux.workspaces", "tmux.key-layers", "nvim.buffers-windows", "tmux.quick-reference"],
+      "source": {"label": "Authored tmux/main.conf and tmux manual", "url": "https://man.openbsd.org/tmux", "revision": "Authored source and installed tmux.1 inspected 2026-09-06; stock defaults are not live verification"}
+    },
+    {
+      "id": "tmux.copy-mode", "chapter": "tmux", "title": "Copy terminal output and search scrollback",
+      "synonyms": ["copy terminal output", "search scrollback", "select terminal text", "copy mode", "paste tmux buffer", "clipboard paste", "scroll terminal history"],
+      "kind": "reference", "layer": "tmux copy-mode-vi versus application input and system clipboard", "requirements": ["tmux"],
+      "body": "cards/tmux-copy-mode.md", "effect": "Copy mode reads pane history into tmux buffers. Pasting sends input to an application and may execute commands.",
+      "recovery": "Stock vi q exits copy mode; Esc clears selection. Pasted commands and clipboard changes have no general undo.",
+      "related": ["tmux.key-layers", "tmux.panes", "tmux.quick-reference"],
+      "source": {"label": "Authored tmux/main.conf clipboard defect and tmux copy-mode manual", "url": "https://man.openbsd.org/tmux", "revision": "Source inspected 2026-09-06; pbcopy paste defect flagged, not fixed or executed; clipboard integration unverified"}
+    },
+    {
+      "id": "tmux.quick-reference", "chapter": "tmux", "title": "tmux quick reference for keeping work running",
+      "synonyms": ["tmux cheatsheet", "tmux cheat sheet", "tmux quick reference", "tmux shortcuts", "tmux key help", "every binding"],
+      "kind": "reference", "layer": "tmux prefix/suffix, menu and native commands", "requirements": ["tmux"],
+      "body": "cards/tmux-quick-reference.md", "effect": "Recall session/window/pane actions and distinguish direct key help from the authored menu's full key listing.",
+      "recovery": "Esc cancels the menu/prompt; q leaves stock vi copy mode. Detach rather than killing work; reconnect on the same host.",
+      "related": ["tmux.workspaces", "tmux.key-layers", "tmux.panes", "tmux.copy-mode", "nvim.quick-reference"],
+      "source": {"label": "Authored tmux/main.conf and tmux manual", "url": "https://man.openbsd.org/tmux", "revision": "Reference reconciliation 2026-09-06; stock defaults and persistence plugins are not verified runtime state"}
+    },
+    {
       "id": "writing.review", "chapter": "writing", "title": "Choose between a rewrite and feedback",
       "synonyms": ["improve a paragraph", "AI writing", "review before applying", "critique prose", "Fabric patterns", "keep my voice", "summarize text"],
       "kind": "reference", "layer": "Writing workflow — reference only, not an AI action", "requirements": [],

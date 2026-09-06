@@ -4,7 +4,7 @@
 
 `workstation-guide [task query]` searches locally across titles, authored synonyms, explanations and effects. Reserved commands are `list`, `show`, `learn`, `doctor`, `cmd` and the currently unimplemented `ai`. `-l` and `--list` are shorthand for `list` and take no positional query/subcommand. Options are parsed before literal text; `--` ends option parsing. A query beginning with a reserved command is not execution and cannot start an AI job; reserved argument errors explain usage.
 
-`list --json` and a query with `--json` return `{schemaVersion:1, ok:true, chapters, cards}`. `show <id> --json` returns `{schemaVersion:1, ok:true, card}`. A card includes its stable metadata, interpolated `content` and dependency `tools` statuses. Reference cards have no executable step or AI model/prompt fields. Future action support will require an explicit validated extension, not inferred execution from prose.
+`list --json` and a query with `--json` return `{schemaVersion:1, ok:true, chapters, cards, indexMarkdown, documents}`. `cards` retains the matching/ranked subset; `documents` maps **all** stable IDs to complete rendered Markdown and `indexMarkdown` lists all chapters, keeping related navigation available even for narrow queries. `show <id> --json` returns `{schemaVersion:1, ok:true, card}`. A card includes its stable metadata, interpolated `content`, dependency `tools` statuses and complete `markdown` (metadata, explanation, effects, recovery, sources and sibling links). These are additive JSON v1 fields; consumers should ignore unknown fields. Reference cards have no executable step or AI model/prompt fields. Future action support will require an explicit validated extension, not inferred execution from prose.
 
 `doctor --json` returns `{schemaVersion:1, ok:true, profile, tools, bindings, notice}`. `present` means an executable was found, not that a hook, account or running integration works. `node` describes the running interpreter. No executable/version command, shell startup, auth read or model call occurs during doctor. Missing optional tools are informative, not exit failure.
 
@@ -41,9 +41,16 @@ Allowed bindings and source files:
 | Token after `binding.` | Source under the config root |
 | --- | --- |
 | `shell.file-picker`, `shell.history` | `zsh/.zshrc` |
-| `tmux.prefix`, `tmux.menu`, `tmux.cockpit` | `tmux/main.conf` |
+| `tmux.prefix`, `tmux.menu`, `tmux.cockpit`, `tmux.split-below`, `tmux.split-right`, `tmux.navigate-panes`, `tmux.new-window`, `tmux.copy-mode-keys`, `tmux.clipboard-paste`, `tmux.session-picker` | `tmux/main.conf` |
 | `nvim.leader` | `nvim/lua/vim-options.lua` |
 | `nvim.discovery` | `nvim/lua/plugins/which-key.lua` |
+| `nvim.find-files`, `nvim.buffers`, `nvim.grep`, `nvim.explorer`, `nvim.recent` | `nvim/lua/plugins/snacks.lua` |
+| `nvim.hover`, `nvim.definition`, `nvim.references`, `nvim.code-action`, `nvim.format`, `nvim.rename` | `nvim/lua/plugins/lsp-config.lua` |
+| `nvim.directory` | `nvim/lua/plugins/oil.lua` |
+| `nvim.navigate-panes` | `nvim/lua/plugins/nvim-tmux-navigation.lua` |
+| `nvim.test-nearest`, `nvim.test-file`, `nvim.test-suite`, `nvim.test-last`, `nvim.test-visit` | `nvim/lua/plugins/vim-test.lua` |
+
+Record leader-dependent keys symbolically (`Leader f f`, repeated `Leader Leader`), not as baked-in Space sequences verified only by a plugin file. The separately fingerprinted `nvim.leader` explains that opener. tmux action values are suffixes; `tmux.prefix` is separate. `tmux.copy-mode-keys` describes the option, not a shortcut. See [coverage and inspection caveats](reference-coverage.md).
 
 Profiles are trusted local configuration. Fingerprints detect drift, not authenticity or runtime behavior. Reading the allowlisted source never sources/evaluates it. Symlink resolution must remain inside the config root.
 
@@ -69,7 +76,7 @@ All lessons plus a six-chapter `index.md` are created under an owned `workstatio
 
 Use ordinary `j/k`, `/word` and `n`. Put the cursor on the filename part of a Markdown link and press `gf`; `Ctrl-O` returns. `:q` returns to the picker immediately, without an extra confirmation prompt. For a direct lookup it returns to the shell. `:q!` discards accidental edits to a copy. No custom key mappings, executable Markdown actions or URL opener are installed.
 
-Neovim starts with `-u NONE -i NONE -n -R --noplugin`, plus pre-file `nomodeline nomodelineexpr noexrc noundofile noswapfile`. Only bundled filetype detection/syntax is enabled, with line numbers/wrapped text. HOME, XDG config/data/state/cache/runtime and temporary paths are private to the reader; `NVIM_LOG_FILE=/dev/null`. Inherited editor init/server variables are dropped. This deliberately does **not** load the user's live plugins/theme, perform installs or reuse a remote Neovim server. The future `:WorkstationHelp` split in an existing editor is a separate adapter, not installed by this change. Neovim 0.11.6 is locally tested.
+Neovim starts with `-u NONE -i NONE -n -R --noplugin`, plus pre-file `nomodeline nomodelineexpr noexrc noundofile noswapfile`. Only bundled filetype detection/syntax is enabled, with line numbers/wrapped text. HOME, XDG config/data/state/cache/runtime and temporary paths are private to the reader; `NVIM_LOG_FILE=/dev/null`. Inherited editor init/server variables are dropped. This deliberately does **not** load the user's live plugins/theme, perform installs or reuse a remote Neovim server. The opt-in [`:WorkstationHelp` adapter](neovim-help.md) instead uses shared JSON Markdown in memory buffers within an existing editor. It is separately loaded, not installed by running the CLI; its trusted live-editor boundary differs from this isolated reader. Neovim 0.11.6 is locally tested.
 
 `-R` guards accidental writes; it is not a sandbox and does not prohibit intentional `:w!`/shell commands. File examples are never executed by opening help. `--plain`, `--glow`, non-TTY and JSON bypass Neovim. Missing/failed Neovim gets a clear notice and full terminal Markdown fallback, so ordinary help remains available without the editor. The no-history guarantee does not claim the absence of these explicitly scoped temporary reading files.
 

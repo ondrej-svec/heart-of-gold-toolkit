@@ -34,6 +34,15 @@ test('root is broad, printable and never waits on non-TTY stdin', t => {
   assert.deepEqual(readdirSync(root).sort(), ['bin']);
 });
 
+test('root chapter numbering agrees with offered/list order when authored cards interleave chapters', t => {
+  const { env } = home(t);
+  const root = run(env).stdout;
+  const data = JSON.parse(run(env, ['list', '--json']).stdout);
+  const numbered = [...root.matchAll(/^\s+(\d+)\. .+\(([a-z0-9.-]+)\)$/gm)];
+  assert.equal(numbered.length, data.cards.length);
+  for (const [, number, id] of numbered) assert.equal(data.cards[Number(number) - 1].id, id);
+});
+
 test('reference/search/learn/doctor work with macOS network access denied', { skip: process.platform !== 'darwin' || !existsSync('/usr/bin/sandbox-exec') }, t => {
   const { env } = home(t);
   for (const args of [[], ['find a file'], ['learn', 'shell.find-file', '--hint', '1'], ['doctor', '--json']]) {
@@ -56,6 +65,27 @@ test('queries search intentions; opening reference and JSON need no optional bin
   assert.equal(card.status, 0, card.stderr);
   assert.match(JSON.parse(card.stdout).card.content, /unknown binding/);
   assert.equal(JSON.parse(card.stdout).card.tools[0].status, 'missing');
+});
+
+test('JSON exposes complete shared Markdown for the in-editor reader without creating files', t => {
+  const { root, env } = home(t);
+  const data = JSON.parse(run(env, ['list', '--json']).stdout);
+  assert.match(data.indexMarkdown, /# Your workstation/);
+  for (const card of data.cards) {
+    for (const value of [card.title, card.layer, card.content, card.effect, card.recovery, card.source.url]) assert.ok(card.markdown.includes(value), card.id);
+    assert.ok(data.indexMarkdown.includes(`${card.id}.md`));
+    assert.equal(data.documents[card.id], card.markdown);
+    assert.match(card.markdown, /:q closes/);
+    assert.doesNotMatch(card.markdown, /returns to the picker|\{\{binding\./);
+    for (const related of card.related) assert.ok(card.markdown.includes(`${related}.md`));
+  }
+  const direct = JSON.parse(run(env, ['show', data.cards[0].id, '--json']).stdout);
+  assert.equal(direct.card.markdown, data.cards[0].markdown);
+  const query = JSON.parse(run(env, ['--json', '--', 'go to definition']).stdout);
+  assert.ok(query.cards.length < data.cards.length);
+  assert.deepEqual(query.documents, data.documents);
+  assert.equal(query.indexMarkdown, data.indexMarkdown);
+  assert.deepEqual(readdirSync(root), ['bin']);
 });
 
 test('-l and --list are local guide-list shortcuts, not tldr options', t => {

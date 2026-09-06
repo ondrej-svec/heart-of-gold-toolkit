@@ -9,10 +9,20 @@ const READING = 'Read-only guide copy · j/k: move · /word then n: search\n' +
   ':q returns to the picker (or shell for a direct lookup). No custom key mappings.\n';
 
 /** Shared full lesson renderer: bodies alone omit important context/recovery. */
-export function renderCard(card, { files = false } = {}) {
+export const EDITOR_READING = 'Read-only guide · j/k: move · /word then n: search\n' +
+  'Put the cursor on a .md filename and press gf to follow it; Ctrl-O goes back.\n' +
+  ':q closes the guide window. :WorkstationHelp searches again. No custom key mappings.\n';
+
+export function renderCard(card, { files = false, reading = READING } = {}) {
   const related = files ? '## Related guides\n\n' + card.related.map(id => `- [${id}](${id}.md)`).join('\n') + '\n- [All chapters](index.md)'
     : `Related: ${card.related.join(' · ')}`;
-  return `# ${card.title}\n\n${files ? READING + '\n' : ''}WHERE  ${card.layer}\nSETUP  ${card.tools.map(tool => `${tool.name}: ${tool.status}`).join(' · ') || 'No tool required to read or understand this lesson'}\n\n${card.content}\n## Expected effect\n\n${card.effect}\n\n## Exit / undo\n\n${card.recovery}\n\n${related}\n\nSource: ${card.source.label} — ${card.source.revision}\n${card.source.url}\n${files ? '' : '\nRead another card: workstation-guide show <id>\n'}`;
+  return `# ${card.title}\n\n${files ? reading + '\n' : ''}WHERE  ${card.layer}\nSETUP  ${card.tools.map(tool => `${tool.name}: ${tool.status}`).join(' · ') || 'No tool required to read or understand this lesson'}\n\n${card.content}\n## Expected effect\n\n${card.effect}\n\n## Exit / undo\n\n${card.recovery}\n\n${related}\n\nSource: ${card.source.label} — ${card.source.revision}\n${card.source.url}\n${files ? '' : '\nRead another card: workstation-guide show <id>\n'}`;
+}
+
+export function renderIndex(cards, { reading = READING } = {}) {
+  return '# Your workstation — learning and quick reference\n\n' + reading + '\n' + CHAPTERS.map(chapter =>
+    `## ${chapter.title}\n\n` + cards.filter(card => card.chapter === chapter.id).map(card => `- [${card.title}](${card.id}.md)`).join('\n')
+  ).join('\n\n') + '\n\nThese are temporary reading copies of the shared catalog, not its editable source.\nNo examples run automatically. No progress is tracked.\n';
 }
 
 /** Private regular files, not catalog-source buffers; resolved labels never enter Git. */
@@ -24,10 +34,7 @@ export function createDocuments(cards, selectedId, parent = tmpdir()) {
   const directory = realpathSync(mkdtempSync(join(parent, 'workstation-reader-')));
   try {
     for (const card of cards) writeFileSync(join(directory, `${card.id}.md`), renderCard(card, { files: true }), { mode: 0o600, flag: 'wx' });
-    const index = '# Your workstation — learning and quick reference\n\n' + READING + '\n' + CHAPTERS.map(chapter =>
-      `## ${chapter.title}\n\n` + cards.filter(card => card.chapter === chapter.id).map(card => `- [${card.title}](${card.id}.md)`).join('\n')
-    ).join('\n\n') + '\n\nThese are temporary reading copies of the shared catalog, not its editable source.\nNo examples run automatically. No progress is tracked.\n';
-    writeFileSync(join(directory, 'index.md'), index, { mode: 0o600, flag: 'wx' });
+    writeFileSync(join(directory, 'index.md'), renderIndex(cards), { mode: 0o600, flag: 'wx' });
     return { directory, entry: join(directory, `${selectedId}.md`) };
   } catch (error) { rmSync(directory, { recursive: true, force: true }); throw error; }
 }

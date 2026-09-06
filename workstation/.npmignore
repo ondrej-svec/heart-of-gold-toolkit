@@ -15,3 +15,5 @@
 !integrations/
 !integrations/zsh/
 !integrations/zsh/help.zsh
+!integrations/nvim/
+!integrations/nvim/workstation-help.lua

@@ -20,9 +20,10 @@ test('exact host package payload allows only module assets and runs independentl
   assert.ok(moduleFiles.includes('workstation/bin/workstation-guide.mjs'));
   assert.ok(moduleFiles.includes('workstation/docs/interface.md'));
   assert.ok(moduleFiles.includes('workstation/integrations/zsh/help.zsh'));
+  assert.ok(moduleFiles.includes('workstation/integrations/nvim/workstation-help.lua'));
   assert.ok(files.includes('src/commands/workstation.ts'));
   for (const file of moduleFiles) {
-    assert.match(file, /^workstation\/(?:package\.json|README\.md|(?:bin|src)\/[a-z-]+\.mjs|catalog\/(?:index\.json|cards\/[a-z-]+\.md)|docs\/[a-z-]+\.md|integrations\/zsh\/help\.zsh|scripts\/backup\.mjs)$/);
+    assert.match(file, /^workstation\/(?:package\.json|README\.md|(?:bin|src)\/[a-z-]+\.mjs|catalog\/(?:index\.json|cards\/[a-z-]+\.md)|docs\/[a-z-]+\.md|integrations\/(?:zsh\/help\.zsh|nvim\/workstation-help\.lua)|scripts\/backup\.mjs)$/);
     assert.doesNotMatch(file, /(?:auth|profile\.json|sessions|backups|state|tests|fixtures|\.env)/);
     assert.equal(isAbsolute(file), false);
     const target = join(home, 'payload', file);
