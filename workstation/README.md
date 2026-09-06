@@ -18,7 +18,7 @@ node workstation/bin/workstation-guide.mjs doctor
 The direct runtime needs **Node 22+**, no dependencies, Bun, Pi, credentials or network. In a terminal, optional fzf selects a lesson; otherwise a numbered prompt works. **Enter opens a complete Markdown file in Neovim.** `:q` returns directly to the picker (or shell for a direct lookup), without an extra viewer prompt. Missing/failed Neovim falls back to terminal text. Piped/JSON output never launches an editor or waits. `--plain` avoids all presentation tools; `--glow` explicitly chooses terminal Markdown formatting instead of Neovim.
 
 - In Neovim: `j/k` move, `/word` then `n` searches, `gf` on a `.md` filename follows a related guide, `Ctrl-O` goes back. Each lesson links to `index.md` with all six chapters. These are ordinary files and native keys, not custom mappings. `:q!` discards accidental edits to a reading copy.
-- The reader uses isolated startup, not your live plugins/theme or editor state. Complete `.md` copies include metadata, resolved bindings, recovery and links. They have private permissions and are removed after the reader exits; the authored source stays untouched. There is no persistent copy/export command in this slice.
+- The reader uses isolated startup, not your live plugins or editor state. Its owned styling follows your terminal's Rosé Pine color roles; no live Neovim colorscheme is loaded. Complete `.md` copies include metadata, resolved bindings, recovery and links. They have private permissions and are removed after the reader exits; the authored source stays untouched. There is no persistent copy/export command in this slice.
 - Esc quits fzf. In the terminal-text fallback, Enter or `q` returns and Ctrl-C quits.
 - Unknown/stale private bindings stay visibly unresolved. Upstream default shortcuts are labeled as defaults, never claimed as your configuration.
 - Two optional manual exercises offer progressive hints; there is no tracking, shell-history inspection or scoreboard.
@@ -26,6 +26,14 @@ The direct runtime needs **Node 22+**, no dependencies, Bun, Pi, credentials or 
 - The host exports `workstation-guide` as a Node binary and `heart-of-gold workstation …` as a convenience wrapper. From source, use `bun --no-env-file src/index.ts workstation …` to avoid Bun's automatic `.env` loading. The host's normal Bun shebang does not promise dotenv isolation; use direct Node for that boundary.
 
 **Proof status:** sixteen authored cards in six populated chapters, catalog/profile/search, read-only doctor, search → Neovim Markdown reading, an opt-in in-editor help split, safe terminal fallbacks, two manual exercises and host/package integration. AI-writing content is reference-only. An opt-in zsh `help` wrapper is available below. Pi execution, vendored Fabric prompts, Neovim review/Apply, general installation/restore, portable skill/Pi command and release are later gated slices. No existing `help`, `cheat`, tmux or editor mapping changes just by running this code.
+
+## Rosé Pine consistency
+
+The root/list, fzf picker, standalone Neovim reader and explicit Glow view use the terminal's **semantic ANSI palette**, matching the shared workstation roles: iris headings, foam code/links, rose accents, muted labels, overlay selections. With the client terminal configured for Rosé Pine Moon/Dawn, the guide follows that active palette—including over SSH—without consulting the host OS or loading private appearance scripts. It does not install or change the terminal palette; another terminal theme supplies its own colors.
+
+The reader uses `notermguicolors` and owned syntax/status/search highlights, so changing the terminal palette recolors the same slots. No themes/plugins are downloaded. fzf receives explicit color-only argv, **not** inherited `FZF_DEFAULT_OPTS` executable hooks. Glow gets an owned private temporary style, removed after rendering. The opt-in in-editor helper keeps that editor's existing theme unchanged.
+
+`--plain`, non-TTY and JSON stay uncolored. Nonempty `NO_COLOR` or `TERM=dumb` selects plain terminal output without the optional picker/reader/Glow. Reopening `help` is enough to use a source-checkout update; no shell or editor reload is needed for these guide-owned colors.
 
 ## Make `help` your front door (zsh, opt-in)
 

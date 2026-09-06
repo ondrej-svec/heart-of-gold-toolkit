@@ -4,7 +4,7 @@ Run after reviewing the installed tldr C client 1.6.1:
   uv run --no-project --no-config workstation/tests/terminal-smoke.py --tldr-c-1.6.1 /absolute/path/to/tldr
 No dependencies; requires already installed Node, fzf, Glow, Neovim and macOS sandbox-exec.
 """
-import os, pty, select, time, tempfile, subprocess, pathlib, json, hashlib, shutil, fcntl, termios, struct, signal, argparse
+import os, pty, select, time, tempfile, subprocess, pathlib, json, hashlib, shutil, fcntl, termios, struct, signal, argparse, re
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--tldr-c-1.6.1', dest='tldr', required=True, help='Absolute path to the explicitly reviewed C 1.6.1 client, not another tldr client')
 args = parser.parse_args()
@@ -23,6 +23,7 @@ def terminal(env, args, stages, launcher=None):
         os.execve(SANDBOX[0], SANDBOX + (launcher or [NODE, CLI]) + args, env)
     fcntl.ioctl(fd, termios.TIOCSWINSZ, struct.pack('HHHH', 36, 120, 0, 0))
     data = b''
+    transcript = bytearray()
     reaped = False
     try:
         for needle, response in stages:
@@ -34,9 +35,10 @@ def terminal(env, args, stages, launcher=None):
                     chunk = os.read(fd, 65536)
                     if not chunk: raise AssertionError('terminal closed before stage: ' + needle + '\n' + repr(data[-2000:]))
                     data += chunk
+                    transcript.extend(chunk)
                     if b'\x1b[6n' in chunk: os.write(fd, b'\x1b[1;1R')
             time.sleep(.2)
-            os.write(fd, response)
+            if response: os.write(fd, response)
             data = b''
         until = time.monotonic() + 5
         while time.monotonic() < until:
@@ -44,10 +46,11 @@ def terminal(env, args, stages, launcher=None):
             if done:
                 reaped = True
                 assert os.waitstatus_to_exitcode(status) == 0, status
-                return
+                return bytes(transcript)
             if select.select([fd], [], [], .1)[0]:
                 try:
                     chunk = os.read(fd, 65536)
+                    transcript.extend(chunk)
                     if b'\x1b[6n' in chunk: os.write(fd, b'\x1b[1;1R')
                 except OSError: pass
         raise AssertionError('terminal did not exit')
@@ -73,6 +76,27 @@ def terminal(env, args, stages, launcher=None):
                 os.waitpid(pid, 0)
         os.close(fd)
 
+def assert_terminal_palette(output, allow_nvim_probe=False):
+    if allow_nvim_probe:
+        # Neovim's startup DECRQSS capability probe draws no text. Permit only
+        # this exact set-color/query pair, never arbitrary RGB rendering.
+        output = output.replace(b'\x1b[48;2;1;2;3m\x1bP$qm\x1b\\', b'')
+    sgr = re.findall(rb'\x1b\[([0-9;:]*)m', output)
+    assert sgr, 'expected actual rendered terminal colors'
+    for params in sgr:
+        parts = params.replace(b':', b';').split(b';')
+        for index, part in enumerate(parts):
+            if part in (b'38', b'48', b'58') and index + 1 < len(parts):
+                assert parts[index + 1] != b'2', 'unexpected fixed RGB output: ' + repr(params)
+                if parts[index + 1] == b'5':
+                    assert int(parts[index + 2]) < 16, 'color escaped terminal palette: ' + repr(params)
+
+# Positive controls: the palette assertion must reject actual RGB and extended colors.
+for forbidden in [b'\x1b[38;2;1;2;3mtext', b'\x1b[48;5;42mtext']:
+    try: assert_terminal_palette(forbidden, allow_nvim_probe=True)
+    except AssertionError: pass
+    else: raise AssertionError('palette check accepted forbidden rendering')
+
 with tempfile.TemporaryDirectory(prefix='workstation-real-tools-') as home:
     bindir = pathlib.Path(home) / 'bin'; bindir.mkdir()
     for name, target in [('node', NODE), ('fzf', FZF), ('glow', GLOW), ('nvim', NVIM), ('tldr', args.tldr)]:
@@ -83,11 +107,25 @@ with tempfile.TemporaryDirectory(prefix='workstation-real-tools-') as home:
     terminal(env, ['--plain'], [('Number or task', b'return to my workspace\n'), ('# Return to a workspace', b'\n'), ('Number or task', b'q\n')])
     terminal(env, ['--plain'], [('Number or task', b'6\n'), ('# Split terminal panes', b'\n'), ('Number or task', b'q\n')])
     print('PASS numbered intention search and expanded tmux card/read/back/quit, network denied')
+    colored = terminal(env, ['list'], [('nvim.quick-reference', b'')])
+    assert b'\x1b[35m' in colored and b'\x1b[90m' in colored
+    assert_terminal_palette(colored)
+    for overrides, flags in [({}, ['list', '--plain']), ({'NO_COLOR': '1'}, ['list']), ({'TERM': 'dumb'}, ['list']), ({}, ['list', '--json'])]:
+        plain = terminal({**env, **overrides}, flags, [('nvim.quick-reference', b'')])
+        assert b'\x1b[' not in plain, 'plain/JSON output gained ANSI escapes'
+    for overrides in [{'NO_COLOR': '1'}, {'TERM': 'dumb'}]:
+        plain = terminal({**env, **overrides}, ['show', 'nvim.modes', '--glow'], [('Read another card:', b'')])
+        assert b'\x1b[' not in plain, 'color opt-out launched a colored presentation'
     # Wait for fzf's own ready header, not the earlier Node root heading.
-    terminal(env, ['--glow'], [('Type a task', b'find a file'), ('find a file', b'\r'), ('Enter or q: back', b'q\n'), ('Type a task', b'\x1b')])
+    colored = terminal(env, ['--glow'], [('Type a task', b'find a file'), ('find a file', b'\r'), ('Enter or q: back', b'q\n'), ('Type a task', b'\x1b')])
+    assert_terminal_palette(colored)
+    fenced = terminal(env, ['show', 'shell.build-command', '--glow'], [('Read another card:', b'')])
+    assert_terminal_palette(fenced)  # Includes actual Chroma-highlighted shell code.
     terminal(env, [], [('Type a task', b'get back to my session'), ('get back to my session', b'\r'), ('Read-only guide copy', b':q\r'), ('Type a task', b'\x1b')])
     terminal(env, [], [('Type a task', b'find a file'), ('find a file', b'\r'), ('Read-only guide copy', b'/shell.history.md\r'), ('/shell.history.md', b'gf'), ('Recall a command', b'\x0f'), ('find-file.md', b':q\r'), ('Type a task', b'\x1b')])
-    terminal(env, ['show', 'nvim.modes'], [('Read-only guide copy', b':q\r')])
+    colored = terminal(env, ['show', 'nvim.modes'], [('Read-only guide copy', b':q\r')])
+    assert_terminal_palette(colored, allow_nvim_probe=True)
+    print('PASS adaptive ANSI colors in root/fzf/Glow/reader; plain/NO_COLOR/dumb/JSON uncolored')
     bun = shutil.which('bun')
     if bun:
         terminal(env, ['show', 'nvim.modes'], [('Read-only guide copy', b':q\r')], launcher=[bun, '--no-env-file', str(ROOT.parent / 'src/index.ts'), 'workstation'])

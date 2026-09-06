@@ -7,6 +7,7 @@ import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { sha256 } from '../src/profile.mjs';
 import { toolEnv, pick, present } from '../src/presentation.mjs';
+import { FZF_COLORS, GLOW_STYLE } from '../src/theme.mjs';
 
 const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 const CLI = join(ROOT, 'bin/workstation-guide.mjs');
@@ -178,7 +179,7 @@ test('tool environment drops inherited executable hooks, credentials and pagers'
 test('fzf accepts only offered IDs, cancels cleanly, and never interpolates commands', async t => {
   const { root, env } = home(t);
   const cards = [{ id: 'shell.find-file', title: 'Find a file', chapter: 'finding', synonyms: ['without typing a path'] }];
-  fake(root, 'fzf', `let s='';process.stdin.on('data',c=>s+=c);process.stdin.on('end',()=>{if(Object.keys(process.env).some(k=>k.startsWith('FZF_')))process.exit(3);process.stdout.write(s.split('\\n')[0]+'\\n');});`);
+  fake(root, 'fzf', `let s='';process.stdin.on('data',c=>s+=c);process.stdin.on('end',()=>{if(Object.keys(process.env).some(k=>k.startsWith('FZF_')))process.exit(3);if(!process.argv.includes('--color=16')||!process.argv.includes(${JSON.stringify(FZF_COLORS)}))process.exit(4);process.stdout.write(s.split('\\n')[0]+'\\n');});`);
   assert.equal((await pick(cards, { ...env, FZF_DEFAULT_OPTS: 'bad' })).id, 'shell.find-file');
   fake(root, 'fzf', `process.stdout.write('evil-id\\tbad\\n');`);
   assert.equal(await pick(cards, env), undefined);
@@ -189,13 +190,16 @@ test('fzf accepts only offered IDs, cancels cleanly, and never interpolates comm
 test('Glow is explicit, stdin-only, disposable and never gets pager/config hooks', async t => {
   const { root, env } = home(t);
   const marker = join(root, 'glow-record.json');
-  fake(root, 'glow', `const fs=require('node:fs');fs.writeFileSync(${JSON.stringify(marker)}, JSON.stringify({args:process.argv.slice(2),home:process.env.HOME,cwd:process.cwd(),env:process.env}));let s='';process.stdin.on('data',c=>s+=c);process.stdin.on('end',()=>process.stdout.write(s));`);
+  fake(root, 'glow', `const fs=require('node:fs');const style=process.argv[process.argv.indexOf('--style')+1];fs.writeFileSync(${JSON.stringify(marker)}, JSON.stringify({args:process.argv.slice(2),home:process.env.HOME,cwd:process.cwd(),env:process.env,style:JSON.parse(fs.readFileSync(style,'utf8')),mode:fs.statSync(style).mode&511}));let s='';process.stdin.on('data',c=>s+=c);process.stdin.on('end',()=>process.stdout.write(s));`);
   const body = '# hello\n';
   assert.equal(await present(body, { env, glow: false, tty: true }), body);
   assert.equal(existsSync(marker), false);
   assert.equal(await present(body, { env: { ...env, PAGER: 'bad', GLOW_CONFIG_HOME: '/private' }, glow: true, tty: true }), body);
   const info = JSON.parse(readFileSync(marker));
   assert.equal(info.args.at(-1), '-');
+  assert.equal(info.args[1], join(info.home, 'style.json'));
+  assert.deepEqual(info.style, GLOW_STYLE);
+  assert.equal(info.mode, 0o600);
   assert.equal(info.env.PAGER, undefined);
   assert.equal(info.home, info.cwd);
   assert.equal(existsSync(info.home), false);

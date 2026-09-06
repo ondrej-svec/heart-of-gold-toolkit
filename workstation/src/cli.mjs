@@ -3,6 +3,7 @@ import { CHAPTERS, TOOLS, loadCatalog, search } from './catalog.mjs';
 import { BINDINGS, loadProfile, bindingStatus, interpolate, readBounded, sha256 } from './profile.mjs';
 import { executable, toolEnv, runProcess } from './process.mjs';
 import { pick, present } from './presentation.mjs';
+import { colorEnabled, colorText } from './theme.mjs';
 import { readLesson, renderCard, renderIndex, EDITOR_READING } from './reader.mjs';
 
 const VERSION = '0.1.0-proof';
@@ -20,6 +21,8 @@ Options: --plain (terminal text; no picker/editor/Glow), --glow (terminal format
 Use -- to treat remaining arguments as literal search text.
 Interactive lessons open as Markdown files in an isolated Neovim reader.
 Use j/k, /word, gf on a filename, Ctrl-O to go back; :q returns to the picker.
+Colors follow the active terminal palette (Rosé Pine when configured).
+--plain, NO_COLOR or TERM=dumb selects uncolored terminal presentation.
 Non-TTY/JSON output never opens an editor or waits. Esc quits the picker.
 No live editor configuration, AI runner or shell alias is installed.
 `;
@@ -100,7 +103,11 @@ export async function main(argv = process.argv.slice(2), env = process.env) {
   let options;
   try {
     options = parse(argv);
-    if (options.help) { output(USAGE); return 0; }
+    // An explicit color opt-out uses terminal text, not a nested colored UI.
+    if (env.NO_COLOR || env.TERM === 'dumb') { options.plain = true; options.glow = false; }
+    const print = value => output(colorEnabled(env, process.stdout.isTTY, options.plain)
+      ? colorText(value, CHAPTERS.map(chapter => chapter.title)) : value);
+    if (options.help) { print(USAGE); return 0; }
     if (options.version) { output(VERSION); return 0; }
     const data = loadCatalog();
     const state = loadProfile(env, options.profile);
@@ -126,7 +133,8 @@ export async function main(argv = process.argv.slice(2), env = process.env) {
           ? 'Neovim is unavailable; showing terminal text. Use --plain to keep this mode.'
           : 'Neovim could not display the guide; showing terminal text instead.');
       }
-      output(await present(renderCard(card), { env, glow: options.glow, tty }));
+      if (options.glow) output(await present(renderCard(card), { env, glow: true, tty }));
+      else print(renderCard(card));
       return false;
     };
     const diagnosis = () => ({ profile: state.status, tools: installed,
@@ -135,7 +143,7 @@ export async function main(argv = process.argv.slice(2), env = process.env) {
     const doctor = () => {
       const status = diagnosis();
       if (options.json) json(status);
-      else output(`SETUP CHECK — read only\nProfile: ${status.profile}\n\n${status.tools.map(tool => `${tool.name}: ${tool.status} — ${tool.role}`).join('\n')}\n\n${status.bindings.map(binding => `${binding.name}: ${binding.status}`).join('\n')}\n\n${status.notice}\n`);
+      else print(`SETUP CHECK — read only\nProfile: ${status.profile}\n\n${status.tools.map(tool => `${tool.name}: ${tool.status} — ${tool.role}`).join('\n')}\n\n${status.bindings.map(binding => `${binding.name}: ${binding.status}`).join('\n')}\n\n${status.notice}\n`);
     };
     if (options.hintSet && command !== 'learn') throw new Error('--hint is only for learn');
     if (['list', 'doctor'].includes(command) && rest.length) throw new Error(`${command} takes no positional arguments`);
@@ -153,12 +161,12 @@ export async function main(argv = process.argv.slice(2), env = process.env) {
       if (!rest.length) {
         const exercises = cards.filter(card => card.exercise);
         if (options.json) json({ cards: exercises });
-        else output('MANUAL PRACTICE — opt in; nothing launches or records progress\n\n' + listText(exercises) + '\n\nStart: workstation-guide learn <id> · Reveal: --hint 1');
+        else print('MANUAL PRACTICE — opt in; nothing launches or records progress\n\n' + listText(exercises) + '\n\nStart: workstation-guide learn <id> · Reveal: --hint 1');
       } else {
         const card = byId(rest[0]);
         if (!card.exercise) throw new Error('This card has no exercise yet');
         if (options.json) json({ id: card.id, ...card.exercise, hints: card.exercise.hints.slice(0, options.hint) });
-        else output(exerciseText(card, options.hint));
+        else print(exerciseText(card, options.hint));
       }
       return 0;
     }
@@ -168,14 +176,14 @@ export async function main(argv = process.argv.slice(2), env = process.env) {
         documents: Object.fromEntries(cards.map(card => [card.id, card.markdown])) });
       return 0;
     }
-    if (command === 'list') { output(listText(matches)); return 0; }
-    if (!tty) { output(command ? listText(matches) : rootText(cards)); return 0; }
+    if (command === 'list') { print(listText(matches)); return 0; }
+    if (!tty) { print(command ? listText(matches) : rootText(cards)); return 0; }
     if (command && matches.length === 1) { await display(matches[0]); return process.exitCode || 0; }
-    if (!matches.length) { output(listText(matches)); return 0; }
+    if (!matches.length) { print(listText(matches)); return 0; }
     // Reuse the same authored cards in both the optional picker and numbered UI.
     let offered = matches;
     while (!process.exitCode) {
-      output(!command && offered === matches ? rootText(cards) : listText(offered));
+      print(!command && offered === matches ? rootText(cards) : listText(offered));
       let chosen;
       if (!options.plain) chosen = await pick([...offered,
         { id: 'menu.learn', title: 'Practise a workflow', chapter: 'guide' },
@@ -184,7 +192,7 @@ export async function main(argv = process.argv.slice(2), env = process.env) {
       if (chosen === null) break;
       if (chosen?.id === 'menu.doctor' || chosen?.id === 'menu.learn') {
         if (chosen.id === 'menu.doctor') doctor();
-        else output(listText(cards.filter(card => card.exercise)) + '\nUse: workstation-guide learn <id>');
+        else print(listText(cards.filter(card => card.exercise)) + '\nUse: workstation-guide learn <id>');
         if (await ask('Enter: back · Ctrl-C: quit > ') === null) break;
         continue;
       }
@@ -192,12 +200,12 @@ export async function main(argv = process.argv.slice(2), env = process.env) {
         const answer = await ask('Number or task · l: practise · d: doctor · q/Esc: quit > ');
         if (answer === null || answer === 'q' || answer === '\x1b') break;
         if (answer === 'd' || answer === 'doctor') { doctor(); continue; }
-        if (answer === 'l' || answer === 'learn') { output(listText(cards.filter(card => card.exercise)) + '\nUse: workstation-guide learn <id>'); continue; }
+        if (answer === 'l' || answer === 'learn') { print(listText(cards.filter(card => card.exercise)) + '\nUse: workstation-guide learn <id>'); continue; }
         if (/^\d+$/.test(answer)) chosen = offered[Number(answer) - 1];
         else {
           offered = search({ cards }, answer);
           if (offered.length === 1) chosen = offered[0];
-          else { output(listText(offered)); if (!offered.length) offered = matches; continue; }
+          else { print(listText(offered)); if (!offered.length) offered = matches; continue; }
         }
         if (!chosen) { output('Choose a listed number or search by task.'); continue; }
       }

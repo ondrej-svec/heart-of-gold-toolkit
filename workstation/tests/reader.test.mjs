@@ -8,6 +8,7 @@ import { loadCatalog, CHAPTERS } from '../src/catalog.mjs';
 import { interpolate, emptyProfile } from '../src/profile.mjs';
 import { executable } from '../src/process.mjs';
 import { createDocuments, readerInvocation, readLesson, renderCard } from '../src/reader.mjs';
+import { READER_THEME } from '../src/theme.mjs';
 
 function fixture(t) {
   const home = mkdtempSync(join(tmpdir(), 'guide reader '));
@@ -72,6 +73,7 @@ test('reader uses an isolated argv/environment, real files, and cleans after nor
     assert.deepEqual(info.args.slice(0, 7), ['-u', 'NONE', '-i', 'NONE', '-n', '-R', '--noplugin']);
     assert.equal(info.args.at(-2), '--');
     assert.ok(info.args.includes('set nomodeline nomodelineexpr noexrc noundofile noswapfile'));
+    assert.ok(info.args.includes(READER_THEME));
     assert.equal(info.env.VIMINIT, undefined);
     assert.equal(info.env.EXINIT, undefined);
     assert.equal(info.env.NVIM, undefined);
@@ -118,6 +120,8 @@ test('real isolated Neovim disables persistence/modelines and follows files with
     assert(vim.o.shadafile=='NONE'); assert(not vim.o.swapfile); assert(not vim.o.undofile)
     assert(not vim.o.modeline); assert(not vim.o.modelineexpr); assert(not vim.o.exrc)
     assert(vim.bo.readonly); assert(vim.bo.buftype==''); assert(vim.bo.filetype=='markdown')
+    assert(not vim.o.termguicolors)
+    assert(vim.api.nvim_get_hl(0,{name='markdownH1',link=false}).ctermfg==5)
     assert(vim.bo.tabstop~=13); assert(vim.g.should_not_run==nil)
     assert(vim.fn.search('shell.history.md','w')>0)
     vim.cmd('normal! gf'); assert(vim.fn.expand('%:t')=='shell.history.md')

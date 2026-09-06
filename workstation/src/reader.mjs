@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { CHAPTERS } from './catalog.mjs';
 import { executable, toolEnv, runProcess } from './process.mjs';
+import { READER_THEME } from './theme.mjs';
 
 const READING = 'Read-only guide copy · j/k: move · /word then n: search\n' +
   'Put the cursor on a .md filename and press gf to follow it; Ctrl-O goes back.\n' +
@@ -50,7 +51,7 @@ export function readerInvocation(file, documents, env) {
     file,
     args: ['-u', 'NONE', '-i', 'NONE', '-n', '-R', '--noplugin',
       '--cmd', 'set nomodeline nomodelineexpr noexrc noundofile noswapfile',
-      '--cmd', 'filetype on', '--cmd', 'syntax enable',
+      '--cmd', 'filetype on', '--cmd', 'syntax enable', '--cmd', READER_THEME,
       '--cmd', 'set number wrap linebreak breakindent laststatus=2 statusline=%t%=%l:%c\\ %P',
       '--', documents.entry],
     options: { env: childEnv, cwd: documents.directory },

@@ -1,8 +1,9 @@
-import { mkdtempSync, rmSync, realpathSync } from 'node:fs';
+import { mkdtempSync, rmSync, realpathSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { executable, toolEnv, runProcess } from './process.mjs';
 export { toolEnv } from './process.mjs';
+import { FZF_COLORS, GLOW_STYLE } from './theme.mjs';
 
 // No preview, reload, execute bindings, shell templates or inherited FZF_* hooks.
 export async function pick(cards, env = process.env) {
@@ -12,6 +13,7 @@ export async function pick(cards, env = process.env) {
     (card.synonyms?.length ? `\t${card.synonyms.join(' · ')}` : '');
   const result = await runProcess(fzf, [
     '--no-multi', '--no-sort', '--no-extended', '--layout=reverse', '--border=rounded',
+    '--color=16', FZF_COLORS,
     '--delimiter=\t', '--with-nth=2..', '--prompt=How do I…? ',
     '--header=Type a task · Enter: read only · Esc: quit',
   ], { env: toolEnv(env), input: cards.map(record).join('\n') + '\n', timeout: 0 });
@@ -28,9 +30,11 @@ export async function present(markdown, { env = process.env, glow = false, tty =
   const home = realpathSync(mkdtempSync(join(tmpdir(), 'workstation-glow-')));
   try {
     // Glow may initialize config. Contain that in an owned disposable cwd/HOME,
-    // use stdin and a built-in style, and never request its external pager/TUI.
+    // use stdin and an owned semantic ANSI style, never its external pager/TUI.
     const childEnv = { ...toolEnv(env), HOME: home, XDG_CONFIG_HOME: home, XDG_CACHE_HOME: home, XDG_DATA_HOME: home, GLOW_CONFIG_HOME: home };
-    const result = await runProcess(binary, ['--style', 'dark', '--width', '80', '-'], { env: childEnv, cwd: home, input: markdown });
+    const style = join(home, 'style.json');
+    writeFileSync(style, JSON.stringify(GLOW_STYLE), { mode: 0o600, flag: 'wx' });
+    const result = await runProcess(binary, ['--style', style, '--width', '80', '-'], { env: childEnv, cwd: home, input: markdown });
     if (result.interrupted) { process.exitCode = result.code; return ''; }
     return result.code === 0 && result.stdout.trim() ? result.stdout : markdown;
   } finally { rmSync(home, { recursive: true, force: true }); }
