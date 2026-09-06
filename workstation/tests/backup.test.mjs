@@ -19,13 +19,42 @@ async function put(file, content) {
   await writeFile(file, content);
 }
 
-test('dry-run defaults to seven missing records, creates nothing', async t => {
+test('dry-run defaults to ten missing records, creates nothing', async t => {
   const f = await fixture(t);
   const result = await backup(f);
   assert.equal(result.applied, false);
-  assert.equal(result.entries.length, 7);
+  assert.equal(result.entries.length, 10);
   assert.ok(result.entries.every(e => e.kind === 'missing'));
   assert.deepEqual(await readdir(f.home), []);
+});
+
+test('live-help targets capture prior absence or exact ignore/loader/profile bytes only', async t => {
+  const f = await fixture(t);
+  const paths = ['.gitignore', 'nvim/after/plugin/workstation-help.lua', 'workstation/profile.json'];
+  const initial = await backup(f);
+  for (const name of paths) assert.equal(initial.entries.find(e => e.path === name)?.kind, 'missing', name);
+  for (const name of paths) await put(path.join(f.home, '.config', name), `synthetic ${name}\n`);
+  // An adjacent credential-shaped symlink must not be visited.
+  await symlink('/do-not-read/credentials', path.join(f.home, '.config/workstation/auth.json'));
+  const result = await backup({ ...f, apply: true });
+  for (const name of paths) {
+    const entry = result.entries.find(e => e.path === name);
+    assert.equal(entry.kind, 'file');
+    assert.equal(await readFile(path.join(result.destination, entry.payload), 'utf8'), `synthetic ${name}\n`);
+  }
+  assert.equal(result.entries.filter(e => e.kind === 'file').length, paths.length);
+});
+
+test('new loader/profile target symlinks fail closed before backup writes', async t => {
+  const f = await fixture(t);
+  for (const name of ['nvim/after/plugin/workstation-help.lua', 'workstation/profile.json']) {
+    const target = path.join(f.home, '.config', name);
+    await mkdir(path.dirname(target), { recursive: true });
+    await symlink('/do-not-read/credentials', target);
+    await assert.rejects(backup({ ...f, apply: true }), /symlink/);
+    assert.equal(await lstat(f.destination).catch(error => error.code), 'ENOENT');
+    await rm(target);
+  }
 });
 
 test('preserves exact bytes and original mode in private non-clobbering snapshot', async t => {

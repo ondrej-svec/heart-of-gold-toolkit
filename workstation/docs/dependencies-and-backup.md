@@ -29,7 +29,7 @@ node workstation/scripts/backup.mjs --apply   # explicitly create one private sn
 
 The script only inspects these paths:
 
-- Under `${XDG_CONFIG_HOME:-$HOME/.config}`: `CHEATSHEET.md`, `zsh/.zshrc`, `tmux/main.conf`, `nvim/lua/llm-filter.lua`, `nvim/lua/plugins/which-key.lua`.
+- Under `${XDG_CONFIG_HOME:-$HOME/.config}`: `CHEATSHEET.md`, `zsh/.zshrc`, `tmux/main.conf`, `nvim/lua/llm-filter.lua`, `nvim/lua/plugins/which-key.lua`, `.gitignore`, `nvim/after/plugin/workstation-help.lua`, `workstation/profile.json`.
 - Under `$HOME`: `.zshrc` and `.tmux.conf`. Regular files are captured as bytes; symlinks are accepted only if they point directly to the corresponding allowlisted config file. A missing target is recorded as missing at its config entry while the root symlink identity is preserved.
 
 Snapshots go to `${XDG_STATE_HOME:-$HOME/.local/state}/workstation-guide/backups/<unique-id>/`. Paths must be absolute; relocated HOME/XDG paths and spaces are supported. Existing symlinked XDG roots, config leaves, source/destination directory ancestors, and unrecognized root symlinks fail closed. This deliberately rejects some legitimate custom symlink layouts rather than guessing their safety. HOME itself is canonicalized for OS-level aliases.
@@ -44,7 +44,7 @@ A new destination is exclusive, never merged or overwritten. The manifest is wri
 
 No automatic restore command is implemented in this slice. Before any future scoped restore: inspect the manifest, verify every payload hash, preview conflicts against the current destination, and obtain explicit approval. Restore regular file bytes and then the recorded mode; recreate approved links from their recorded target text, never by copying a symlink payload as config. Missing entries mean the source did not exist at backup time, not permission to delete later work. Never restore over later user edits or clone into populated `~/.config`. Alternate-home backup tests are not second-device restoration evidence.
 
-## Proposed exact dotfiles additions (not applied)
+## Exact private integration paths (opt-in, not an installer)
 
 The private dotfiles repository uses an inverse allowlist. Keep every current exclusion. Proposed new private integration paths are limited to:
 
@@ -55,22 +55,20 @@ workstation/RESTORE.md
 workstation/restore-manifest.json
 workstation/pi-preferences.json
 zsh/workstation-guide.zsh
-nvim/lua/plugins/workstation-guide.lua
+nvim/after/plugin/workstation-help.lua
 ```
 
-`restore-manifest.json` would describe only approved managed paths/dependencies, never embed private backup payloads. `pi-preferences.json` is reserved for explicitly selected nonsecret provider/model/thinking preferences later; this backup never reads Pi settings. Final profile/installer contracts must be reviewed before creating these paths.
+Help-only activation needs the profile and reviewed snippets. Other paths remain future proposals: `restore-manifest.json` would describe only approved managed paths/dependencies, never embed private backup payloads; `pi-preferences.json` is reserved for explicitly selected nonsecret provider/model/thinking preferences later. This backup never reads Pi settings. Do not create or allow those future files as part of help-only activation.
 
-For the currently ignored `workstation/` parent, use an explicit child allowlist rather than opening the whole directory:
+For an ignored `workstation/` parent, help-only activation uses an explicit profile-only exception rather than opening the whole directory:
 
 ```gitignore
 !/workstation/
 /workstation/*
 !/workstation/profile.json
-!/workstation/DEPENDENCIES.md
-!/workstation/RESTORE.md
-!/workstation/restore-manifest.json
-!/workstation/pi-preferences.json
 ```
+
+For help-only activation, allow **only** the profile child; the other workstation files above remain proposals. The Neovim after/plugin hook avoids a plugin-manager spec or init.lua edit. Its trusted module path remains private, and normal startup or deliberately sourcing just that hook activates the command.
 
 The two integration snippets sit inside already-allowed authored zsh/Neovim directories; review those exact files individually rather than widening any directory rule. Toolkit binaries, vendored prompts and reusable adapters stay in the toolkit installation, not copied into tracked dotfiles. No blanket allowance for Pi, Fabric, `.config`, new tool directories, runtime state or machine overrides.
 

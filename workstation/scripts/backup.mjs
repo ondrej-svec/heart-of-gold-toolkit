@@ -8,6 +8,7 @@ import { pathToFileURL } from 'node:url';
 const CONFIG_FILES = Object.freeze([
   'CHEATSHEET.md', 'zsh/.zshrc', 'tmux/main.conf',
   'nvim/lua/llm-filter.lua', 'nvim/lua/plugins/which-key.lua',
+  '.gitignore', 'nvim/after/plugin/workstation-help.lua', 'workstation/profile.json',
 ]);
 const ROOT_LINKS = Object.freeze({ '.zshrc': 'zsh/.zshrc', '.tmux.conf': 'tmux/main.conf' });
 const MAX_BYTES = 8 * 1024 * 1024;

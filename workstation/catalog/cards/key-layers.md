@@ -12,7 +12,7 @@ Read the layers from the outside in:
 4. **Application mode:** Neovim Normal, Insert and Visual modes have different meanings for the same key.
 
 Your tmux prefix: {{binding.tmux.prefix}}.
-Your complete tmux help-menu sequence: {{binding.tmux.menu}}.
+Your tmux help-menu key, pressed after the prefix: {{binding.tmux.menu}}.
 
 At a shell inside tmux, `tmux show-options -gv prefix` displays the running server's prefix. `tmux list-keys -T prefix` lists its prefix bindings. These inspect the running server; a matching config-file fingerprint alone does not prove it was reloaded.
 

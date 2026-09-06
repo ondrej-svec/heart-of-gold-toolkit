@@ -98,6 +98,10 @@ test('tmux content separates prefix, suffix, stock defaults and clipboard defect
     assert.match(body, /not live verification/i);
     assert.doesNotMatch(body, /C-a|Ctrl-a/);
   }
+  const layers = getCard('tmux.key-layers').content;
+  assert.doesNotMatch(layers, /complete tmux help-menu sequence/);
+  assert.match(layers, /after the prefix/);
+  assert.ok(getCard('personal.cockpit').content.includes('{{binding.tmux.prefix}}'));
   const panes = getCard('tmux.panes').content;
   assert.match(panes, /horizontal.*below/i);
   assert.match(panes, /vertical.*right/i);
