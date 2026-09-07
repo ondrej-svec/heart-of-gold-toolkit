@@ -19,18 +19,18 @@ async function put(file, content) {
   await writeFile(file, content);
 }
 
-test('dry-run defaults to ten missing records, creates nothing', async t => {
+test('dry-run defaults to eleven missing records, creates nothing', async t => {
   const f = await fixture(t);
   const result = await backup(f);
   assert.equal(result.applied, false);
-  assert.equal(result.entries.length, 10);
+  assert.equal(result.entries.length, 11);
   assert.ok(result.entries.every(e => e.kind === 'missing'));
   assert.deepEqual(await readdir(f.home), []);
 });
 
 test('live-help targets capture prior absence or exact ignore/loader/profile bytes only', async t => {
   const f = await fixture(t);
-  const paths = ['.gitignore', 'nvim/after/plugin/workstation-help.lua', 'workstation/profile.json'];
+  const paths = ['.gitignore', 'nvim/after/plugin/workstation-help.lua', 'nvim/after/plugin/workstation-ai.lua', 'workstation/profile.json'];
   const initial = await backup(f);
   for (const name of paths) assert.equal(initial.entries.find(e => e.path === name)?.kind, 'missing', name);
   for (const name of paths) await put(path.join(f.home, '.config', name), `synthetic ${name}\n`);
@@ -47,7 +47,7 @@ test('live-help targets capture prior absence or exact ignore/loader/profile byt
 
 test('new loader/profile target symlinks fail closed before backup writes', async t => {
   const f = await fixture(t);
-  for (const name of ['nvim/after/plugin/workstation-help.lua', 'workstation/profile.json']) {
+  for (const name of ['nvim/after/plugin/workstation-help.lua', 'nvim/after/plugin/workstation-ai.lua', 'workstation/profile.json']) {
     const target = path.join(f.home, '.config', name);
     await mkdir(path.dirname(target), { recursive: true });
     await symlink('/do-not-read/credentials', target);

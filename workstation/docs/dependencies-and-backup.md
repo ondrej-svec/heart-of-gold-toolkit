@@ -29,7 +29,7 @@ node workstation/scripts/backup.mjs --apply   # explicitly create one private sn
 
 The script only inspects these paths:
 
-- Under `${XDG_CONFIG_HOME:-$HOME/.config}`: `CHEATSHEET.md`, `zsh/.zshrc`, `tmux/main.conf`, `nvim/lua/llm-filter.lua`, `nvim/lua/plugins/which-key.lua`, `.gitignore`, `nvim/after/plugin/workstation-help.lua`, `workstation/profile.json`.
+- Under `${XDG_CONFIG_HOME:-$HOME/.config}`: `CHEATSHEET.md`, `zsh/.zshrc`, `tmux/main.conf`, `nvim/lua/llm-filter.lua`, `nvim/lua/plugins/which-key.lua`, `.gitignore`, `nvim/after/plugin/workstation-help.lua`, `workstation/profile.json`, `nvim/after/plugin/workstation-ai.lua`.
 - Under `$HOME`: `.zshrc` and `.tmux.conf`. Regular files are captured as bytes; symlinks are accepted only if they point directly to the corresponding allowlisted config file. A missing target is recorded as missing at its config entry while the root symlink identity is preserved.
 
 Snapshots go to `${XDG_STATE_HOME:-$HOME/.local/state}/workstation-guide/backups/<unique-id>/`. Paths must be absolute; relocated HOME/XDG paths and spaces are supported. Existing symlinked XDG roots, config leaves, source/destination directory ancestors, and unrecognized root symlinks fail closed. This deliberately rejects some legitimate custom symlink layouts rather than guessing their safety. HOME itself is canonicalized for OS-level aliases.
@@ -56,6 +56,7 @@ workstation/restore-manifest.json
 workstation/pi-preferences.json
 zsh/workstation-guide.zsh
 nvim/after/plugin/workstation-help.lua
+nvim/after/plugin/workstation-ai.lua
 ```
 
 Help-only activation needs the profile and reviewed snippets. Other paths remain future proposals: `restore-manifest.json` would describe only approved managed paths/dependencies, never embed private backup payloads; `pi-preferences.json` is reserved for explicitly selected nonsecret provider/model/thinking preferences later. This backup never reads Pi settings. Do not create or allow those future files as part of help-only activation.
@@ -70,7 +71,9 @@ For an ignored `workstation/` parent, help-only activation uses an explicit prof
 
 For help-only activation, allow **only** the profile child; the other workstation files above remain proposals. The Neovim after/plugin hook avoids a plugin-manager spec or init.lua edit. Its trusted module path remains private, and normal startup or deliberately sourcing just that hook activates the command.
 
-The two integration snippets sit inside already-allowed authored zsh/Neovim directories; review those exact files individually rather than widening any directory rule. Toolkit binaries, vendored prompts and reusable adapters stay in the toolkit installation, not copied into tracked dotfiles. No blanket allowance for Pi, Fabric, `.config`, new tool directories, runtime state or machine overrides.
+The separately approved AI hook adds only `:WorkstationAI` setup, not a model call, new mappings or a legacy `:Llm` migration. Back up its prior absence/bytes before creation; keep the live profile and Pi settings unchanged unless a separate preference change was approved. Remove only the unchanged owned hook for rollback, never restore the whole configuration. Existing editor sessions must deliberately source just that hook; agents should verify autoload in disposable Neovim instead of executing live init/plugins.
+
+The integration snippets sit inside already-allowed authored zsh/Neovim directories; review those exact files individually rather than widening any directory rule. Toolkit binaries, vendored prompts and reusable adapters stay in the toolkit installation, not copied into tracked dotfiles. No blanket allowance for Pi, Fabric, `.config`, new tool directories, runtime state or machine overrides.
 
 Never allow/copy `.env`, Pi `auth.json`, sessions, trust records, caches, whole Pi profiles, or credential-bearing neighboring tool directories. Preserve exclusions for all current credential stores and for editor/shell scratch, nested migration copies, newsboat state and vendored screenshots. Use explicit staging, never blanket `git add -A` in dotfiles.
 
