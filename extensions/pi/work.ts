@@ -2,7 +2,9 @@ import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 
 const PROTECTED_PATHS = [".env", ".git/", "node_modules/"];
 const CONFIRM_COMMANDS = [/\bgit\s+push\b/i, /\bnpm\s+publish\b/i, /\bbun\s+publish\b/i, /\bgh\s+pr\s+create\b/i];
-const BLOCKED_COMMANDS = [/\bgit\s+add\s+\.\b/i, /\brm\s+(-rf?|--recursive)/i];
+// Command-text heuristic, not a shell parser. The dot must end an argument:
+// a word boundary after it matches .pi paths but misses the bare dot at EOF.
+const BLOCKED_COMMANDS = [/\bgit\s+add\s+(?:--\s+)?(?:\.|'\.'|"\.")(?=$|[\s;&|<>()])/i, /\brm\s+(-rf?|--recursive)/i];
 
 export default function workExtension(pi: ExtensionAPI) {
 	// Always-on guardrails — no mode toggle needed
