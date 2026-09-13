@@ -1,10 +1,14 @@
 # hog_ask visual preview — revision 02
 
-**Browser design prototype. Not installed, not a native-terminal screenshot, and not a real approval surface.** Human visual review is pending; production code, immutable releases, and Pi settings are unchanged.
+**Browser design prototype. Not installed, not a native-terminal screenshot, and not a real approval surface.** Further interaction changes were requested after visual review; production code, immutable releases, and Pi settings are unchanged.
 
 [Open revision 02](https://ondrejs-mac-mini.tailbc79e3.ts.net/s/site--2026-09-13--36963640/) · [Plan and review gate](../../plans/2026-09-13-design-hog-ask-visual-preview-plan.md)
 
 Ondrej found [revision 01](https://ondrejs-mac-mini.tailbc79e3.ts.net/s/site--2026-09-13--85d53b33/) better, but asked for quieter approval copy and a cleaner keyboard-first interface. This revision responds to that feedback; it is not yet accepted for production.
+
+## Further review findings
+
+[Cross-harness research and local reproduction](../../reviews/2026-09-13-harness-question-approval-ux.md) found gaps beyond the 34 keyboard checks: Down does not enter custom input, clicking the `›` marker loses focus, and focusing the text field replaces the layout and moves it. The actual text input itself accepts click-and-type. Approval needs clearer separate approve/feedback intents. This revision remains unchanged as evidence; it is not the final accepted interaction.
 
 ## The revision
 

@@ -4,8 +4,8 @@ type: plan
 date: 2026-09-13
 status: in_progress
 confidence: medium
-readiness: "Keyboard-first revision 02 built and browser-verified; awaiting visual review; production remains out of scope"
-preview_status: pending
+readiness: "Cross-harness research complete; revision 02 needs unified input navigation and clearer approval intents; next preview not built"
+preview_status: revisions_requested
 ---
 
 # hog_ask: a clear single-choice interaction
@@ -104,12 +104,22 @@ The browser proof must not be called a new native-terminal implementation. Nativ
 - [Original interactive preview](https://ondrejs-mac-mini.tailbc79e3.ts.net/s/site--2026-09-13--85d53b33/); [source and reproduction notes](../previews/hog-ask-v2/README.md).
 - **25 actual headless browser checks passed**, with screenshots inspected in light/dark and normal/narrow layouts. An independent read-only review found no blocking or important correctness findings. Neither result substitutes for human visual acceptance or native-terminal proof.
 - The normal approval review keeps its note visible; narrow layouts keep the overflow hint, warning and controls fixed within a 24-row-style budget. The share-server module MIME issue was resolved in the preview build by serving byte-identical `.js` files, not by changing the server.
-### Revision 02 — ready for review
+### Revision 02 — reviewed, further changes requested
 
 - [Keyboard-first preview](https://ondrejs-mac-mini.tailbc79e3.ts.net/s/site--2026-09-13--36963640/): lighter text entry, no action-button row, type-to-reply, contextual send chord, quiet qualification copy, and explicit keyboard fallback.
 - **34 headless browser checks passed.** The main response flows use keyboard events. Normal/narrow and light/dark screenshots were inspected. Independent review found no important behavior or safety defects; its stale-proof finding was resolved by refreshing the recorded verification and manifest.
 - Pi's keybinding/terminal setup documentation confirms that native Ctrl+Enter support and fullscreen paging must be verified later. No native compatibility claim or configuration change is implied by the browser proof.
 - Installed 0.2.3 remains untouched. The only remaining plan gate is Ondrej's visual review; later production work still requires its own plan and execution authorization.
+
+## Research after revision 02
+
+Ondrej found the visual direction good, but requested natural pointer/arrow access to custom entry and better approval behavior, with research into other harnesses. This is qualified feedback, not final acceptance.
+
+[Research and reproducible findings](../reviews/2026-09-13-harness-question-approval-ux.md) compare pinned Codex, current OpenCode, Gemini CLI and official Claude Code sources. In our browser preview, Down excludes custom entry, the `›` marker loses focus when clicked, and entering the textarea moves it by 133px in the tested viewport. The actual text field itself accepts click-and-type; the issue is not a complete lack of mouse support. Existing 34 checks did not cover these boundaries.
+
+The next proposed interaction uses a stable inline editor in the normal focus route, full-row click targets, hover feedback without stolen typing, and explicit approve/request-changes/pause intents. Generic approval-plus-note should not masquerade as approval and then change meaning. This proposal preserves the existing conservative response contract and explicit Send gate; it does not authorize production implementation or waive human review.
+
+Pi 0.85.1 documents real component mouse support in fullscreen mode; integrating it should be a native proof obligation, not dismissed as a browser-only convenience. Regular mode still leaves mouse handling to terminal scrollback. No preview code, native extension, settings, release or package version changed during this research checkpoint.
 
 ## References
 
