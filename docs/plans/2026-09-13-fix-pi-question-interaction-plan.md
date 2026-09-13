@@ -2,9 +2,9 @@
 title: "fix: make Pi questions intentional and preserve conversational planning"
 type: plan
 date: 2026-09-13
-status: in_progress
+status: complete
 confidence: medium
-readiness: "0.2.3 published and locally activated; only existing-session reload confirmation remains"
+readiness: "0.2.3 published, activated and verified; implementing session reload confirmed"
 preview_status: "Structural previews and recorded terminal/RPC proof approved; no revisions requested"
 related:
   - docs/plans/2026-04-14-feat-pi-guided-workflow-enhancement-plan.md
@@ -163,7 +163,7 @@ No option selected. Review before sending.
 
 ## Implementation tasks and phase gates
 
-Checkboxes track implementation progress. The structural preview, recorded runtime proof, and subsequent release/activation request are approved. Local activation and npm publication are verified; the final task remains open only for existing-session reload confirmation.
+Checkboxes track implementation progress. The structural preview, recorded runtime proof, and subsequent release/activation request are approved. Local activation and npm publication are verified. Ondrej confirmed the implementing session's reload; its refreshed context exposes `hog_ask` and the 0.2.3 skill paths. All implementation and release tasks are complete.
 
 ### Phase 1 — Remove the false-choice path (independently shippable)
 
@@ -206,7 +206,7 @@ Depends on Phases 1–2 and Ondrej's preview approval; do not substitute autonom
 - [x] Run focused new tests, `npm run test:pi`, and compatibility/publish/security checks. Use the repository's supported Python environment (for example `uv run` on the check scripts); do not install packages into a global Python environment. Run full prepublish checks for an actual release and classify unrelated baseline failures explicitly.
 - [x] Verify standalone Pi package, skills-only install, and a profile containing the existing workstation `/answer`: no duplicate command/tool, no required dependency on that workstation, and no lost RPC path. Use isolated test profiles; do not alter the user's live profile for a smoke test.
 - [x] Prepare scoped commits and version changes consistent with `CONVENTIONS.md` (deep-thought/marvin manifests and marketplace versions where affected; root package as appropriate). Update the hard-coded root-version assertion in `tests/pi-package-contract.test.mjs` with any intentional root bump. Do not run the release script over unrelated dirty work or use its `--ship` as a shortcut to unrequested publishing.
-- [ ] Record source SHA, checks, preview disposition, and activation instructions. Only after explicit release/activation authorization, publish or stage a clean immutable release and update the configured source. Verify the loaded source and a real prompt interaction; pushing a source commit alone does not fix an already pinned installation. **0.2.3 published as npm `latest`; downloaded registry bytes exactly match the verified tarball. Immutable local activation is verified in fresh Pi processes. Only existing-session `/reload` confirmation remains.**
+- [x] Record source SHA, checks, preview disposition, and activation instructions. Only after explicit release/activation authorization, publish or stage a clean immutable release and update the configured source. Verify the loaded source and a real prompt interaction; pushing a source commit alone does not fix an already pinned installation. **0.2.3 published as npm `latest`; downloaded registry bytes exactly match the verified tarball. Immutable local activation and real interactions are verified. Ondrej confirmed `/reload`; the implementing session now exposes `hog_ask` and skills from the verified 0.2.3 release.**
 
 **Exit:** verified source and a clear release handoff. Production activation is separately recorded, never inferred from a push. If only Phase 1 ships, this overall plan remains incomplete with later tasks unchecked.
 
@@ -248,7 +248,7 @@ Depends on Phases 1–2 and Ondrej's preview approval; do not substitute autonom
 - The sealed release passed five RPC checks and actual regular/fullscreen PTY interactions (custom text, note, qualified approval, narrow long-scope navigation and dismissal). A fresh process using the actual global profile confirmed the new extension/skill source paths, exactly one `hog_ask`, the existing `/answer`, no retired debug command or load errors, and a real plan-editor open/cancel. These checks made no model calls.
 - **Publication completed:** after npm login was restored (`ondrejsvec`), the first browser-approval attempt timed out. Ondrej then said "ok ready"; a fresh attempt completed npm's normal browser approval and exited successfully. Published the retained tarball as **`@heart-of-gold/toolkit@0.2.3`**, public, with tag **`latest`**. No approval or authentication check was bypassed.
 - **Registry verification:** npm reports version/latest **0.2.3**. The registry integrity is `sha512-sYnxacx+acXw9yXMDMh3srGjcnKQVSYmV2ra7cLydBCpbB46RWbZf4xD28TaflRONgZuoN2vPFPgVi0wp9KciA==`; an unauthenticated HTTPS download matched the tested tarball byte-for-byte. `registry-verification.json` and the updated receipt are retained beside the archive. No dirty working-tree content was published.
-- **Existing sessions:** fresh Pi processes load 0.2.3; already-running sessions (including the implementing conversation) require `/reload`. Their in-memory extensions were not remotely replaced or sessions interrupted.
+- **Reload confirmed:** Ondrej reported "reloaded". The implementing conversation's refreshed context now includes `hog_ask` and skills under the verified `0.2.3-6a1713667c14` release; the configured source and package version were rechecked. This closes the final task. Other previously opened sessions may still need `/reload`; none were remotely interrupted.
 - **Rollback:** replace only the new source path with the preserved `0.2.0-staging-guard-e1110a118793` source and reload. Do not restore the whole backup over intervening settings changes.
 
 ### Proof acceptance and release handoff (before release authorization)
@@ -266,7 +266,7 @@ Depends on Phases 1–2 and Ondrej's preview approval; do not substitute autonom
 - Real offline Pi 0.85.1 PTY proof passed in regular and fullscreen modes, including custom answer, note, qualified approval, resize to 36×24, long-scope scrolling and dismissal. Real RPC preserved the qualifying note and returned `needs_discussion` / `approved: false`; real print/JSON returned `unavailable` without UI/model requests. [Working proof for feedback](../reviews/2026-09-13-hog-ask-proof.md).
 - Final source checks: **37 interaction-policy + 124 Pi + 204 workstation + 2 visualization tests passed**; full `prepublishOnly`, compatibility, security, publish-safety (**284 packaged files**), Python AST and whitespace checks passed. Workstation totals include unrelated pre-existing tests. Standalone, skills-only and existing-workstation-`/answer` profiles loaded in isolation; the combined test was run, not skipped.
 - Root source version **0.2.3**; no shared skill/plugin versions changed in this phase. Source baseline: `229ec51`; the new scoped commit's SHA is reported in the work handoff. No package publication or installed-profile mutation occurred.
-- **Handoff checkpoint:** proof feedback was pending at the implementation push; it is now accepted as recorded above. The plan remains `in_progress` only for existing-session reload confirmation; publication and fresh-process activation are verified above. Never patch the pinned release in place or publish unrelated dirty work.
+- **Handoff checkpoint:** proof feedback was pending at the implementation push; it is now accepted as recorded above. The plan is now complete: proof acceptance, publication, activation, and the implementing session's reload are recorded above. Never patch the pinned release in place or publish unrelated dirty work.
 
 ### Phase 3 kickoff — structural approval, not activation
 
