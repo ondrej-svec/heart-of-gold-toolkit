@@ -4,7 +4,7 @@ type: plan
 date: 2026-09-13
 status: in_progress
 confidence: medium
-readiness: "Phases 1–2 authorized; Phase 3 waits for user preview review"
+readiness: "Phases 1–2 verified; Phase 3 waits for user preview review"
 preview_status: "Structural preview included; user review required before decision-card implementation"
 related:
   - docs/plans/2026-04-14-feat-pi-guided-workflow-enhancement-plan.md
@@ -179,11 +179,11 @@ Checkboxes track implementation progress. Phase 3 stays gated on preview review;
 
 Depends on Phase 1's behavioral contract; independent of card implementation.
 
-- [ ] Add the authoring contract and concise self-contained rules to the seven scoped skills. Remove mandatory fixed menus, researchable-question outsourcing, and canonical `AskUserQuestion` requirements from the touched skills. Preserve natural choices and plain-text fallback.
-- [ ] Update `brainstorm` unknown ownership and stopping rules; update `plan` draft/readiness/preview handling; update `architect` plan handoff; update `work` authorization versus path-presence handling without reintroducing per-task approval.
-- [ ] Update `src/utils/transform.ts` so Codex wording preserves conditional UI use instead of restoring blanket preferences. Verify Pi/OpenCode transformations do not change semantics.
-- [ ] Update `scripts/check-harness-compatibility.py` and add focused authoring/transform fixtures. Replace obsolete phrase requirements with checks for the new contract, portable fallbacks, and absence of harness-only dependencies. Do not simply delete the compatibility gate.
-- [ ] Walk through representative conversations: clear request, ambiguous scope, agent-researchable unknown, missing preview, approved execution, review of a plan path, and completed work. Record expected ask/report/proceed behavior and review actual rendered/installed skill text; string checks alone cannot prove question quality.
+- [x] Add the authoring contract and concise self-contained rules to the seven scoped skills. Remove mandatory fixed menus, researchable-question outsourcing, and canonical `AskUserQuestion` requirements from the touched skills. Preserve natural choices and plain-text fallback.
+- [x] Update `brainstorm` unknown ownership and stopping rules; update `plan` draft/readiness/preview handling; update `architect` plan handoff; update `work` authorization versus path-presence handling without reintroducing per-task approval.
+- [x] Update `src/utils/transform.ts` so Codex wording preserves conditional UI use instead of restoring blanket preferences. Verify Pi/OpenCode transformations do not change semantics.
+- [x] Update `scripts/check-harness-compatibility.py` and add focused authoring/transform fixtures. Replace obsolete phrase requirements with checks for the new contract, portable fallbacks, and absence of harness-only dependencies. Do not simply delete the compatibility gate.
+- [x] Walk through representative conversations: clear request, ambiguous scope, agent-researchable unknown, missing preview, approved execution, review of a plan path, and completed work. Record expected ask/report/proceed behavior and review actual rendered/installed skill text; string checks alone cannot prove question quality.
 
 **Exit:** no touched skill or installer adaptation contradicts the contract. First-phase blockers and subjective gates are visible; approved dependent work does not become optional.
 
@@ -245,6 +245,17 @@ Depends on Phases 1–2 and Ondrej's preview approval; do not substitute autonom
 - Current Pi 0.85.1 documents `expandPromptTemplates: true` as required for extension-emitted skill expansion. All seven launchers now opt in, both idle and queued; tests assert the exact target and delivery options. A real isolated offline RPC profile still discovers skills and opens/cancels the standard plan editor.
 - Verification: **96 Pi tests passed**, plus compatibility, publish-safety (279 packaged files), security regression, and diff-whitespace checks. Root source version is 0.2.1; no package was published and no installed profile was changed.
 - Phase 3 previews remain unreviewed. The separate workstation `/answer` and pre-existing workstation edits remain untouched.
+
+### Phase 2 — verified source; preview gate remains
+
+- Seven scoped skills now carry self-contained conversation/unknown-ownership/readiness rules. New plans default to draft unless scope was actually approved. Natural execution requests and explicit work commands have the same meaning; paths/reviews do not authorize work. Independent ready phases retain quality/commit/push checkpoints without marking the whole plan complete. Architect keeps its stories/architecture boundaries and pipeline outputs, handing off to the plan skill rather than implementing from stories.
+- Added `docs/architecture/interaction-contract.md`, updated portability/README guidance and the Codex adapter, and expanded the compatibility gate. Regression fixtures caught the adapter rewriting `read/review` into `read$review`: seven assertions failed before command-token boundaries were fixed.
+- Static conversation/installed-text walkthrough: [review record](../reviews/2026-09-13-interaction-policy-walkthrough.md). This is source/transformation evidence, **not live-model facilitation or UI usability proof**. Independent review identified five contradictions/test weaknesses; all were corrected and independently verified as resolved.
+- Final checks: **37 interaction-policy + 96 Pi + 204 workstation + 2 visualization tests passed**. Full `prepublishOnly` passed via `uv run --with pyyaml npm run prepublishOnly`, including publish-safety, security, and compatibility. Workstation results include existing uncommitted tests, not newly owned work. Diff checks passed.
+- Scoped source versions: toolkit **0.2.2**, deep-thought **0.4.1**, marvin **0.7.1**; manifest/marketplace parity is tested. Phase 1 source commit: `ff81d4c`; Phase 2 is the scoped commit containing this record, whose SHA is reported in the work handoff.
+- **Next gate:** user review of the representative Phase 3 previews. No `hog_ask` tool or decision-card renderer was built. All Phase 3 and remaining full-plan release tasks stay unchecked; the plan remains `in_progress`.
+- **Activation handoff:** do not patch the pinned `0.2.0-staging-guard-e1110a118793` release. After explicit release/activation authorization, use a clean source commit to stage/publish a new immutable release, update the configured Pi source, reload, and verify the loaded source and real interaction. Until then, the pinned installation can still show the old enhancer. Source push alone is not activation.
+- Unrelated `.github/workflows/workstation.yml`, `workstation/README.md`, `workstation/package.json`, and untracked writing-desk work remain untouched and excluded from the scoped commits.
 
 ## References and research provenance
 

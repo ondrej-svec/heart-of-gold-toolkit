@@ -1,0 +1,82 @@
+[
+  {
+    "name": "natural-language execution is authorized without command syntax",
+    "input": "Implement the ready plan at docs/plans/x.md",
+    "expected": "Execute ready scope without another permission question.",
+    "path": "plugins/marvin/skills/work/SKILL.md",
+    "contains": ["Explicit execution intent authorizes the stated scope subject to gates", "Do not require literal slash-command syntax or re-ask an already authorized transition."],
+    "excludes": ["Plans are pre-approved decisions"]
+  },
+  {
+    "name": "explicit command execution has the same scope boundary",
+    "input": "/work docs/plans/x.md",
+    "expected": "Read the full plan, then execute only authorized ready tasks.",
+    "path": "plugins/marvin/skills/work/SKILL.md",
+    "contains": ["Record the authorized scope; start only its ready tasks.", "without per-task reapproval"],
+    "excludes": ["When a plan file is provided: **default to autonomous mode."]
+  },
+  {
+    "name": "review or mention of a path is not execution",
+    "input": "Review docs/plans/x.md; do not implement it",
+    "expected": "Review only; plan status cannot override the request.",
+    "path": "plugins/marvin/skills/work/SKILL.md",
+    "contains": ["**If a path is merely mentioned, supplied for review, or recommended:** read/review it if requested, but do **not** start work.", "An old `approved` status does not override current user intent or unresolved gates."],
+    "excludes": ["read$review"]
+  },
+  {
+    "name": "missing preview blocks only dependent work",
+    "input": "Implement phase 1; phase 3 preview is pending",
+    "expected": "Report the dependent gate; continue independent ready scope.",
+    "path": "plugins/marvin/skills/work/SKILL.md",
+    "contains": ["If those items or a required preview approval are missing, report the blocked dependent work and return to planning/review.", "Continue any independent authorized, ready phase"],
+    "excludes": ["planning$review"]
+  },
+  {
+    "name": "independent phase still receives quality checks and source push",
+    "input": "Phase 1 is complete; phase 3 still awaits preview review",
+    "expected": "Check, commit and push the independently shippable checkpoint; keep overall plan in progress.",
+    "path": "plugins/marvin/skills/work/SKILL.md",
+    "contains": ["Always run applicable quality checks before committing/pushing this checkpoint", "An explicitly independently shippable phase may reach this checkpoint while later phases are gated.", "otherwise retain `in_progress` and record the remaining blocked phase."],
+    "excludes": ["If only an independent phase completed, report it under Phase 5 instead", "All plan tasks checked — no unchecked boxes"]
+  },
+  {
+    "name": "new plan distinguishes default status and approval",
+    "input": "Write a plan; do not implement it",
+    "expected": "Produce a draft, show phase readiness and the execution boundary.",
+    "path": "plugins/deep-thought/skills/plan/SKILL.md",
+    "contains": ["status: draft", "Start at `draft` unless the user has actually approved the documented scope", "Report the actual status, not the template default."],
+    "excludes": ["Only an explicit request to execute `/work"]
+  },
+  {
+    "name": "agent-researchable unknown is not sent to the user",
+    "input": "We have not checked whether this API supports retries",
+    "expected": "Investigate accessible evidence; classify owner, phase and disposition.",
+    "path": "plugins/deep-thought/skills/brainstorm/SKILL.md",
+    "contains": ["Unverified/weak assumptions have an owner, blocking phase, and disposition", "investigate available evidence; ask only user-owned consequential decisions"],
+    "excludes": ["user was asked about each", "flag to the user, ask whether to proceed"]
+  },
+  {
+    "name": "architect standalone hands off rather than writing outside its scope",
+    "input": "Create stories and architecture for this feature",
+    "expected": "Deliver the requested artifacts and a planning handoff, not implementation.",
+    "path": "plugins/deep-thought/skills/architect/SKILL.md",
+    "contains": ["Architect itself writes only stories and architecture docs, not execution plans.", "If the user already authorized that planning transition, continue through the plan skill without re-asking"],
+    "excludes": ["Start implementation (Recommended)"]
+  },
+  {
+    "name": "architect pipeline keeps its output contract",
+    "input": "BRAINSTORM_PATH is set by an existing pipeline",
+    "expected": "Return story and architecture paths, then stop.",
+    "path": "plugins/deep-thought/skills/architect/SKILL.md",
+    "contains": ["**Pipeline (`$BRAINSTORM_PATH` set):** return these downstream outputs and stop", "Stories: {stories_path}/{slug}.md\nArchitecture: {stories_path}/{slug}.architecture.md"],
+    "excludes": ["**Exit:** Execution plan exists"]
+  },
+  {
+    "name": "completed scope is a report, not a ritual menu",
+    "input": "The authorized checkpoint has passed its checks",
+    "expected": "Report actual source/activation/check status and remaining gated work.",
+    "path": "plugins/marvin/skills/work/SKILL.md",
+    "contains": ["Present the actual checkpoint, never a blanket completion claim", "Do not use a fixed handoff menu."],
+    "excludes": ["All tasks complete. Shipped."]
+  }
+]

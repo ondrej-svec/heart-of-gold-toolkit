@@ -24,6 +24,10 @@ Collaborative discovery before planning. Answers **WHAT** to build and **WHY** �
 
 **NEVER write code during this skill. This is a discussion, not implementation.**
 
+### Interaction and readiness policy
+
+Natural conversation is the default. Inspect available evidence before questioning. Classify an unknown as a user decision, agent investigation, or later verification; name its blocking phase and owner. Ask only focused questions that determine progress (up to three independent related clarifications in prose), with evidence-based recommendation/tradeoffs when useful. Preserve decisions and stop when this phase is clear. Use a structured UI only for a consequential choice or approval and always permit plain prose/custom qualifications; required work is progress, never an option. A document path or suggested next step is not execution authorization. New plans are drafts until the user approves scope; readiness and preview gates remain separate. End with the result and one appropriate next step, not a fixed handoff menu.
+
 ## Common Rationalizations
 
 | Shortcut | Why It Fails | The Cost |
@@ -42,15 +46,10 @@ Collaborative discovery before planning. Answers **WHAT** to build and **WHY** �
 Not everything needs a brainstorm.
 
 **If requirements are already clear and specific:**
-Ask the user whether to skip directly to planning or brainstorm first.
+Report that evidence and recommend planning directly; ask only if the user has expressed uncertainty about skipping discovery. If a real choice remains, ask it in prose (or optional structured UI) with the tradeoff. Do not treat the recommendation as authorization to plan or implement.
 
-- Prefer the harness's structured question UI if available
-- Otherwise present a short plain-text choice list with these options:
-  1. **Go to /plan (Recommended)** — Requirements are clear; skip brainstorming and start planning
-  2. **Brainstorm first** — Explore the problem space before committing to an approach
-
-- If user selects **Go to /plan** → exit this skill, suggest `/plan`
-- If user selects **Brainstorm first** → continue to Phase 1
+- If the user asks to plan → transition to `/plan` without re-asking permission; otherwise only recommend it.
+- If the user wants discovery → continue to Phase 1.
 
 **Brainstorm when:**
 - The problem is ambiguous or has multiple valid approaches
@@ -64,17 +63,17 @@ Ask the user whether to skip directly to planning or brainstorm first.
 
 ## Phase 1: Reframe the Problem
 
-**Entry:** User confirmed brainstorming is needed.
+**Entry:** The user requested discovery and the topic benefits from it; the initial request is sufficient, with no ritual reconfirmation.
 
 This is the critical step. Before exploring solutions, question the problem.
 
-Ask **one question at a time**. Do not dump a questionnaire. Prefer the harness's structured question UI when available; otherwise ask plainly in text and wait for the answer before continuing. Start with:
+Ask one focused question only when evidence cannot resolve a user-owned decision; do not dump a questionnaire. Research agent-owned unknowns first and record later verification separately. Use these as lenses, not a mandatory interview; skip what is already settled:
 
 1. "What problem are we actually solving?" — Strip away assumptions. Get to the root need.
 2. "Who has this problem and when?" — Context changes solutions.
 3. "What does success look like?" — Not features, outcomes.
 
-Continue asking until the problem is clear. Prefer multiple-choice questions when natural options exist. Validate assumptions explicitly: "I'm assuming X — correct?"
+Stop asking once the problem is clear enough for this phase. Offer alternatives only for a real choice. Verify researchable assumptions yourself; ask for confirmation only when a consequential assumption belongs to the user.
 
 **Exit:** Problem statement is clear and reframed. Both you and the user agree on what you're solving.
 
@@ -137,7 +136,7 @@ Through collaborative dialogue, explore 2-3 approaches. For each:
 
 Ask one question at a time. Start broad (purpose, users), narrow to specifics (constraints, edge cases). Prefer explicit option lists when there are 2-4 natural choices.
 
-**If any open questions emerge:** You MUST ask the user about each one. Do not assume answers or defer them silently.
+**If open questions emerge:** classify each. Investigate agent-owned questions, ask only user-owned decisions that block this phase, and record later verification without interrupting progress.
 
 If the chosen approach depends on taste, hierarchy, copy quality, workshop framing, or boundary judgment, you MUST also capture before leaving this phase:
 - target outcome
@@ -172,8 +171,8 @@ Once an approach is selected, run the Recursive Why loop before locking it in. T
 
 3. **Classify what you find:**
    - **Bedrock** (verified, backed by evidence or hard constraint) → proceed with confidence
-   - **Unverified** (believed but not proven) → flag to the user, ask whether to proceed, investigate, or mitigate
-   - **Weak** (rests on habit or "that's how we do it") → challenge directly: "Is there a reason, or is this inertia?"
+   - **Unverified** (believed but not proven) → assign an owner and blocking phase; investigate available evidence or record later verification, asking only about a user-owned consequential decision
+   - **Weak** (rests on habit or "that's how we do it") → check the rationale against evidence; challenge with a question only if the remaining direction or risk acceptance is user-owned
 
 4. **Surface to the user** before moving to Phase 4:
    ```
@@ -183,11 +182,7 @@ Once an approach is selected, run the Recursive Why loop before locking it in. T
    ✗ Weak: "We always use WebSockets for this" (habit, not requirement)
    ```
 
-5. **Ask the user explicitly** if any unverified or weak assumptions are found.
-   Prefer the harness's structured choice UI when available; otherwise present this short option list in plain text:
-   - "Proceed anyway (accept the risk)"
-   - "Investigate before committing"
-   - "Reconsider approach"
+5. **Classify unverified or weak assumptions.** Investigate evidence the agent can obtain; ask the user only when risk acceptance or a consequential direction is theirs to decide. State the recommendation and tradeoffs. A structured UI is optional only for that real choice; prose and qualifications remain valid.
 
 **Depth:** 2-3 levels of "why" per assumption. Stop at bedrock, not at a fixed number.
 
@@ -264,7 +259,7 @@ related:
 **Alternatives considered:** {What else was explored and why it was rejected}
 
 ## Open Questions
-{Questions that need to be answered during planning or implementation}
+{For each unknown: user decision / agent investigation / later verification; owner, blocking phase, and next action}
 
 ## Out of Scope
 {Things explicitly excluded from this work}
@@ -289,22 +284,7 @@ If a novel pattern was discovered during brainstorming (approach nobody's tried,
 
 **Entry:** Document written (Phase 5 complete).
 
-Ask the user what to do next.
-
-- Prefer the harness's structured choice UI if available
-- Otherwise present this short plain-text choice list:
-  1. **Proceed to /plan** — Turn these decisions into an implementation plan
-  2. **Visualize / Share** — Generate a shareable HTML mind map first when sharing is configured; otherwise render in the terminal
-  3. **Keep exploring** — More questions or refine decisions before moving on
-  4. **Done for now** — Return later; to plan: `/plan {brainstorm-path}`
-
-**If user selects "Proceed to /plan":** Suggest running `/plan {brainstorm-path}`.
-
-**If user selects "Visualize / Share":** Run `/babel-fish:visualize {brainstorm-path}` and try the shareable HTML flow first when `share-html` is configured. Otherwise render the terminal mind map. After rendering or sharing, return to this handoff with the remaining options.
-
-**If user selects "Keep exploring":** Return to Phase 3 and continue asking questions one at a time. When satisfied, update the document and return to this handoff.
-
-**If user selects "Done for now":** Confirm the path.
+Report the brainstorm path, settled decisions, open questions with their owners/phases, and the appropriate next step. If the user already requested planning next, transition to `/plan {brainstorm-path}` without another permission question; otherwise suggest it without implying that planning or implementation has started. Continue exploration only on a concrete unresolved decision; otherwise stop.
 
 ---
 
@@ -315,10 +295,10 @@ Before delivering the brainstorm document, verify:
 - [ ] Problem was reframed — not just accepted at face value
 - [ ] At least 2 approaches were explored with tradeoffs
 - [ ] Assumption Audit ran on the chosen approach — assumptions classified as bedrock/unverified/weak
-- [ ] No unverified or weak assumptions were silently accepted — user was asked about each
+- [ ] Unverified/weak assumptions have an owner, blocking phase, and disposition — investigate available evidence; ask only user-owned consequential decisions
 - [ ] Every decision has rationale and rejected alternatives documented
 - [ ] Open questions are listed — nothing swept under the rug
-- [ ] `/plan` can start from this document without asking "but what did you decide about X?"
+- [ ] Planning can use settled decisions without repeating discovery; remaining blockers identify their owner and next action
 - [ ] No code was written — only the brainstorm document was created
 
 ## What Makes This Heart of Gold

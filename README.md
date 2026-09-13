@@ -17,7 +17,7 @@
 bunx @heart-of-gold/toolkit install --to codex
 ```
 
-The Codex target also applies Codex-specific wording transforms for flagship shared skills so interactive flows like `brainstorm` and `plan` more strongly encourage Codex's structured user-input UI instead of falling back to plain text when richer selection UX is available. It also rewrites slash-command references in installed skill text — both plain (`/plan`, `/work`) and plugin-prefixed (`/deep-thought:review`, `/marvin:compound`) — to Codex-style `$...` skill invocations.
+The Codex target preserves the shared conversation-first policy: structured UI is optional for meaningful decisions or approvals, with plain-text answers and qualifications always valid. It rewrites actual skill-command references — both plain (`/plan`, `/work`) and plugin-prefixed (`/deep-thought:review`, `/marvin:compound`) — to Codex-style `$...` invocations without rewriting prose such as `read/review` or file paths.
 
 ### OpenCode
 ```bash
@@ -222,7 +222,9 @@ npm run check:compat
 
 - `check:publish-safety` verifies the `npm pack` file list and fails if the publish would include blocked files such as `.env` or obvious secrets such as private keys, Slack webhooks, GitHub tokens, npm tokens, or AWS access keys.
 - `check:security` runs lightweight regression checks for sensitive Guide scripts and is also enforced in GitHub Actions.
-- `check:compat` ensures the flagship shared skills (`brainstorm`, `plan`, `work`) keep their harness-neutral interaction contract rather than drifting toward pi-only or Claude-only assumptions.
+- `check:compat` protects the seven scoped shared skills (`brainstorm`, `plan`, `architect`, `think`, `investigate`, `review`, `work`) from harness-only interaction requirements. `npm run test:interactions` checks source/transformed policy passages, readiness scenarios, and command-token boundaries. These are static authoring checks, not proof of live-model question quality.
+
+The [interaction contract](docs/architecture/interaction-contract.md) separates conversation, decisions, and progress. New plans default to draft; document status, phase readiness/preview review, and explicit execution intent remain distinct. Required work inside an authorized ready scope is executed, not offered as optional scope.
 
 ## Requirements
 

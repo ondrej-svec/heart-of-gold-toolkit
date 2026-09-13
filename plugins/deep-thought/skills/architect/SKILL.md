@@ -10,7 +10,6 @@ allowed-tools:
   - Grep
   - Glob
   - Agent
-  - AskUserQuestion
   - Write
   - Edit
 ---
@@ -25,6 +24,10 @@ Turn decisions into stories + architecture. Answers **WHAT to build** and **HOW 
 **This skill MAY NOT:** edit code, create source files, run tests, deploy, implement anything.
 
 **NEVER write code during this skill. Design and document only.**
+
+### Interaction and readiness policy
+
+Natural conversation is the default. Inspect evidence before questioning. Classify unknowns as user decisions, agent investigation, or later verification, and name their blocking phase and owner. Ask focused questions only when an answer changes progress (up to three independent related clarifications in prose), including evidence-based recommendation/tradeoffs where useful. Preserve decisions and stop when clear. Structured UI is conditional for a meaningful choice/approval only; prose and custom qualifications always work. Required work is progress, not a selectable scope. Stories, documents, paths, and suggested next steps do not authorize implementation. Hand off to execution planning, not unrestricted implementation; plan approval, readiness/preview gates, and explicit execution authorization remain separate.
 
 ## Common Rationalizations
 
@@ -48,9 +51,9 @@ Turn decisions into stories + architecture. Answers **WHAT to build** and **HOW 
 4. Skip to Phase 2
 
 **If no env var (standalone mode):**
-1. Check `docs/brainstorms/` for a recent match (last 14 days)
-2. **If found:** Use **AskUserQuestion** (header: "Brainstorm", question: "Found brainstorm: [title]. Use this as input?") with options: "Yes, use it" and "Different input"
-3. **If not found:** Use **AskUserQuestion** (header: "Feature", question: "What are you building? Describe the feature, problem, or goal.") — accept free text
+1. Use the supplied feature/context first; check `docs/brainstorms/` for a recent related match (last 14 days) and inspect it.
+2. If competing inputs would materially change the architecture, ask one prose question with evidence and tradeoffs; otherwise proceed with the best-supported context.
+3. Only if the intended feature/problem is still missing, ask for it in prose. Research agent-owned gaps before requesting more detail.
 
 **Exit:** Feature context understood — decisions extracted or gathered from user.
 
@@ -166,29 +169,22 @@ Use the template from `architecture-template.md` in this skill's directory. The 
 
 ---
 
-## Phase 5: Confirm and Handoff
+## Phase 5: Handoff to Execution Planning
 
 **Entry:** Stories and architecture doc written.
 
-**If interactive (no `$BRAINSTORM_PATH`):**
-Use **AskUserQuestion** with:
-- question: "Stories and architecture ready. What next?"
-- header: "Next step"
-- options:
-  1. label: "Start implementation (Recommended)", description: "Proceed to scaffold or test writing"
-  2. label: "Visualize / Share", description: "Generate a shareable HTML view first when sharing is configured; otherwise render structure in the terminal"
-  3. label: "Review and refine", description: "Adjust stories or architecture based on feedback"
-  4. label: "Done for now", description: "Return later"
-- multiSelect: false
+Report the story and architecture paths, settled decisions, and unresolved blockers with owners. Do not route stories directly to unrestricted implementation or infer approval from a path or review.
 
-**If user selects "Visualize / Share":** Run `/babel-fish:visualize {stories_path}/{slug}.architecture.md` and try the shareable HTML flow first when `share-html` is configured. Otherwise render the terminal mind map. After rendering or sharing, return to this handoff with the remaining options.
+**Standalone:** identify an existing execution plan to continue or recommend `/plan {architecture-path}` to create one from these artifacts. If the user already authorized that planning transition, continue through the plan skill without re-asking; otherwise state the next planning action and stop. Architect itself writes only stories and architecture docs, not execution plans. Ask naturally only if a consequential architecture decision remains.
 
-**If pipeline mode (`$BRAINSTORM_PATH` set):**
-Complete without asking. Output paths for downstream consumers:
-```
+**Pipeline (`$BRAINSTORM_PATH` set):** return these downstream outputs and stop; do not start planning or implementation automatically. Downstream execution still requires an execution plan, readiness, and user authorization.
+
+```text
 Stories: {stories_path}/{slug}.md
 Architecture: {stories_path}/{slug}.architecture.md
 ```
+
+**Exit:** Artifacts delivered with a planning handoff (standalone) or unchanged output paths (pipeline).
 
 ---
 

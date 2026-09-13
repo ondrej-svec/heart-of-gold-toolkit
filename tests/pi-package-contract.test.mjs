@@ -37,7 +37,7 @@ test('Pi package exports every skill emitted by an extension command', () => {
 
 test('Pi package uses only the current Earendil namespace', () => {
   const pkg = readJson(join(ROOT, 'package.json'));
-  assert.equal(pkg.version, '0.2.1');
+  assert.equal(pkg.version, '0.2.2');
   assert.deepEqual(
     Object.keys(pkg.peerDependencies).sort(),
     ['@earendil-works/pi-ai', '@earendil-works/pi-coding-agent', '@earendil-works/pi-tui'],

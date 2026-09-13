@@ -53,15 +53,29 @@ pi enhancements must remain optional. The shared skill must still be usable with
 
 ## Portable Interaction Contract
 
-Shared skills should describe interaction intent in harness-neutral language.
+Shared skills describe intent, not a harness primitive. Inspect evidence before
+asking; classify unknowns as user decision, agent investigation, or later
+verification, and name the blocking phase and owner. Ask focused questions only
+when the answer determines progress (up to three independent related prose
+clarifications), recommend from evidence where appropriate, preserve decisions,
+and stop when clear.
 
-Prefer wording like:
-- "Ask one question at a time"
-- "Prefer explicit options when there are 2-4 natural choices"
-- "Use the harness's structured choice UI if available; otherwise present concise plain-text options"
-- "Pause after each question and wait for the user's answer"
+Structured UI is conditional: use it only for a meaningful choice or named
+approval. Plain prose and custom qualifications remain valid in every harness.
+Required tasks are obligations/progress, never selectable alternatives. End with
+the result and an appropriate next step rather than a fixed handoff menu.
 
-Avoid treating a single harness primitive as canonical.
+Document existence/status, readiness (including preview gates), and execution
+authorization are separate. New plans are drafts unless scope is actually
+approved. A path mention or review does not authorize work; explicit execution
+intent ("Implement this plan" or `/work <path>`) may authorize stated scope subject
+to gates. Literal command syntax is not required.
+Once authorized and ready, work remains autonomous without per-task approval;
+a blocker stops only dependent work.
+
+Avoid treating a single harness primitive as canonical. See
+[interaction-contract.md](interaction-contract.md) for the complete authoring
+contract.
 
 ## Anti-Rules
 
@@ -72,8 +86,8 @@ Do **not** make the shared skill depend on:
 - TUI-only behaviors as the only usable interaction path
 
 If a harness-specific feature exists, shared skills should describe it as an optional realization:
-- use the structured UI **when available**
-- otherwise fall back to concise plain-text interaction
+- use structured UI only for a real decision/approval **when available**
+- otherwise fall back to concise plain-text interaction with room for qualifications
 
 ## Flagship Workflow Policy
 

@@ -11,7 +11,6 @@ allowed-tools:
   - Grep
   - Glob
   - Agent
-  - AskUserQuestion
 ---
 
 # Think
@@ -24,6 +23,10 @@ Deep reasoning for decisions that matter. Expert perspectives, devil's advocate,
 **This skill MAY NOT:** edit code, create files, run commands, implement anything, deploy.
 
 **This is thinking, not doing. Present the analysis — the user decides what to act on.**
+
+### Interaction and readiness policy
+
+Natural conversation is the default. Inspect evidence before questioning. Classify unknowns as user decisions, agent investigation, or later verification, naming phase and owner. Ask focused questions only when they determine progress (up to three independent related prose clarifications), and give evidence-based recommendation/tradeoffs where relevant. Preserve decisions and stop when clear. Use structured UI only for a consequential choice or approval, never as a requirement; prose/custom qualifications always work. Required work is not a choice. A recommendation, artifact path, or suggested next step never authorizes execution; approval, readiness, and execution authorization are separate.
 
 ## Common Rationalizations
 
@@ -45,7 +48,7 @@ Deep reasoning for decisions that matter. Expert perspectives, devil's advocate,
 - Gather relevant context: what does the codebase currently do? What are the constraints?
 
 **If invoked without a question:**
-Use **AskUserQuestion** (header: "Topic", question: "What decision or problem do you want to think through?") with contextual options if possible, otherwise let the user type via the automatic "Other" option.
+Ask naturally what decision or problem to examine. Do not manufacture options before evidence establishes a real choice.
 
 **If invoked with `ultrathink`:**
 - Enable extended thinking — deeper analysis, more perspectives, longer reasoning chains
@@ -65,17 +68,7 @@ Use **AskUserQuestion** (header: "Topic", question: "What decision or problem do
 | **What-If Analysis** | Uncertain about consequences | Trace each option through scenarios |
 | **Tradeoff Matrix** | Comparing options across criteria | Structured weighted comparison |
 
-**If mode isn't obvious from the question:** Use **AskUserQuestion** with:
-- question: "Which thinking mode fits this decision best?"
-- header: "Mode"
-- options:
-  1. label: "Expert Panel (Recommended)", description: "3-5 expert perspectives on this decision"
-  2. label: "Devil's Advocate", description: "Systematically attack your preferred option"
-  3. label: "What-If Analysis", description: "Trace each option through concrete scenarios"
-  4. label: "Tradeoff Matrix", description: "Weighted comparison across criteria"
-- multiSelect: false
-
-If user says "you pick," default to Expert Panel.
+**If mode isn't obvious from the question:** choose the lightest useful mode from evidence and state why. Ask only if the user has a consequential preference about the lens; then present the tradeoff naturally (optional structured UI, prose fallback).
 
 **Exit:** Mode chosen.
 
@@ -184,19 +177,7 @@ If no clear winner: "Both A and B are defensible. The tiebreaker question is: [t
 
 **Entry:** Recommendation delivered.
 
-Use **AskUserQuestion** with:
-- question: "Analysis complete. What would you like to do?"
-- header: "Next step"
-- options:
-  1. label: "Proceed", description: "Move to /plan or /work with this recommendation"
-  2. label: "Challenge a point", description: "Push back on something in the analysis"
-  3. label: "Different mode", description: "Re-analyze with a different lens (e.g., Devil's Advocate after Expert Panel)"
-  4. label: "Done", description: "Analysis sufficient, move on"
-- multiSelect: false
-
-**If user selects "Challenge a point":** Discuss, update the analysis if warranted, then return to this choice.
-
-**If user selects "Different mode":** Return to Phase 2 with a new mode. Combine insights from both passes.
+Report the recommendation, uncertainty, and one appropriate next step. Continue only on a concrete challenge or request for another lens. If planning is appropriate, suggest it without implying authorization to implement.
 
 ---
 

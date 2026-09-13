@@ -63,7 +63,13 @@ function replaceCodexCommandAliases(content: string): string {
     ([a], [b]) => b.length - a.length
   )) {
     const escaped = source.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    transformed = transformed.replace(new RegExp(`${escaped}\\b`, "g"), target);
+    // Match a command token, not read/review, a URL/path, or a longer command.
+    // Permit sentence punctuation after a command, but not a file extension.
+    const token = new RegExp(
+      `(?<![\\p{L}\\p{N}_/\\\\.$:-])${escaped}(?![\\p{L}\\p{N}_:/\\\\-]|\\.[\\p{L}\\p{N}_])`,
+      "gu"
+    );
+    transformed = transformed.replace(token, target);
   }
   return transformed;
 }
@@ -72,25 +78,23 @@ export function transformContentForCodex(content: string): string {
   return replaceCodexCommandAliases(content)
     .replace(/~\/\.claude\//g, "~/.codex/")
     .replace(/\.claude\//g, ".codex/")
+    // Legacy authoring used blanket UI preferences. Keep the portable policy when
+    // installing older skills instead of turning every clarification into a Codex form.
     .replace(
-      /Prefer the harness's structured question UI when available; otherwise ask plainly in text and wait for the answer before continuing\./g,
-      "In Codex, prefer the structured user-input UI when available; otherwise ask plainly in text and wait for the answer before continuing."
-    )
-    .replace(
-      /Prefer the harness's structured question UI when available; otherwise ask plainly in text and wait for the answer before continuing:/g,
-      "In Codex, prefer the structured user-input UI when available; otherwise ask plainly in text and wait for the answer before continuing:"
+      /Prefer the harness's structured question UI when available; otherwise ask plainly in text and wait for the answer before continuing[.:]/g,
+      "Use structured UI only for a meaningful decision or approval; otherwise ask naturally in prose and wait for the answer."
     )
     .replace(
       /Prefer the harness's structured question UI if available/g,
-      "In Codex, prefer the structured user-input UI when available"
+      "Use structured UI only for a meaningful decision or approval"
     )
     .replace(
       /Prefer the harness's structured choice UI if available/g,
-      "In Codex, prefer the structured user-input choice UI when available"
+      "Use structured UI only for a meaningful decision or approval"
     )
     .replace(
       /Prefer the harness's structured choice UI when available/g,
-      "In Codex, prefer the structured user-input choice UI when available"
+      "Use structured UI only for a meaningful decision or approval"
     )
     .replace(
       /If the harness provides task or progress UI, mirror the major plan tasks there\./g,

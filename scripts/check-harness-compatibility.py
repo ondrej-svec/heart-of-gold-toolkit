@@ -1,42 +1,51 @@
 #!/usr/bin/env python3
+"""Keep flagship authoring portable without deleting the compatibility gate."""
 from pathlib import Path
 import sys
 
 ROOT = Path(__file__).resolve().parent.parent
-FLAGSHIP_SKILLS = [
-    ROOT / "plugins/deep-thought/skills/brainstorm/SKILL.md",
-    ROOT / "plugins/deep-thought/skills/plan/SKILL.md",
-    ROOT / "plugins/marvin/skills/work/SKILL.md",
-]
-FORBIDDEN = [
+SKILLS = [
+    ROOT / f"plugins/deep-thought/skills/{name}/SKILL.md"
+    for name in ("brainstorm", "plan", "architect", "think", "investigate", "review")
+] + [ROOT / "plugins/marvin/skills/work/SKILL.md"]
+FORBIDDEN = (
     "AskUserQuestion",
     "TaskCreate",
     "TaskUpdate",
-]
-REQUIRED_SNIPPETS = {
-    ROOT / "plugins/deep-thought/skills/brainstorm/SKILL.md": [
-        "structured question UI when available",
-        "plain-text choice list",
-    ],
-    ROOT / "plugins/deep-thought/skills/plan/SKILL.md": [
-        "structured choice UI if available",
-        "plain-text choice list",
-    ],
-    ROOT / "plugins/marvin/skills/work/SKILL.md": [
-        "structured choice UI when available",
-        "plan checkboxes as the source of truth",
-    ],
+    "Prefer the harness's structured",
+    "hog_ask",  # Pi tool guidance belongs in the adapter, not the shared workflow.
+    "/skill:",
+)
+REQUIRED = (
+    "natural conversation is the default",
+    "evidence before questioning",
+    "agent investigation",
+    "later verification",
+    "structured ui",
+    "prose",
+    "authoriz",
+)
+
+SPECIFIC_RULES = {
+    "brainstorm": ("owner, blocking phase, and disposition",),
+    "plan": ("status: draft", "literal slash-command syntax is not required"),
+    "architect": ("**Pipeline (`$BRAINSTORM_PATH` set):**",),
+    "work": ("plan checkboxes as the source of truth", "Always run applicable quality checks", "explicit execution intent"),
 }
 
 errors: list[str] = []
-for path in FLAGSHIP_SKILLS:
+for path in SKILLS:
     text = path.read_text(encoding="utf-8")
+    relative = path.relative_to(ROOT)
     for token in FORBIDDEN:
         if token in text:
-            errors.append(f"{path.relative_to(ROOT)} contains forbidden harness-specific token: {token}")
-    for snippet in REQUIRED_SNIPPETS.get(path, []):
-        if snippet not in text:
-            errors.append(f"{path.relative_to(ROOT)} is missing required portability phrase: {snippet}")
+            errors.append(f"{relative} contains retired or harness-specific token: {token}")
+    normalized = text.lower()
+    for snippet in (*REQUIRED, *SPECIFIC_RULES.get(path.parent.name, ())):
+        if snippet.lower() not in normalized:
+            errors.append(f"{relative} is missing portable interaction rule: {snippet}")
+    if len(text.splitlines()) > 500:
+        errors.append(f"{relative} exceeds the 500-line skill limit")
 
 if errors:
     print("Harness compatibility checks failed:\n")

@@ -11,7 +11,6 @@ allowed-tools:
   - Grep
   - Glob
   - Agent
-  - AskUserQuestion
   - Bash
 ---
 
@@ -25,6 +24,10 @@ One focused review. Not nine shallow passes — one deep one that reads carefull
 **This skill MAY NOT:** edit code, fix issues, create PRs, push changes, modify any files.
 
 **This is a review, not a fix. Present findings — the user decides what to do.**
+
+### Interaction and readiness policy
+
+Natural conversation is the default. Inspect evidence before questioning. Classify unknowns as user decisions, agent investigation, or later verification, naming phase and owner. Ask focused questions only when the answer determines progress (up to three independent related prose clarifications), with evidence-based recommendation/tradeoffs where useful. Preserve settled decisions and stop when clear. Structured UI is only for a meaningful choice/approval and always has prose/custom qualification fallback. Required work is not optional scope. A review, document path, or next-step suggestion does not authorize execution; approval, readiness/preview gates, and explicit execution authorization remain separate.
 
 ## Common Rationalizations
 
@@ -51,7 +54,7 @@ Auto-detect based on input:
 | PR URL or number | **Code** — PR diff | `gh pr diff <number>` |
 | Directory path | **Architecture** — structural review | Analyze patterns, conventions, dependencies |
 
-**If ambiguous:** Use **AskUserQuestion** (header: "Review type", question: "What are we reviewing?") with options: "Code changes" (description: "Review the diff or specific code files") and "Document" (description: "Evaluate the plan, brainstorm, or spec itself").
+**If ambiguous:** inspect the supplied reference and repository state first. Ask one prose clarification only if code, document, or architecture review remain materially different user-owned directions; state the evidence and tradeoff.
 
 **Exit:** Review type determined — code, document, or architecture.
 
@@ -191,19 +194,7 @@ Analyze the directory/codebase structure:
 
 **Entry:** Findings presented.
 
-Use **AskUserQuestion** with:
-- question: "Review complete. What would you like to do next?"
-- header: "Next step"
-- options:
-  1. label: "Address findings", description: "Start fixing the issues (exits review mode)"
-  2. label: "Discuss a finding", description: "Push back or get more detail on a specific finding"
-  3. label: "Document insights", description: "Run /compound to capture non-obvious patterns found"
-  4. label: "Done", description: "Review complete, move on"
-- multiSelect: false
-
-**If user selects "Discuss a finding":** Discuss, then return to this choice.
-
-**If user selects "Document insights":** Suggest `/compound` with the specific insight.
+Report the verdict, findings, and one appropriate next step. Discuss a named finding if requested and suggest a plan for fixes when warranted, but do not treat review completion or a plan path as permission to implement.
 
 ---
 

@@ -1,0 +1,12 @@
+[
+  {"source":"Use /plan then /work.","codex":"Use $plan then $work."},
+  {"source":"`/work <path>` and **/plan**","codex":"`$work <path>` and **$plan**"},
+  {"source":"/deep-thought:review src/file.ts\n/marvin:work plan.md","codex":"$review src/file.ts\n$work plan.md"},
+  {"source":"(/plan) '/review' \"/architect\"","codex":"($plan) '$review' \"$architect\""},
+  {"source":"read/review it; return to planning/review.","codex":"read/review it; return to planning/review."},
+  {"source":"docs/plans/a.md docs/plan.md ./work ../review","codex":"docs/plans/a.md docs/plan.md ./work ../review"},
+  {"source":"https://example.test/work /work/file.ts /plan.md","codex":"https://example.test/work /work/file.ts /plan.md"},
+  {"source":"/work-extra /plan_other /review:unknown /workshop","codex":"/work-extra /plan_other /review:unknown /workshop"},
+  {"source":"/architecture-review vs /review, then /plan...","codex":"$architecture-review vs $review, then $plan..."},
+  {"source":"návrh/plan /worké","codex":"návrh/plan /worké"}
+]

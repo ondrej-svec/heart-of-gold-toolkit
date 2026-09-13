@@ -11,7 +11,6 @@ allowed-tools:
   - Grep
   - Glob
   - Agent
-  - AskUserQuestion
   - Bash
 ---
 
@@ -25,6 +24,10 @@ Detective-style investigation. Follow evidence trails, notice what's missing, co
 **This skill MAY NOT:** edit code, fix issues, create PRs, deploy. The only Bash allowed is read-only diagnostics (git log, curl for status, kubectl get, etc.).
 
 **This is an investigation, not a fix. Present the case — the user decides what to do.**
+
+### Interaction and readiness policy
+
+Natural conversation is the default. Inspect evidence before questioning. Classify unknowns as user decisions, agent investigation, or later verification, naming the blocking phase and owner. Ask focused questions only when an answer determines progress (up to three independent related prose clarifications); provide evidence-based recommendation/tradeoffs when useful. Preserve decisions and stop when clear. Structured UI is conditional for a consequential choice/approval only; prose and custom qualifications remain valid. Required work is progress, not a selection. Findings, paths, or a suggested next step do not authorize execution: readiness, approval, and explicit execution authorization are distinct.
 
 ## The Three Minds
 
@@ -61,15 +64,7 @@ Three investigative lenses — reasoning frameworks that each unlock a different
 | "Data doesn't look right" | **Data** | Integrity, schema, migration risks |
 | "Something is broken in prod" | **System** | Infrastructure, networking, runtime |
 
-**If unclear:** Use **AskUserQuestion** with:
-- question: "What are we investigating?"
-- header: "Polarity"
-- options:
-  1. label: "Code bug", description: "Logic errors, type mismatches, broken flows"
-  2. label: "Performance", description: "Slow queries, memory leaks, bottlenecks"
-  3. label: "Architecture", description: "Pattern violations, coupling, design drift"
-  4. label: "System/Data", description: "Infrastructure failures, data integrity issues"
-- multiSelect: false
+**If unclear:** inspect supplied paths, logs, and repository evidence first. Ask one natural question only if polarity remains a user-owned ambiguity; explain the likely classification and why. A structured UI is optional for genuinely distinct investigation directions.
 
 **Auto-load relevant knowledge:**
 - Code + `.py` → Read `${CLAUDE_PLUGIN_ROOT}/knowledge/python-fastapi-patterns.md`
@@ -234,17 +229,7 @@ Each with a concrete scenario of what goes wrong.]
 
 **Entry:** Case report presented.
 
-Use **AskUserQuestion** with:
-- question: "Investigation complete. What would you like to do?"
-- header: "Next step"
-- options:
-  1. label: "Fix the issues", description: "Start implementing fixes (exits investigation mode)"
-  2. label: "Dig deeper", description: "Investigate a specific finding further"
-  3. label: "Document findings", description: "Run /compound to capture this for future reference"
-  4. label: "Done", description: "Investigation sufficient, move on"
-- multiSelect: false
-
-**If user selects "Dig deeper":** Use **AskUserQuestion** (header: "Finding", question: "Which finding to dig into?") with each finding as an option. Then return to Phase 2 focused on that trail.
+Report the case, confidence, and which findings remain agent-investigable versus user-owned decisions. Continue deeper only for a named finding. Suggest planning a fix where appropriate, but do not imply that findings or a path authorize implementation.
 
 ---
 

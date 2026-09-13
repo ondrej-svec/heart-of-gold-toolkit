@@ -25,6 +25,10 @@ Strategic planning that fits the problem. Answers **HOW** to build what was deci
 
 **NEVER write code during this skill. Research and plan only.**
 
+### Interaction and readiness policy
+
+Natural conversation is the default. Inspect evidence before questioning. Classify unknowns as user decisions, agent investigation, or later verification, and name the blocking phase and owner. Ask focused questions only when an answer determines progress (up to three independent related clarifications in prose); give evidence-based recommendations/tradeoffs when relevant. Preserve decisions and stop when clear. Use structured UI only for a meaningful choice/approval, always with prose/custom qualification fallback; required tasks are obligations, not alternatives. A path mention, review, or suggested `/work` is not execution authorization. New plans are `draft` until scope is actually approved; status, readiness/preview gates, and authorization are distinct. End with the result and appropriate next step, not a ritual menu.
+
 ## Common Rationalizations
 
 | Shortcut | Why It Fails | The Cost |
@@ -49,9 +53,7 @@ Strategic planning that fits the problem. Answers **HOW** to build what was deci
 **If the user provided a topic but no brainstorm:**
 - Check `docs/brainstorms/` (or project override path) for a recent match (last 14 days, semantic match on filename/frontmatter)
 - **If one found:** Read it and announce. Skip Phase 1.
-- **If multiple found:** Ask the user which brainstorm to use.
-  - Prefer the harness's structured choice UI if available
-  - Otherwise present a short plain-text option list with each matching brainstorm plus `None — proceed without brainstorm context`
+- **If multiple found:** inspect the strongest matches and ask only if the user must choose between materially different inputs. State the evidence and recommendation; prose is sufficient, with optional structured UI for that genuine choice.
 - **If none found:** Continue to Phase 1.
 
 **Exit:** Context understood — brainstorm consumed (if exists), scope clear enough to research.
@@ -62,12 +64,7 @@ Strategic planning that fits the problem. Answers **HOW** to build what was deci
 
 **Entry:** No brainstorm exists. User provided a topic or description.
 
-Ask clarifying questions one at a time, not a questionnaire. Prefer the harness's structured question UI when available; otherwise ask plainly in text and wait for the answer before continuing:
-- What problem does this solve?
-- What's the desired outcome?
-- Any constraints? (time, tech, dependencies)
-
-Prefer multiple-choice questions when natural options exist. Continue until the scope is clear OR user says "proceed."
+Inspect repository and supplied evidence first. Ask focused clarification only for user-owned ambiguity that blocks planning; investigate agent-owned gaps and identify later verification separately. Ask one question at a time (up to three independent related prose clarifications) and include a recommendation/tradeoff when evidence supports one. Stop once scope is clear enough to plan.
 
 **Exit:** Scope understood well enough to research.
 
@@ -180,11 +177,15 @@ Check the project's `CLAUDE.md` for a "Toolkit Output Paths" table. Use those pa
 title: "{type}: {description}"
 type: plan
 date: YYYY-MM-DD
-status: approved
+status: draft
 brainstorm: {path if exists}
 confidence: high | medium | low
+readiness: ready | blocked | preview_required
+preview_status: not_required | pending | approved
 ---
 ```
+
+Start at `draft` unless the user has actually approved the documented scope; record that approval if setting `approved`. Report the actual status, not the template default. For phased plans, name which phases are ready or blocked and who owns each gate; a global readiness label alone is insufficient. Neither an old `approved` status nor a preview's existence overrides current intent or a required preview review.
 
 **All plans include:**
 1. **Title and one-line summary**
@@ -275,9 +276,9 @@ If the task materially changes UI, copy, information architecture, facilitation 
 - rejection criteria
 - required preview artifacts
 
-For design-heavy tasks, autonomous `work` should not start until at least one preview artifact exists. Acceptable preview forms include an HTML/static mockup, a terminal-friendly structural preview, or another concrete representation that makes drift obvious before implementation. The plan should also say who reviews the preview and what failure sends the work back to planning.
+For design-heavy tasks, dependent implementation must wait for the required preview artifact and its required review. Acceptable preview forms include an HTML/static mockup, a terminal-friendly structural preview, or another concrete representation that makes drift obvious before implementation. Name the reviewer, the disposition needed to proceed, and what failure sends work back to planning. Independent authorized, ready phases may proceed without crossing that gate.
 
-**Exit:** Plan document written.
+**Exit:** Plan document written with actual approval status (`draft` by default), explicit phase readiness, blockers/owners, preview disposition, and the execution-authorization boundary.
 
 ---
 
@@ -285,22 +286,7 @@ For design-heavy tasks, autonomous `work` should not start until at least one pr
 
 **Entry:** Plan written and saved.
 
-Ask the user what to do next.
-
-- Prefer the harness's structured choice UI if available
-- Otherwise present this short plain-text choice list:
-  1. **Start /work (Recommended)** — Begin implementing this plan
-  2. **Visualize / Share** — Generate a shareable HTML mind map first when sharing is configured; otherwise render in the terminal
-  3. **Review and refine** — Adjust the plan based on feedback
-  4. **Done for now** — Return later; to start: `/work {plan-path}`
-
-**If user selects "Start /work":** Suggest running `/work {plan-path}`.
-
-**If user selects "Visualize / Share":** Run `/babel-fish:visualize {plan-path}` and try the shareable HTML flow first when `share-html` is configured. Otherwise render the terminal mind map. After rendering or sharing, return to this handoff with the remaining options.
-
-**If user selects "Review and refine":** Accept feedback, update the plan, then present these options again.
-
-**If user selects "Done for now":** Confirm the path.
+Report the plan path, actual status, readiness/preview state, blockers and owners, then recommend the next concrete action. Invite review or feedback if needed. Do not offer implementation as a default menu: a plan path, review request, or recommendation alone does not authorize work. Explicit execution intent — such as "Implement this plan" or `/work {plan-path}` — authorizes the stated scope subject to documented readiness and preview gates; literal slash-command syntax is not required. Do not re-ask a transition already authorized by the user.
 
 ---
 
@@ -313,7 +299,7 @@ Before delivering the plan, verify:
 - [ ] Decision rationale explains WHY, not just WHAT (for standard+ plans)
 - [ ] Assumptions are surfaced with status (verified/unverified) — for standard+ plans
 - [ ] Unverified assumptions are either investigation tasks or explicit risks — nothing swept under the rug
-- [ ] Someone new could start `/work` from this plan without clarifying questions
+- [ ] Ready phases are executable without guessing; blocked phases identify the prerequisite, owner, and required disposition
 - [ ] Confidence level is stated and honest
 - [ ] No code was written — only the plan document was created
 
