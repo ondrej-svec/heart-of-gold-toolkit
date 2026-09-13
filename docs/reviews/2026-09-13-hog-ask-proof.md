@@ -2,9 +2,11 @@
 
 **Disposition:** structural previews and recorded runtime proof approved. After
 receiving this proof, Ondrej replied "ok I think thats fine", with no revisions
-requested. Implementation source: `8d14ba5`. This acceptance does not authorize
-publishing or installed-profile activation; neither was performed. This is one
-card, not a questionnaire system.
+requested. Implementation source: `8d14ba5`. That acceptance alone did not
+authorize publishing or profile activation. A subsequent explicit request
+authorized both: the immutable 0.2.3 release is now activated locally and verified,
+while npm publication awaits authentication. See the [activation record](../plans/2026-09-13-fix-pi-question-interaction-plan.md#authorized-local-activation--npm-publication-blocked).
+This is one card, not a questionnaire system.
 
 ## What ran
 
@@ -166,6 +168,7 @@ editor request has no AbortSignal support.
 Automated fixtures do not prove the model will always ask the right question,
 that every RPC client renders well, or that this feels comfortable to Ondrej.
 Ondrej accepted this recorded proof; that satisfies the feedback gate, not a
-claim of hands-on usability testing. Publishing and activation still require
-separate authorization. The pinned release remains unchanged; source push is not
-activation.
+claim of hands-on usability testing. Subsequent activation used a new immutable
+release; the previous release's files remain unchanged. Fresh sessions load the
+new source; already-open sessions need `/reload`. npm publication is still
+blocked by authentication. Source push alone is not activation.

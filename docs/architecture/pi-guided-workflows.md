@@ -2,13 +2,13 @@
 
 ## Current behavior
 
-Shared skills own conversational meaning and workflow policy. The Pi extension owns explicit launch commands, optional decision presentation and existing work guardrails, not interpretation of the assistant's prose. This describes source version 0.2.3; the recorded proof is accepted, while installed activation remains separately gated.
+Shared skills own conversational meaning and workflow policy. The Pi extension owns explicit launch commands, optional decision presentation and existing work guardrails, not interpretation of the assistant's prose. This describes version 0.2.3; the recorded proof is accepted and local activation has been explicitly authorized and verified. npm publication is blocked by authentication; already-open sessions need `/reload`.
 
 - Ordinary answers, questions, task lists, acceptance criteria, and progress reports remain ordinary chat. There is no `agent_end` extraction, workflow-detection state, hidden model routing, heuristic list-to-choice fallback, or automatic answer injection.
 - Users answer in plain text. A separately installed workstation may provide a user-invoked `/answer`; Heart of Gold does not register or depend on it.
 - `/deep-thought-brainstorm`, `/deep-thought-plan`, `/deep-thought-architect`, `/marvin-work`, and the three sharing launchers remain. Launchers send their intended `/skill:…` with `expandPromptTemplates: true` under the current Pi API, including queued follow-ups. Without that option, current Pi sends the slash text literally instead of expanding the skill.
 - Explicit launcher input dialogs still use standard `editor` requests, including over RPC. Work guards still protect paths, block unsafe command patterns, and require their existing publication confirmation. No guard semantics changed.
-- `hog_ask` is a deliberately invoked, single-question decision/approval tool. It does not inspect prose, activate a workflow mode, or call another model. The structural direction and [recorded runtime proof](../reviews/2026-09-13-hog-ask-proof.md) were accepted; this does not authorize publication or installed activation.
+- `hog_ask` is a deliberately invoked, single-question decision/approval tool. It does not inspect prose, activate a workflow mode, or call another model. The structural direction and [recorded runtime proof](../reviews/2026-09-13-hog-ask-proof.md) were accepted. Subsequent explicit authorization enabled local activation; proof acceptance alone was not treated as permission to publish or install.
 
 ## Deliberate decision/approval contract
 

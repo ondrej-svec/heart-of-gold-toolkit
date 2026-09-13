@@ -55,7 +55,7 @@ The automatic guided enhancer and `/deep-thought-guided-debug` are retired; ther
 
 Source now includes **`hog_ask`**, an agent-invoked tool for one genuine decision or named approval—not a task selector. Native TUI cards and standard RPC dialogs support custom answers, optional notes, and review before Send. A recommendation is never an answer; an approval with custom text or any nonempty note returns `needs_discussion`, not approval. Print/JSON returns `unavailable`. No answer executes an action automatically.
 
-The single-card proof has been accepted; publishing and installed activation still require separate authorization. No pinned installation or published release was changed. See the [interaction architecture](docs/architecture/pi-guided-workflows.md) and [actual terminal/RPC proof](docs/reviews/2026-09-13-hog-ask-proof.md).
+The single-card proof has been accepted and the immutable 0.2.3 release activated locally. npm publication is pending authentication; source pushes do not update other pinned installations. Already-open local Pi sessions need `/reload`. See the [interaction architecture](docs/architecture/pi-guided-workflows.md) and [actual terminal/RPC proof](docs/reviews/2026-09-13-hog-ask-proof.md).
 
 The skills themselves enforce their own boundaries (read-only for brainstorm/plan, safe commands for work) via `allowed-tools` and prompt constraints — no manual mode switching needed.
 

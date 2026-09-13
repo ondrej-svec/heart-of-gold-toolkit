@@ -4,7 +4,7 @@ type: plan
 date: 2026-09-13
 status: in_progress
 confidence: medium
-readiness: "Source verified and proof approved; release/activation remains separately gated"
+readiness: "0.2.3 activated locally and verified; npm publication blocked on login; open sessions need reload"
 preview_status: "Structural previews and recorded terminal/RPC proof approved; no revisions requested"
 related:
   - docs/plans/2026-04-14-feat-pi-guided-workflow-enhancement-plan.md
@@ -18,7 +18,7 @@ Stop converting reports into choices. Keep conversation natural, ask deliberatel
 
 ## Context and authorization
 
-This plan captures the investigation and external research discussed with Ondrej on 2026-09-13. After the planning commit, Ondrej requested implementation ("ok lets go"). Phases 1–2 were completed. After the preview handoff, Ondrej replied "yeah fine,continue", approving the structural direction and authorizing Phase 3. After the working-proof handoff, Ondrej replied "ok I think thats fine", accepting the recorded terminal/RPC proof without requesting revisions. The proof-feedback gate is satisfied. Publishing packages and changing the installed Pi profile are not authorized by that acceptance. No separate brainstorm document exists for this discussion.
+This plan captures the investigation and external research discussed with Ondrej on 2026-09-13. After the planning commit, Ondrej requested implementation ("ok lets go"). Phases 1–2 were completed. After the preview handoff, Ondrej replied "yeah fine,continue", approving the structural direction and authorizing Phase 3. After the working-proof handoff, Ondrej replied "ok I think thats fine", accepting the recorded terminal/RPC proof without requesting revisions. The proof-feedback gate is satisfied. That acceptance alone did not authorize publishing or profile changes. Ondrej subsequently requested "alright then publish and activate?", authorizing both. Local activation is now verified; npm publication is blocked by registry authentication. No separate brainstorm document exists for this discussion.
 
 Detail: **standard**, with explicit phase gates because the work changes facilitation and approval semantics. Confidence is high in the reproduced defect and the desired interaction split, medium in routine usability until real use beyond the accepted proof.
 
@@ -163,7 +163,7 @@ No option selected. Review before sending.
 
 ## Implementation tasks and phase gates
 
-Checkboxes track implementation progress. Phase 3's structural preview and recorded runtime proof are approved. Release/activation authorization remains separate; proof acceptance does not satisfy that gate.
+Checkboxes track implementation progress. The structural preview, recorded runtime proof, and subsequent release/activation request are approved. Local activation is verified; the final task remains open for npm publication and existing-session reload confirmation.
 
 ### Phase 1 — Remove the false-choice path (independently shippable)
 
@@ -206,7 +206,7 @@ Depends on Phases 1–2 and Ondrej's preview approval; do not substitute autonom
 - [x] Run focused new tests, `npm run test:pi`, and compatibility/publish/security checks. Use the repository's supported Python environment (for example `uv run` on the check scripts); do not install packages into a global Python environment. Run full prepublish checks for an actual release and classify unrelated baseline failures explicitly.
 - [x] Verify standalone Pi package, skills-only install, and a profile containing the existing workstation `/answer`: no duplicate command/tool, no required dependency on that workstation, and no lost RPC path. Use isolated test profiles; do not alter the user's live profile for a smoke test.
 - [x] Prepare scoped commits and version changes consistent with `CONVENTIONS.md` (deep-thought/marvin manifests and marketplace versions where affected; root package as appropriate). Update the hard-coded root-version assertion in `tests/pi-package-contract.test.mjs` with any intentional root bump. Do not run the release script over unrelated dirty work or use its `--ship` as a shortcut to unrequested publishing.
-- [ ] Record source SHA, checks, preview disposition, and activation instructions. Only after explicit release/activation authorization, publish or stage a clean immutable release and update the configured source. Verify the loaded source and a real prompt interaction; pushing a source commit alone does not fix an already pinned installation.
+- [ ] Record source SHA, checks, preview disposition, and activation instructions. Only after explicit release/activation authorization, publish or stage a clean immutable release and update the configured source. Verify the loaded source and a real prompt interaction; pushing a source commit alone does not fix an already pinned installation. **Authorized; immutable 0.2.3 release activated and verified in fresh Pi processes. npm publication remains blocked by E401; already-open sessions need `/reload`.**
 
 **Exit:** verified source and a clear release handoff. Production activation is separately recorded, never inferred from a push. If only Phase 1 ships, this overall plan remains incomplete with later tasks unchecked.
 
@@ -238,11 +238,23 @@ Depends on Phases 1–2 and Ondrej's preview approval; do not substitute autonom
 
 ## Implementation record
 
-### Proof acceptance and release handoff
+### Authorized local activation — npm publication blocked
+
+- Ondrej requested "alright then publish and activate?". This authorizes publication and activation, independently of earlier proof approval. No additional scope was inferred.
+- Exported only tracked commit **`6a1713667c14d47a3f5b1d48a383b5766fb1eac8`** (implementation `8d14ba5` plus proof-acceptance documentation). All **389 tracked files** matched their Git blobs; no dirty workstation files entered the build.
+- Clean-export checks passed: **37 interaction-policy + 124 Pi + 148 workstation + 2 visualization tests**, full prepublish, security, compatibility and publish-safety (**282 packaged files**). The smaller workstation/package totals exclude previously counted uncommitted work. Installed the four dependency versions from `bun.lock` without lifecycle scripts or saved manifest changes after its stale peer metadata prevented a frozen Bun install.
+- Packed `heart-of-gold-toolkit-0.2.3.tgz`; all **282 extracted files** matched the verified export. Sealed a new read-only release at `$HOME/.local/lib/heart-of-gold/releases/0.2.3-6a1713667c14`. The old release was not modified; its tree digest is unchanged.
+- Updated **only** the Heart of Gold package source in `$HOME/.pi/agent/settings.json`, preserving its skill filters and every other setting. Settings backup, package, integrity receipt, logs and terminal captures live under `$HOME/.local/lib/heart-of-gold/artifacts/0.2.3-6a1713667c14/`.
+- The sealed release passed five RPC checks and actual regular/fullscreen PTY interactions (custom text, note, qualified approval, narrow long-scope navigation and dismissal). A fresh process using the actual global profile confirmed the new extension/skill source paths, exactly one `hog_ask`, the existing `/answer`, no retired debug command or load errors, and a real plan-editor open/cancel. These checks made no model calls.
+- **Publication blocker:** `npm whoami --registry=https://registry.npmjs.org` returns **E401 Unauthorized**. No npm publication occurred. After the user completes `npm login --registry=https://registry.npmjs.org`, recheck the account and version, publish the exact retained tarball with `--access public`, and verify registry version/integrity. Do not publish from the dirty working tree.
+- **Existing sessions:** fresh Pi processes load 0.2.3; already-running sessions (including the implementing conversation) require `/reload`. Their in-memory extensions were not remotely replaced or sessions interrupted.
+- **Rollback:** replace only the new source path with the preserved `0.2.0-staging-guard-e1110a118793` source and reload. Do not restore the whole backup over intervening settings changes.
+
+### Proof acceptance and release handoff (before release authorization)
 
 - Ondrej accepted the linked working proof with "ok I think thats fine". No revisions were requested. This closes the Phase 3 feedback gate, not the release/activation gate.
 - Verified implementation source: **`8d14ba5`**, pushed to `origin/feat/workstation-guide`; root version **0.2.3**. The verification results below belong to that implementation. This follow-up changes documentation only.
-- Publication and installed activation remain **not authorized and not performed**. The final Phase 4 checkbox remains open for the separately gated release/activation and loaded-source verification; no source implementation task remains.
+- At that checkpoint, publication and installed activation were **not authorized or performed**. The later authorization and local activation are recorded above; no source implementation task remains.
 - After explicit authorization: recheck the configured source and repository state; stage or publish a new immutable release from the verified clean source commit; update the intended Pi source; reload; verify the actual loaded source, ordinary prose without popups, and a benign deliberate question. Never patch the pinned `0.2.0-staging-guard-e1110a118793` release or include unrelated dirty workstation work.
 
 ### Phase 3 — verified single-card proof (pre-feedback checkpoint)
@@ -253,7 +265,7 @@ Depends on Phases 1–2 and Ondrej's preview approval; do not substitute autonom
 - Real offline Pi 0.85.1 PTY proof passed in regular and fullscreen modes, including custom answer, note, qualified approval, resize to 36×24, long-scope scrolling and dismissal. Real RPC preserved the qualifying note and returned `needs_discussion` / `approved: false`; real print/JSON returned `unavailable` without UI/model requests. [Working proof for feedback](../reviews/2026-09-13-hog-ask-proof.md).
 - Final source checks: **37 interaction-policy + 124 Pi + 204 workstation + 2 visualization tests passed**; full `prepublishOnly`, compatibility, security, publish-safety (**284 packaged files**), Python AST and whitespace checks passed. Workstation totals include unrelated pre-existing tests. Standalone, skills-only and existing-workstation-`/answer` profiles loaded in isolation; the combined test was run, not skipped.
 - Root source version **0.2.3**; no shared skill/plugin versions changed in this phase. Source baseline: `229ec51`; the new scoped commit's SHA is reported in the work handoff. No package publication or installed-profile mutation occurred.
-- **Handoff checkpoint:** proof feedback was pending at the implementation push; it is now accepted as recorded above. The plan remains `in_progress` only for separately authorized release/activation and verification. Never patch the pinned release in place or publish unrelated dirty work.
+- **Handoff checkpoint:** proof feedback was pending at the implementation push; it is now accepted as recorded above. The plan remains `in_progress` for the remaining publication and existing-session reload confirmation recorded above. Never patch the pinned release in place or publish unrelated dirty work.
 
 ### Phase 3 kickoff — structural approval, not activation
 
