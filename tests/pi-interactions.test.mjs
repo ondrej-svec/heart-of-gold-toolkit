@@ -5,7 +5,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import heartOfGold from '../extensions/pi/index.ts';
+import './helpers/pi-runtime.mjs';
+const { default: heartOfGold } = await import('../extensions/pi/index.ts');
 
 const fixtures = JSON.parse(readFileSync(new URL('./fixtures/pi-interactions/assistant-turns.json', import.meta.url), 'utf8'));
 const launchers = [
@@ -27,6 +28,7 @@ function harness({ mode = 'tui', idle = true, editorAnswer } = {}) {
       assert.equal(commands.has(name), false, `Duplicate command ${name}`);
       commands.set(name, command);
     },
+    registerTool(tool) { assert.equal(tool.name, 'hog_ask'); },
     sendUserMessage: record('message'),
   };
   const ctx = {

@@ -77,6 +77,23 @@ Avoid treating a single harness primitive as canonical. See
 [interaction-contract.md](interaction-contract.md) for the complete authoring
 contract.
 
+## Pi realization: three surfaces
+
+- **Conversation:** ordinary prose, optionally assisted by a separately installed,
+  user-invoked `/answer`. No post-turn extraction or answer injection.
+- **Decision/approval:** optional agent-invoked `hog_ask`, one question at a time.
+  Native TUI card; standard abortable RPC select/input with final review;
+  print/JSON returns `unavailable`. Skills-only installs still work in prose.
+- **Progress:** non-interactive reports from the authoritative Markdown plan,
+  not a second tracker or a menu of required tasks.
+
+`hog_ask` returns readable Q&A plus structured question/scope, answer ID/text,
+notes, status and approval flag. Only a reviewed, explicitly submitted bare
+`approve` records the named approval. Custom approval text or any nonempty note
+means `needs_discussion`; dismissal, abort and unavailability never imply consent.
+This is not a replacement for permissions or existing work/deployment guards.
+See the [Pi contract and proof boundaries](pi-guided-workflows.md).
+
 ## Anti-Rules
 
 Do **not** make the shared skill depend on:

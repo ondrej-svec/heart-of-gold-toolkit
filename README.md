@@ -51,7 +51,11 @@ When installed as a Pi package, Heart of Gold exposes Pi-native extension comman
 
 Workflow replies now stay conversational: lists, progress reports, and questions never automatically open a form or call a second extraction model. Answer in plain text. If your separately installed workstation package provides `/answer`, you may invoke it yourself; Heart of Gold neither supplies nor requires it.
 
-The automatic guided enhancer and `/deep-thought-guided-debug` are retired; there is no legacy-mode switch. Explicit launcher input dialogs and work-guard confirmations remain available in TUI and RPC. A future deliberate decision card is planned but is **not implemented**. See the [interaction architecture and migration notes](docs/architecture/pi-guided-workflows.md).
+The automatic guided enhancer and `/deep-thought-guided-debug` are retired; there is no legacy-mode switch. Explicit launcher input dialogs and work-guard confirmations remain available in TUI and RPC.
+
+Source now includes **`hog_ask`**, an agent-invoked tool for one genuine decision or named approval—not a task selector. Native TUI cards and standard RPC dialogs support custom answers, optional notes, and review before Send. A recommendation is never an answer; an approval with custom text or any nonempty note returns `needs_discussion`, not approval. Print/JSON returns `unavailable`. No answer executes an action automatically.
+
+The single-card proof is ready for feedback; no pinned installation or published release was changed. See the [interaction architecture](docs/architecture/pi-guided-workflows.md) and [actual terminal/RPC proof](docs/reviews/2026-09-13-hog-ask-proof.md).
 
 The skills themselves enforce their own boundaries (read-only for brainstorm/plan, safe commands for work) via `allowed-tools` and prompt constraints — no manual mode switching needed.
 

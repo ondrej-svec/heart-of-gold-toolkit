@@ -4,8 +4,8 @@ type: plan
 date: 2026-09-13
 status: in_progress
 confidence: medium
-readiness: "Phases 1–2 verified; Phase 3 waits for user preview review"
-preview_status: "Structural preview included; user review required before decision-card implementation"
+readiness: "Single-card source verified; actual proof feedback gates broader use"
+preview_status: "Structural previews approved; real terminal/RPC proof recorded, user feedback pending"
 related:
   - docs/plans/2026-04-14-feat-pi-guided-workflow-enhancement-plan.md
   - docs/architecture/pi-guided-workflows.md
@@ -18,7 +18,7 @@ Stop converting reports into choices. Keep conversation natural, ask deliberatel
 
 ## Context and authorization
 
-This plan captures the investigation and external research discussed with Ondrej on 2026-09-13. After the planning commit, Ondrej requested implementation ("ok lets go"). Phases 1–2 may proceed; the explicit Phase 3 preview gate still requires user review. Publishing packages and changing the installed Pi profile are not authorized by this request. No separate brainstorm document exists for this discussion.
+This plan captures the investigation and external research discussed with Ondrej on 2026-09-13. After the planning commit, Ondrej requested implementation ("ok lets go"). Phases 1–2 were completed. After the preview handoff, Ondrej replied "yeah fine,continue", approving the structural direction and authorizing Phase 3. Real terminal/RPC proof feedback remains a separate gate before broader use. Publishing packages and changing the installed Pi profile are not authorized by this request. No separate brainstorm document exists for this discussion.
 
 Detail: **standard**, with explicit phase gates because the work changes facilitation and approval semantics. Confidence is high in the reproduced defect and the desired interaction split, medium in the proposed card's usability until preview review and a terminal proof slice.
 
@@ -90,7 +90,7 @@ Preserve the useful reasoning phases; remove automatic questionnaires and fixed 
 
 For `architect`, route to creating/continuing an execution plan when one is missing; do not advertise unrestricted implementation based on stories alone. For `work`, retain autonomous execution after authorization and readiness checks, and preserve its existing checkbox/progress contract.
 
-## Proposed decision-card contract
+## Decision-card contract
 
 - Input: stable question `id`, `purpose`, short contextual `title`, one `question`, necessary `context`, and options with stable `id`, `label`, and short consequences. Decision options: 2–4 genuinely alternative answers; optional recommendation references an option ID. Require unique option IDs and normalized labels; RPC uses an explicit display-label-to-ID map (including disambiguated UI actions), never a guessed index or label-only persisted answer.
 - Approval additionally names the concrete action/scope and, when relevant, artifact path/revision. Use fixed outcomes `approve`, `revise`, and `pause`; no recommended or initially selected approval. This is an interaction record, not a new cryptographic authorization mechanism.
@@ -99,7 +99,7 @@ For `architect`, route to creating/continuing an execution plan when one is miss
 - Return structured details containing the question, purpose, scope, selected option ID/label or actual custom text, and note; also return a readable question-and-answer summary in tool `content`.
 - Distinguish `answered`, `needs_discussion`, `dismissed`, `unavailable`, and `aborted`. Approval custom text is `needs_discussion`, not an approval. Only an explicit submitted `approve` selection records approval of the named scope.
 - Choice plus note is reviewed before sending so the user can qualify it. For v1, any nonempty approval note produces `needs_discussion`, retaining the intended selection and note but not granting approval. The agent resolves the qualification and presents the revised scope if approval is still needed; no heuristic decides whether a note is harmless. Notes on ordinary decisions remain part of the answered result.
-- TUI: inline editor-area card using native components and the active theme/keybinding manager. RPC: standard `select`/`editor` dialogs preserving context, custom answer, note, and final confirmation. Print/JSON: explicit `unavailable`; do not retry automatically or infer consent.
+- TUI: inline editor-area card using native components and the active theme/keybinding manager. RPC: standard abortable `select`/`input` dialogs preserving context, custom answer, note, and final confirmation (see transport refinement below). Print/JSON: explicit `unavailable`; do not retry automatically or infer consent.
 - One active card; sequential tool execution plus a session-local, owner-token lock. An overlapping invocation returns `unavailable` with reason `interaction_in_progress`, opens no UI, and leaves the first card unchanged; do not automatically queue or retry it. Release only the owning lock in `finally`, with abort/session cleanup invalidating stale completions. On dismissal/abort, stop this tool's continuation safely and do not authorize dependent work. Tool guidance prohibits sibling actions that depend on its answer in the same assistant message. This UI does not make already-running unrelated tools transactional.
 - Persist question/response data in tool-result details, associated with the active branch. No global mutable decision ledger. No answer injection from stale views after reload, navigation, or shutdown.
 
@@ -122,7 +122,7 @@ Progress: 2 of 5 complete. Next: verify the API contract.
 
 This wording applies only within already authorized execution. During planning, say these are implementation tasks; do not imply implementation is starting. Plain progress is sufficient for v1; do not build an independent progress widget or parse arbitrary prose into tasks.
 
-### B. Real decision — proposed card, not yet approved UI
+### B. Real decision — approved structural direction
 
 ```text
 Decision: rollout audience
@@ -163,7 +163,7 @@ No option selected. Review before sending.
 
 ## Implementation tasks and phase gates
 
-Checkboxes track implementation progress. Phase 3 stays gated on preview review; completing an earlier phase does not approve that preview.
+Checkboxes track implementation progress. Phase 3's structural preview was approved; actual proof feedback still gates broader use. Completing another task does not satisfy a subjective or activation gate.
 
 ### Phase 1 — Remove the false-choice path (independently shippable)
 
@@ -191,21 +191,21 @@ Depends on Phase 1's behavioral contract; independent of card implementation.
 
 Depends on Phases 1–2 and Ondrej's preview approval; do not substitute autonomous approval for this gate.
 
-- [ ] Refine and obtain review of the structural preview above, including narrow layout and approval/custom-answer outcomes. Record disposition here before implementing the renderer.
-- [ ] Add `hog_ask` through `extensions/pi/index.ts`. Separate schema/validation and a pure interaction controller from TUI rendering and transport. Prefer existing dependencies/native components; add a peer dependency only if directly needed under Pi's documented packaging rules.
-- [ ] Implement the card contract: deliberate invocation, no preselection, inline custom text, selection notes, review/back/send, explicit outcomes, and readable plus structured results. Do not use a secondary model to author or explain the card.
-- [ ] Implement RPC dialog parity and explicit print/JSON unavailability. Handle cancel, abort, late completion, session changes, and one-active-card cleanup. Keep launchers and existing guards separate.
-- [ ] Add schema, controller, renderer, event-lifecycle, and RPC tests. Verify duplicate IDs/labels, stable-ID round trips, invalid recommendations, approval notes/custom text, empty inputs, resize, long/Unicode text, configured keybindings, focus propagation, lost UI, and no answer emitted after disposal. Exercise two overlapping invocations in both TUI and RPC: only the owner opens UI; a rejected second call cannot release its lock; cancel/shutdown followed by a new call cannot receive a stale answer. No live model calls or credentialed operations in automated tests.
-- [ ] Run a terminal proof slice and RPC equivalent with benign fixtures; get Ondrej's feedback on the actual interaction. Revise within this scope before broader use.
+- [x] Refine and obtain review of the structural preview above, including narrow layout and approval/custom-answer outcomes. Record disposition here before implementing the renderer.
+- [x] Add `hog_ask` through `extensions/pi/index.ts`. Separate schema/validation and a pure interaction controller from TUI rendering and transport. Prefer existing dependencies/native components; add a peer dependency only if directly needed under Pi's documented packaging rules.
+- [x] Implement the card contract: deliberate invocation, no preselection, inline custom text, selection notes, review/back/send, explicit outcomes, and readable plus structured results. Do not use a secondary model to author or explain the card.
+- [x] Implement RPC dialog parity and explicit print/JSON unavailability. Handle cancel, abort, late completion, session changes, and one-active-card cleanup. Keep launchers and existing guards separate.
+- [x] Add schema, controller, renderer, event-lifecycle, and RPC tests. Verify duplicate IDs/labels, stable-ID round trips, invalid recommendations, approval notes/custom text, empty inputs, resize, long/Unicode text, configured keybindings, focus propagation, lost UI, and no answer emitted after disposal. Exercise two overlapping invocations in both TUI and RPC: only the owner opens UI; a rejected second call cannot release its lock; cancel/shutdown followed by a new call cannot receive a stale answer. No live model calls or credentialed operations in automated tests.
+- [ ] Run a terminal proof slice and RPC equivalent with benign fixtures; get Ondrej's feedback on the actual interaction. **Runtime proof completed and [recorded](../reviews/2026-09-13-hog-ask-proof.md); user feedback remains pending.** Revise within this scope before broader use.
 
 **Exit:** one meaningful decision can be answered, qualified, revised, or dismissed without changing its meaning across supported UI modes. No generic batch/multi-select system has been introduced.
 
 ### Phase 4 — Verification, documentation, and release handoff
 
-- [ ] Extend the Phase 1 migration docs in `README.md` and `docs/architecture/pi-guided-workflows.md`, plus the portability contract, with the now-verified decision-card behavior and three-surface contract. Do not restore automatic enhancement or describe unimplemented UI as available.
-- [ ] Run focused new tests, `npm run test:pi`, and compatibility/publish/security checks. Use the repository's supported Python environment (for example `uv run` on the check scripts); do not install packages into a global Python environment. Run full prepublish checks for an actual release and classify unrelated baseline failures explicitly.
-- [ ] Verify standalone Pi package, skills-only install, and a profile containing the existing workstation `/answer`: no duplicate command/tool, no required dependency on that workstation, and no lost RPC path. Use isolated test profiles; do not alter the user's live profile for a smoke test.
-- [ ] Prepare scoped commits and version changes consistent with `CONVENTIONS.md` (deep-thought/marvin manifests and marketplace versions where affected; root package as appropriate). Update the hard-coded root-version assertion in `tests/pi-package-contract.test.mjs` with any intentional root bump. Do not run the release script over unrelated dirty work or use its `--ship` as a shortcut to unrequested publishing.
+- [x] Extend the Phase 1 migration docs in `README.md` and `docs/architecture/pi-guided-workflows.md`, plus the portability contract, with the now-verified decision-card behavior and three-surface contract. Do not restore automatic enhancement or describe unimplemented UI as available.
+- [x] Run focused new tests, `npm run test:pi`, and compatibility/publish/security checks. Use the repository's supported Python environment (for example `uv run` on the check scripts); do not install packages into a global Python environment. Run full prepublish checks for an actual release and classify unrelated baseline failures explicitly.
+- [x] Verify standalone Pi package, skills-only install, and a profile containing the existing workstation `/answer`: no duplicate command/tool, no required dependency on that workstation, and no lost RPC path. Use isolated test profiles; do not alter the user's live profile for a smoke test.
+- [x] Prepare scoped commits and version changes consistent with `CONVENTIONS.md` (deep-thought/marvin manifests and marketplace versions where affected; root package as appropriate). Update the hard-coded root-version assertion in `tests/pi-package-contract.test.mjs` with any intentional root bump. Do not run the release script over unrelated dirty work or use its `--ship` as a shortcut to unrequested publishing.
 - [ ] Record source SHA, checks, preview disposition, and activation instructions. Only after explicit release/activation authorization, publish or stage a clean immutable release and update the configured source. Verify the loaded source and a real prompt interaction; pushing a source commit alone does not fix an already pinned installation.
 
 **Exit:** verified source and a clear release handoff. Production activation is separately recorded, never inferred from a push. If only Phase 1 ships, this overall plan remains incomplete with later tasks unchecked.
@@ -237,6 +237,21 @@ Depends on Phases 1–2 and Ondrej's preview approval; do not substitute autonom
 | Unrelated workstation changes are already present | Verified at planning time | Stage only owned files, do not stash/reset others, do not publish a dirty checkout |
 
 ## Implementation record
+
+### Phase 3 — verified single-card proof; feedback pending
+
+- Implemented one `hog_ask` tool through the singular entrypoint: bounded TypeBox schema/runtime validation, pure controller, native Editor card, RPC transport and session-local owner lifecycle. Added only the directly used `typebox` peer; no model/extractor, generic form system or answer dispatcher.
+- Outcomes preserve IDs, full question/scope, text/notes, readable Q&A and branch origin. Focus/recommendation/selection/Send are distinct. Only unqualified submitted approve records approval; any custom approval or nonempty note needs discussion. Abort, overlapping calls, lost UI and stale completion are conservative.
+- Parent review fixed expanded-paste preservation, bounded scrolling, neutral review focus and cleanup around a stale session manager. Pi fullscreen owns page keys, so menu-edge arrows also expose long scope/review text. A delegated read-only review was interrupted before a verdict and is not counted as independent approval.
+- Real offline Pi 0.85.1 PTY proof passed in regular and fullscreen modes, including custom answer, note, qualified approval, resize to 36×24, long-scope scrolling and dismissal. Real RPC preserved the qualifying note and returned `needs_discussion` / `approved: false`; real print/JSON returned `unavailable` without UI/model requests. [Working proof for feedback](../reviews/2026-09-13-hog-ask-proof.md).
+- Final source checks: **37 interaction-policy + 124 Pi + 204 workstation + 2 visualization tests passed**; full `prepublishOnly`, compatibility, security, publish-safety (**284 packaged files**), Python AST and whitespace checks passed. Workstation totals include unrelated pre-existing tests. Standalone, skills-only and existing-workstation-`/answer` profiles loaded in isolation; the combined test was run, not skipped.
+- Root source version **0.2.3**; no shared skill/plugin versions changed in this phase. Source baseline: `229ec51`; the new scoped commit's SHA is reported in the work handoff. No package publication or installed-profile mutation occurred.
+- **Remaining gate:** Ondrej reviews the actual proof; revise within the one-card scope if needed. The plan remains `in_progress`. Release/activation handoff stays open until that disposition and separate authorization; never patch the pinned release in place or publish unrelated dirty work.
+
+### Phase 3 kickoff — structural approval, not activation
+
+- Ondrej approved continuing from the linked structural previews with "yeah fine,continue". Implement the one-card scope; actual terminal/RPC proof feedback still remains to be collected. No publication or installed-profile change is authorized.
+- API-grounded transport refinement: Pi 0.85.1's `ui.editor(title, prefill)` has no abort option and leaves a pending RPC request until the client responds. Use standard **select/input** dialogs for RPC custom answers/notes so all stages accept an AbortSignal; inputs preserve text and always have a separate review step. TUI uses the native multiline Editor. RPC clients own layout and may present input as a single line. This replaces the planned RPC editor transport, not question/approval semantics.
 
 ### Phase 1 — verified source, not activated
 

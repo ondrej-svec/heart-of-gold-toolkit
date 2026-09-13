@@ -47,4 +47,7 @@ gates visible and must not cross them without explicit approval.
 Each installed skill carries the essential rules itself; this repository document
 is an authoring reference, not a runtime dependency. Conversation, deliberate
 choices/approvals, and progress are distinct surfaces. Pi's automatic extractor
-is retired; `hog_ask` remains a proposed, unimplemented presentation layer.
+is retired. The optional Pi `hog_ask` presentation is implemented in source;
+shared skills neither require it nor name it as a cross-harness primitive. See
+[Pi interactions](pi-guided-workflows.md) for its outcomes and proof/activation
+boundaries.
