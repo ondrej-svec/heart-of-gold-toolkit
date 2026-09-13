@@ -2,10 +2,10 @@
 title: "design: hog_ask visual and interaction preview"
 type: plan
 date: 2026-09-13
-status: in_progress
+status: complete
 confidence: medium
-readiness: "Revision 03 built and HTTPS browser-verified; independent review defects fixed; awaiting human visual acceptance; production remains gated"
-preview_status: pending
+readiness: "Design accepted with Enter-to-send on approval confirmation; implementation and native proof remain separately gated"
+preview_status: approved
 ---
 
 # hog_ask: a clear single-choice interaction
@@ -24,6 +24,18 @@ Ondrej said "lets go thebn" after the recommendation to make actual styled previ
 
 The previous [interaction plan](2026-09-13-fix-pi-question-interaction-plan.md) remains a completed historical release record. This is a new design iteration, not a retrospective claim that its implementation tests failed.
 
+## Design acceptance — 2026-09-13
+
+Ondrej explicitly said **"alright makes sense then I approve the design now"** after reviewing revision 03 and agreeing to this amendment on the approval-confirmation screen (`img_20260913-192354_5ti.png`):
+
+- **Enter → Send approval**, after the explicit review screen has opened.
+- **Esc → Back**. Ctrl+Enter must not be required to confirm approval.
+- The opening keypress, held/repeated input and continued pointer gestures must not carry through into authorization. Native protection remains an implementation-stage proof obligation, not a capability established by this design approval.
+
+This accepts the revision-03 design **with that keybinding amendment** and closes this preview/design-review plan. It does not authorize production implementation, npm publication, activation, or changes to settings/releases. A follow-up implementation plan and explicit execution authorization are still required.
+
+**Evidence boundary:** the published R3 artifact and source at `daf1be4` still use Ctrl+Enter and initial Back focus on approval review. They are retained unchanged as tested evidence. The 72 browser checks do **not** verify the accepted Enter amendment; implementing and testing it belongs to the follow-up implementation scope. The amendment concerns the approval confirmation shown, not an implicit change to ordinary decision/note shortcuts.
+
 ## Target end state and subjective contract
 
 **Direction:** calm, compact, terminal-native picker. Strong hierarchy comes from spacing, bold text, a focused-row background, and restrained theme accents—not icons, checkbox/radio symbols, gradients, or ornamental cards.
@@ -33,7 +45,7 @@ The previous [interaction plan](2026-09-13-fix-pi-question-interaction-plan.md) 
 - Keep consequences with alternatives and recommendation rationale with its option, once.
 - Custom text has a distinct, directly editable answer area, not another answer option.
 - Dismissal belongs in the footer. Keyboard help stays visible while content scrolls.
-- Preserve explicit review/Send and neutral Back focus. This preview does not silently remove the existing review contract for decisions.
+- Preserve explicit review before Send. Approval confirmation uses a subsequent deliberate Enter to send, with Esc to go back; ordinary decision review retains neutral Back focus. See the accepted amendment above, which supersedes R3's approval-review shortcut.
 - Keep exact approval scope and revision readable. Any custom answer or nonempty approval note still means discussion, not approval.
 - Pointer and keyboard routes are both first-class in the preview. Native fullscreen pointer integration is a later proof obligation; regular Pi mode does not capture the mouse.
 
@@ -82,8 +94,8 @@ Ondrej's "ok go" authorizes the proposed next preview, not production changes or
 
 No semantics are inferred from hover or focus. Clicking an ordinary option opens review, never submits; only an explicit reviewed Send records an outcome. A Request changes activation focuses the editor without manufacturing a blank answer. Keep the unchanged core and no production/API/settings edits.
 
-### Gated: human visual review
-- [ ] Ondrej reviews the actual styled preview and records acceptance or revisions. A runnable preview and automated tests are not visual acceptance.
+### Complete: human visual review
+- [x] Ondrej reviewed the actual styled preview and explicitly accepted the design with the approval-confirmation Enter/Esc amendment recorded above. Automated tests alone were not treated as visual acceptance.
 
 Production implementation is out of scope for this plan. It requires accepted design, a follow-up implementation plan with native TUI/RPC regression checks, and explicit execution authorization. Publication and activation remain separate actions.
 
@@ -92,7 +104,7 @@ Production implementation is out of scope for this plan. It requires accepted de
 - Exactly the real alternatives occupy the answer list; no fake checkboxes and no dismissal/custom row inside it.
 - The first screen reads as single-choice without needing an explanation from the assistant.
 - Custom input, note editing, review, and dismissal are discoverable and keyboard usable.
-- Navigation never sends. Review initially focuses Back; Enter on Back cannot submit.
+- Navigation never sends. Choosing opens review, not submission. Approval confirmation accepts a subsequent deliberate Enter, never the event/gesture that opened it or held-key carry-through; Esc goes back. Ordinary decision review keeps neutral Back focus.
 - Approval and feedback are visibly different intents. Feedback produces `needs_discussion`, `approved: false` without a warning or an “Approve + note” intermediate state; bare approval has no generic note field.
 - Long scope/content is reachable; controls stay visible at 36-column/24-row-style bounds.
 - No live tools, runtime extensions, immutable releases, settings, package versions, or unrelated workstation work changed.
@@ -104,7 +116,7 @@ Production implementation is out of scope for this plan. It requires accepted de
 |---|---|
 | The semantic controller can be reused unchanged | Verified: pure ESM, no Pi/browser/I/O imports in `hog-ask-core.mjs`. |
 | Theme colors and focused background are native-feasible | Verified by Pi themes documentation (`selectedBg`, `text`, `accent`, borders); HTML remains a design approximation. |
-| The new visual grouping will resolve ambiguity | Unverified: Ondrej owns preview review; blocks production design approval. |
+| The new visual grouping will resolve ambiguity | Design accepted by Ondrej with the Enter/Esc amendment; native usability and input-safety proof are still required before rollout. |
 | Browser behavior will transfer to the real TUI | Not yet proven: agent owns later native-editor, keybinding, paste/IME, focus, fullscreen and RPC checks; blocks later rollout. |
 
 The browser proof must not be called a new native-terminal implementation. Native rendering fidelity and ergonomics remain a later gate. The artifact must not submit an actual approval through `hog_ask` or invoke any real action.
@@ -123,13 +135,13 @@ The browser proof must not be called a new native-terminal implementation. Nativ
 - Pi's keybinding/terminal setup documentation confirms that native Ctrl+Enter support and fullscreen paging must be verified later. No native compatibility claim or configuration change is implied by the browser proof.
 - Installed 0.2.3 remains untouched. The only remaining plan gate is Ondrej's visual review; later production work still requires its own plan and execution authorization.
 
-### Revision 03 — ready for visual review
+### Revision 03 — design accepted with keybinding amendment
 
 - [Unified input and approval preview](https://ondrejs-mac-mini.tailbc79e3.ts.net/s/site--2026-09-13--0173761f/). Stable inline entry supports arrows, Tab, whole-row pointer focus and typing; approval and feedback are different intents with no generic approval note.
 - **72 browser checks passed against HTTPS**; **29 existing core/native UI/RPC regressions passed**. Served asset hashes, module MIME and unchanged core identity verified; screenshots inspected in both themes and narrow/normal layouts.
 - Independent review found two defects missed by the initial 54 checks: same-coordinate double-click could hit Send after reflow, and Back lost the caret. Continuing multi-clicks and pointer Send during a 500ms review-settling interval are now suppressed; keyboard Send remains deliberate and immediate. Selection/caret are restored. Exact overlap tests at 1280px and 390px and a narrow independent follow-up confirmed both fixes (72/72).
 - This pointer-settling behavior is a browser design measure, not a native compatibility claim. Native multi-click/refocus/reflow protection is explicitly required in later implementation proof. No production code, settings, package versions or immutable release changed.
-- Human visual acceptance is still the sole unchecked task in this preview plan. Production implementation and rollout remain separate, unauthorized phases.
+- Human visual acceptance is now recorded above; all preview-plan tasks are complete. The accepted Enter amendment is not implemented in this retained artifact. Production implementation, its native verification, and rollout remain separate, unauthorized phases.
 
 ## Research after revision 02
 

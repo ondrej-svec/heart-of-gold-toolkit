@@ -1,10 +1,16 @@
 # hog_ask visual preview — revision 03
 
-**Browser design prototype. Not installed, not a native-terminal screenshot, and not a real approval surface.** Human visual acceptance is pending. Production code, immutable releases, package versions and Pi settings remain unchanged.
+**Browser design prototype. Not installed, not a native-terminal screenshot, and not a real approval surface.** The design is accepted with the Enter/Esc amendment below. Production code, immutable releases, package versions and Pi settings remain unchanged.
 
 [Open revision 03](https://ondrejs-mac-mini.tailbc79e3.ts.net/s/site--2026-09-13--0173761f/) · [Plan and review gate](../../plans/2026-09-13-design-hog-ask-visual-preview-plan.md) · [Cross-harness research](../../reviews/2026-09-13-harness-question-approval-ux.md)
 
-## The revision
+## Accepted design amendment — 2026-09-13
+
+Ondrej explicitly approved the design after agreeing that the approval-confirmation screen should use **Enter → Send approval / Esc → Back**, rather than requiring Ctrl+Enter. The opening keypress, held/repeated input and continued pointer gestures must not authorize accidentally. Ordinary decision/note shortcuts were not changed by that agreement.
+
+**The published R3 artifact and its tests remain unchanged:** they still show/use Ctrl+Enter and initial Back focus. The 72 browser checks below verify that historical build, not the accepted Enter amendment. Its implementation and native input-safety proof belong to the next implementation plan. Design acceptance is not authorization to implement, publish or activate production changes; see the [acceptance record](../../plans/2026-09-13-design-hog-ask-visual-preview-plan.md#design-acceptance--2026-09-13).
+
+## The retained revision-03 artifact
 
 - **One stable input.** Down moves through options into custom entry; Up at the start of the text returns to the last option. Tab/Shift-Tab follow the same route. Type-to-write and paste remain shortcuts. Focus alone does not select an answer.
 - **A coherent mouse target.** Click the text, marker, or row padding to write. Hover highlights without stealing typing focus. The same textarea stays mounted on focus; direct text clicks preserve native caret placement and drag selection. Back preserves text, selection and caret position.
@@ -23,7 +29,7 @@ The initial **54 checks passed but missed two real defects**. Independent review
 1. **P1: double-click reflow could authorize.** At 36 columns, an entry option and the subsequent Send overlapped at the same pointer coordinate. The second click could approve without a deliberate review. The revised suite asserts actual rectangle overlap, then sends coordinate-based double/triple clicks and rapid reset-detail clicks at both 1280px and 390px browser widths. Continued clicks stay blocked even after the settling interval; fresh explicit Send still works.
 2. **P2: Back reset the caret.** `xyz → review → Back → Q` became `Qxyz`. Selection start/end/direction are now captured and restored, and prefilled demos begin at the end. Tests verify both selection retention and `xyzQ` continuation.
 
-A separate narrow follow-up review confirmed both fixes and reran **72/72** browser checks. This is a verified preview checkpoint, not subjective visual acceptance or production approval.
+A separate narrow follow-up review confirmed both fixes and reran **72/72** browser checks. This technical checkpoint was not itself visual acceptance or production approval; subsequent human design acceptance is recorded above.
 
 ## Verification checkpoint
 
@@ -62,4 +68,4 @@ node --test tests/pi-hog-ask*.test.mjs tests/pi-rpc-smoke.test.mjs
 
 The verifier creates and closes only its own isolated browser target. CDP modifiers use the documented bitmask (Shift **8**, Ctrl **2**); the older helper's Shift value **1** meant Alt, which this iteration caught when adding Shift-Tab coverage. No model calls or credentialed operations occur.
 
-Earlier artifacts remain available: [revision 01](https://ondrejs-mac-mini.tailbc79e3.ts.net/s/site--2026-09-13--85d53b33/), [revision 02](https://ondrejs-mac-mini.tailbc79e3.ts.net/s/site--2026-09-13--36963640/). The [plan](../../plans/2026-09-13-design-hog-ask-visual-preview-plan.md) retains the human acceptance and later native/production gates.
+Earlier artifacts remain available: [revision 01](https://ondrejs-mac-mini.tailbc79e3.ts.net/s/site--2026-09-13--85d53b33/), [revision 02](https://ondrejs-mac-mini.tailbc79e3.ts.net/s/site--2026-09-13--36963640/). The [completed preview plan](../../plans/2026-09-13-design-hog-ask-visual-preview-plan.md) records human design acceptance; native implementation, its verification and production rollout remain separately gated.
