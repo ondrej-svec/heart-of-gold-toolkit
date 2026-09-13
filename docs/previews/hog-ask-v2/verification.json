@@ -1,0 +1,33 @@
+{
+  "url": "http://127.0.0.1:4816/s/site--2026-09-13--85d53b33/",
+  "type": "browser-preview-only",
+  "nativeTerminalProof": false,
+  "checks": [
+    "Initial focus is not an answer",
+    "Only real alternatives inhabit the list",
+    "Custom entry visible in normal initial view",
+    "Arrow navigation does not select or send",
+    "Choosing opens review with neutral Back focus",
+    "Enter on initial review focus goes Back, not Send",
+    "Custom text and Unicode reach review literally",
+    "Back retains custom draft",
+    "Send requires an explicit focus move",
+    "Explicit Send records custom answer and note in simulator",
+    "Normal approval review shows the qualification without scrolling",
+    "Qualification warning stays with fixed controls",
+    "Qualified Approve becomes discussion, not approval",
+    "Bare approval keeps exact scope in simulated outcome",
+    "Even a courtesy note prevents approval",
+    "Custom approval text cannot approve",
+    "Escape dismisses with no answer",
+    "Blank custom answer cannot advance",
+    "Multiline limit is enforced",
+    "Paging keys scroll content inside the preview",
+    "Long narrow scope scrolls without moving footer or overflowing horizontally",
+    "Narrow approval stays within the 24-row-style height budget",
+    "Four real alternatives supported",
+    "Small browser viewport has no horizontal overflow",
+    "No runtime exceptions"
+  ],
+  "errors": []
+}

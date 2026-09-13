@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>One question. Your answer. — hog_ask preview</title>
+  <link rel="stylesheet" href="preview.css">
+</head>
+<body>
+  <main>
+    <header class="masthead">
+      <div class="eyebrow">HEART OF GOLD <span>/</span> INTERACTION STUDY 01</div>
+      <div class="heading-row"><h1>One question. Your answer.</h1><span class="draft-stamp">DESIGN PREVIEW<br>NOT INSTALLED</span></div>
+      <p class="intro">A single choice, not a checklist. Room for your own words. Nothing sent until you say so.</p>
+    </header>
+
+    <section class="review-controls" aria-label="Preview controls, outside the proposed terminal UI">
+      <div class="scenarios" role="group" aria-label="Preview scenario">
+        <button data-scenario="decision" aria-pressed="true">01 <span>Choose</span></button>
+        <button data-scenario="custom" aria-pressed="false">02 <span>Write</span></button>
+        <button data-scenario="approval" aria-pressed="false">03 <span>Review approval</span></button>
+      </div>
+      <div class="view-controls">
+        <label class="sr-only" for="theme">Theme</label>
+        <select id="theme"><option value="light">Dawn</option><option value="dark">Moon</option><option value="auto">Auto</option></select>
+        <label class="sr-only" for="width">Terminal width</label>
+        <select id="width"><option value="normal">72 columns</option><option value="narrow">36 columns</option></select>
+        <button id="reset">Reset</button>
+      </div>
+    </section>
+
+    <div class="stage-area">
+      <section class="terminal" id="terminal" aria-label="Proposed terminal answer area">
+        <div class="terminal-label"><span>pi <span class="quiet">/ answer area</span></span><span id="draft-status">Draft · nothing sent</span></div>
+        <div class="terminal-body" id="terminal-body">
+          <div id="screen"></div>
+        </div>
+        <footer class="terminal-footer" id="terminal-footer"></footer>
+      </section>
+      <aside class="design-note" id="design-note"><span class="note-number">01</span><h2>Focus, not a tick.</h2><p>A filled row says where your keyboard is. Enter opens review; moving never answers.</p><p>Your own answer lives below the alternatives. Dismissal lives in the footer.</p></aside>
+    </div>
+
+    <div class="prototype-notice"><span class="notice-mark">↳</span><p><strong>Try it with your keyboard.</strong> Arrow keys, Tab, Enter, and Escape work inside the preview. Clicking is a browser convenience. Every result is a local simulation—not a real approval or tool call.</p></div>
+
+    <details class="proof-details">
+      <summary>Boundaries &amp; stress cases</summary>
+      <div class="detail-grid">
+        <div><h2>What this proves</h2><p>Visual hierarchy, grouping, answer/review flow, and conservative outcomes using the unchanged production controller.</p><p>Not a native terminal screenshot. Native keybindings, paste/IME, terminal scrolling, RPC, and screen-reader behavior still need implementation-stage verification.</p></div>
+        <div><h2>Push the layout</h2><div class="stress-controls"><button data-scenario="bare">Bare approval</button><button data-scenario="long">Long scope</button><button data-scenario="four">Four choices</button></div><p>Use 36 columns to check wrapping. Content scrolls independently of the controls. The body is capped to leave room for the footer in a 24-row-style view.</p></div>
+        <div><h2>Theme &amp; safety</h2><p>Dawn background, text, secondary text, and accent are sampled from your screenshot; new surfaces use Rosé Pine tokens. Moon uses the checked-in Calm palette. No fonts, scripts, or data are fetched from third-party services.</p><p>No settings, files, releases, or real permissions can be changed by this page.</p></div>
+      </div>
+    </details>
+    <footer class="page-footer"><span>hog_ask / visual revision 01</span><span>0.2.3 stays active · awaiting visual review</span></footer>
+  </main>
+  <script type="module" src="preview.js"></script>
+</body>
+</html>

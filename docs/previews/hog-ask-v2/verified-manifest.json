@@ -1,0 +1,11 @@
+{
+  "kind": "browser-design-preview",
+  "productionChanges": false,
+  "coreSha256": "e076b750030edd35a33cf7623d484896f1418bd5336c7d64f77ab19634426100",
+  "files": {
+    "hog-ask-core.js": "e076b750030edd35a33cf7623d484896f1418bd5336c7d64f77ab19634426100",
+    "index.html": "6c5bcbbe06c27b2b5824649e25b6a7968d00799adf06e6c1665ea6daab53033a",
+    "preview.css": "89e4dfefe6df69b05bda86302e3ade66aca48f4b498797ca790c09e616221ec1",
+    "preview.js": "39fe025a605c229734a28ee58b2c587287d21b07ca4f205dd15e08fed778ea78"
+  }
+}
