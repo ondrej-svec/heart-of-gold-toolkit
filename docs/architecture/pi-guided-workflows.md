@@ -2,7 +2,7 @@
 
 ## Current behavior
 
-Shared skills own conversational meaning and workflow policy. The Pi extension owns explicit launch commands, optional decision presentation and existing work guardrails, not interpretation of the assistant's prose. This describes version 0.2.3; the recorded proof is accepted and local activation has been explicitly authorized and verified. npm publication is blocked by authentication; already-open sessions need `/reload`.
+Shared skills own conversational meaning and workflow policy. The Pi extension owns explicit launch commands, optional decision presentation and existing work guardrails, not interpretation of the assistant's prose. This describes version 0.2.3; the recorded proof is accepted and local activation has been explicitly authorized and verified. npm 0.2.3 is published as `latest`, with registry bytes verified against the tested release; already-open sessions need `/reload`.
 
 - Ordinary answers, questions, task lists, acceptance criteria, and progress reports remain ordinary chat. There is no `agent_end` extraction, workflow-detection state, hidden model routing, heuristic list-to-choice fallback, or automatic answer injection.
 - Users answer in plain text. A separately installed workstation may provide a user-invoked `/answer`; Heart of Gold does not register or depend on it.
