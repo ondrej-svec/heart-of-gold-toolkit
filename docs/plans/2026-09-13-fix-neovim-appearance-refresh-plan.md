@@ -2,7 +2,7 @@
 title: "fix: refresh Neovim terminal appearance in the Writing trial"
 type: plan
 date: 2026-09-13
-status: in_progress
+status: complete
 confidence: high
 ---
 
@@ -26,7 +26,7 @@ An opt-in helper in `workstation/integrations/nvim/workstation-appearance.lua` i
 - [x] Implement and package the opt-in helper; document its limits and removal.
 - [x] Test headless/RPC safety, lifecycle/reload, and a real TUI switching dark → light → dark without notifications, including stale initial replies and unchanged unsaved text/undo.
 - [x] Load the helper in the trial config and live editor; verify buffer/view/undo and editor connection are preserved.
-- [ ] Run relevant checks, commit only this fix, push the existing feature branch, and report unrelated leftover changes.
+- [x] Run relevant checks, commit only this fix, push the existing feature branch, and report unrelated leftover changes.
 
 ## Acceptance
 
@@ -39,3 +39,12 @@ An opt-in helper in `workstation/integrations/nvim/workstation-appearance.lua` i
 ## Boundaries and validation
 
 This is a small compatibility fallback, not a proven upstream Herdr repair. A PTY fixture acts as a terminal and answers OSC 11, keeping the native Neovim parser and colour reload path real. It must fail without the helper. The current trial is the only activation target. User-visible macOS appearance toggling remains a final manual confirmation; tests do not change global system settings. Existing uncommitted Writing desk work is outside this commit.
+
+## Completion evidence
+
+- `npm --prefix workstation test`: 186/186 passed, no skips, including the real PTY negative control and light/dark transitions.
+- Node/Python/Lua syntax, `git diff --check`, and package dry-run passed. A separate focused review reported no actionable correctness findings.
+- In-place trial activation preserved the same editor PID, draft digest/changedtick/modified flag, complete undo state, window/view/mode and desk command. Native Rosé Pine is now Dawn. Trial startup loads the helper on `VimEnter`; normal Neovim config is unchanged.
+- Local receipts are under the trial's private `proof/appearance-*` paths; no draft text, socket authority, or credentials are committed.
+- Fix commit `a4eec8a` pushed to `origin/feat/workstation-guide`. Unrelated existing desk files, package formatting/dependency changes, README and workflow edits remain unstaged. No submodule pointer was committed in Bobo.
+- Actual macOS appearance toggling is left to the user for visual confirmation; the automated test uses a separate synthetic terminal, not the live Herdr session.
