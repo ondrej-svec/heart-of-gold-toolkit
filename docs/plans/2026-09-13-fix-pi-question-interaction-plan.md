@@ -4,8 +4,8 @@ type: plan
 date: 2026-09-13
 status: in_progress
 confidence: medium
-readiness: "Single-card source verified; actual proof feedback gates broader use"
-preview_status: "Structural previews approved; real terminal/RPC proof recorded, user feedback pending"
+readiness: "Source verified and proof approved; release/activation remains separately gated"
+preview_status: "Structural previews and recorded terminal/RPC proof approved; no revisions requested"
 related:
   - docs/plans/2026-04-14-feat-pi-guided-workflow-enhancement-plan.md
   - docs/architecture/pi-guided-workflows.md
@@ -18,9 +18,9 @@ Stop converting reports into choices. Keep conversation natural, ask deliberatel
 
 ## Context and authorization
 
-This plan captures the investigation and external research discussed with Ondrej on 2026-09-13. After the planning commit, Ondrej requested implementation ("ok lets go"). Phases 1–2 were completed. After the preview handoff, Ondrej replied "yeah fine,continue", approving the structural direction and authorizing Phase 3. Real terminal/RPC proof feedback remains a separate gate before broader use. Publishing packages and changing the installed Pi profile are not authorized by this request. No separate brainstorm document exists for this discussion.
+This plan captures the investigation and external research discussed with Ondrej on 2026-09-13. After the planning commit, Ondrej requested implementation ("ok lets go"). Phases 1–2 were completed. After the preview handoff, Ondrej replied "yeah fine,continue", approving the structural direction and authorizing Phase 3. After the working-proof handoff, Ondrej replied "ok I think thats fine", accepting the recorded terminal/RPC proof without requesting revisions. The proof-feedback gate is satisfied. Publishing packages and changing the installed Pi profile are not authorized by that acceptance. No separate brainstorm document exists for this discussion.
 
-Detail: **standard**, with explicit phase gates because the work changes facilitation and approval semantics. Confidence is high in the reproduced defect and the desired interaction split, medium in the proposed card's usability until preview review and a terminal proof slice.
+Detail: **standard**, with explicit phase gates because the work changes facilitation and approval semantics. Confidence is high in the reproduced defect and the desired interaction split, medium in routine usability until real use beyond the accepted proof.
 
 ## Problem statement
 
@@ -163,7 +163,7 @@ No option selected. Review before sending.
 
 ## Implementation tasks and phase gates
 
-Checkboxes track implementation progress. Phase 3's structural preview was approved; actual proof feedback still gates broader use. Completing another task does not satisfy a subjective or activation gate.
+Checkboxes track implementation progress. Phase 3's structural preview and recorded runtime proof are approved. Release/activation authorization remains separate; proof acceptance does not satisfy that gate.
 
 ### Phase 1 — Remove the false-choice path (independently shippable)
 
@@ -196,7 +196,7 @@ Depends on Phases 1–2 and Ondrej's preview approval; do not substitute autonom
 - [x] Implement the card contract: deliberate invocation, no preselection, inline custom text, selection notes, review/back/send, explicit outcomes, and readable plus structured results. Do not use a secondary model to author or explain the card.
 - [x] Implement RPC dialog parity and explicit print/JSON unavailability. Handle cancel, abort, late completion, session changes, and one-active-card cleanup. Keep launchers and existing guards separate.
 - [x] Add schema, controller, renderer, event-lifecycle, and RPC tests. Verify duplicate IDs/labels, stable-ID round trips, invalid recommendations, approval notes/custom text, empty inputs, resize, long/Unicode text, configured keybindings, focus propagation, lost UI, and no answer emitted after disposal. Exercise two overlapping invocations in both TUI and RPC: only the owner opens UI; a rejected second call cannot release its lock; cancel/shutdown followed by a new call cannot receive a stale answer. No live model calls or credentialed operations in automated tests.
-- [ ] Run a terminal proof slice and RPC equivalent with benign fixtures; get Ondrej's feedback on the actual interaction. **Runtime proof completed and [recorded](../reviews/2026-09-13-hog-ask-proof.md); user feedback remains pending.** Revise within this scope before broader use.
+- [x] Run a terminal proof slice and RPC equivalent with benign fixtures; get Ondrej's feedback on the actual interaction. **Runtime proof completed and [recorded](../reviews/2026-09-13-hog-ask-proof.md); Ondrej accepted it with "ok I think thats fine", with no revisions requested.** Revise within this scope before broader use if subsequent feedback requires it.
 
 **Exit:** one meaningful decision can be answered, qualified, revised, or dismissed without changing its meaning across supported UI modes. No generic batch/multi-select system has been introduced.
 
@@ -228,7 +228,7 @@ Depends on Phases 1–2 and Ondrej's preview approval; do not substitute autonom
 | The installed enhancer matches the inspected source | Verified during investigation; Pi extension directories were identical | Recheck configured source before implementation/activation; never patch an installed release in place |
 | Removing unsolicited forms is preferable to preserving them behind a flag | Agreed direction: natural conversation plus deliberate decisions | Explain migration; retain plain-text operation; do not replace it with global tool enforcement |
 | Pi supports custom TUI, standard RPC dialogs, tool details, and sequential tools | Verified in current installed docs and official/community source | Pin/test the supported runtime at implementation; preserve fallbacks rather than copy TUI-only code |
-| A single card with review is comfortable enough for routine use | Unverified; source review and screenshots are not usability testing | Preview approval and terminal proof block UI rollout; plain conversation remains default |
+| A single card with review is comfortable enough for routine use | Recorded proof accepted; routine use remains unverified | Preserve plain conversation as default; proof acceptance is not a claim of hands-on usability testing |
 | Updated prompts will reduce unnecessary questions in practice | Unverified behavioral effect | Scenario-based conversation review in Phase 2 and real-use proof; do not claim regex checks establish this |
 | Codex adaptations/checks may retain old UI policy | Verified exact-string transforms and required snippets | Change and test authoring plus installer behavior together |
 | Generic community tool/command names may collide | Existing workstation `/answer`; many packages own `ask_user` | Namespaced `hog_ask`; no ownership of `/answer` or Pi's `/plan` command |
@@ -238,7 +238,14 @@ Depends on Phases 1–2 and Ondrej's preview approval; do not substitute autonom
 
 ## Implementation record
 
-### Phase 3 — verified single-card proof; feedback pending
+### Proof acceptance and release handoff
+
+- Ondrej accepted the linked working proof with "ok I think thats fine". No revisions were requested. This closes the Phase 3 feedback gate, not the release/activation gate.
+- Verified implementation source: **`8d14ba5`**, pushed to `origin/feat/workstation-guide`; root version **0.2.3**. The verification results below belong to that implementation. This follow-up changes documentation only.
+- Publication and installed activation remain **not authorized and not performed**. The final Phase 4 checkbox remains open for the separately gated release/activation and loaded-source verification; no source implementation task remains.
+- After explicit authorization: recheck the configured source and repository state; stage or publish a new immutable release from the verified clean source commit; update the intended Pi source; reload; verify the actual loaded source, ordinary prose without popups, and a benign deliberate question. Never patch the pinned `0.2.0-staging-guard-e1110a118793` release or include unrelated dirty workstation work.
+
+### Phase 3 — verified single-card proof (pre-feedback checkpoint)
 
 - Implemented one `hog_ask` tool through the singular entrypoint: bounded TypeBox schema/runtime validation, pure controller, native Editor card, RPC transport and session-local owner lifecycle. Added only the directly used `typebox` peer; no model/extractor, generic form system or answer dispatcher.
 - Outcomes preserve IDs, full question/scope, text/notes, readable Q&A and branch origin. Focus/recommendation/selection/Send are distinct. Only unqualified submitted approve records approval; any custom approval or nonempty note needs discussion. Abort, overlapping calls, lost UI and stale completion are conservative.
@@ -246,7 +253,7 @@ Depends on Phases 1–2 and Ondrej's preview approval; do not substitute autonom
 - Real offline Pi 0.85.1 PTY proof passed in regular and fullscreen modes, including custom answer, note, qualified approval, resize to 36×24, long-scope scrolling and dismissal. Real RPC preserved the qualifying note and returned `needs_discussion` / `approved: false`; real print/JSON returned `unavailable` without UI/model requests. [Working proof for feedback](../reviews/2026-09-13-hog-ask-proof.md).
 - Final source checks: **37 interaction-policy + 124 Pi + 204 workstation + 2 visualization tests passed**; full `prepublishOnly`, compatibility, security, publish-safety (**284 packaged files**), Python AST and whitespace checks passed. Workstation totals include unrelated pre-existing tests. Standalone, skills-only and existing-workstation-`/answer` profiles loaded in isolation; the combined test was run, not skipped.
 - Root source version **0.2.3**; no shared skill/plugin versions changed in this phase. Source baseline: `229ec51`; the new scoped commit's SHA is reported in the work handoff. No package publication or installed-profile mutation occurred.
-- **Remaining gate:** Ondrej reviews the actual proof; revise within the one-card scope if needed. The plan remains `in_progress`. Release/activation handoff stays open until that disposition and separate authorization; never patch the pinned release in place or publish unrelated dirty work.
+- **Handoff checkpoint:** proof feedback was pending at the implementation push; it is now accepted as recorded above. The plan remains `in_progress` only for separately authorized release/activation and verification. Never patch the pinned release in place or publish unrelated dirty work.
 
 ### Phase 3 kickoff — structural approval, not activation
 

@@ -2,13 +2,13 @@
 
 ## Current behavior
 
-Shared skills own conversational meaning and workflow policy. The Pi extension owns explicit launch commands, optional decision presentation and existing work guardrails, not interpretation of the assistant's prose. This describes source version 0.2.3; proof feedback and installed activation are separate gates.
+Shared skills own conversational meaning and workflow policy. The Pi extension owns explicit launch commands, optional decision presentation and existing work guardrails, not interpretation of the assistant's prose. This describes source version 0.2.3; the recorded proof is accepted, while installed activation remains separately gated.
 
 - Ordinary answers, questions, task lists, acceptance criteria, and progress reports remain ordinary chat. There is no `agent_end` extraction, workflow-detection state, hidden model routing, heuristic list-to-choice fallback, or automatic answer injection.
 - Users answer in plain text. A separately installed workstation may provide a user-invoked `/answer`; Heart of Gold does not register or depend on it.
 - `/deep-thought-brainstorm`, `/deep-thought-plan`, `/deep-thought-architect`, `/marvin-work`, and the three sharing launchers remain. Launchers send their intended `/skill:…` with `expandPromptTemplates: true` under the current Pi API, including queued follow-ups. Without that option, current Pi sends the slash text literally instead of expanding the skill.
 - Explicit launcher input dialogs still use standard `editor` requests, including over RPC. Work guards still protect paths, block unsafe command patterns, and require their existing publication confirmation. No guard semantics changed.
-- `hog_ask` is a deliberately invoked, single-question decision/approval tool. It does not inspect prose, activate a workflow mode, or call another model. The structural direction was approved; [actual proof feedback](../reviews/2026-09-13-hog-ask-proof.md) is still pending before broader use.
+- `hog_ask` is a deliberately invoked, single-question decision/approval tool. It does not inspect prose, activate a workflow mode, or call another model. The structural direction and [recorded runtime proof](../reviews/2026-09-13-hog-ask-proof.md) were accepted; this does not authorize publication or installed activation.
 
 ## Deliberate decision/approval contract
 
@@ -56,4 +56,4 @@ Validated against local Pi 0.85.1. No user settings, workstation `/answer`, exte
 ## Related contracts
 
 - [Shared skill portability](pi-cross-harness-contract.md)
-- [Intentional-question implementation plan and proof-feedback gate](../plans/2026-09-13-fix-pi-question-interaction-plan.md)
+- [Intentional-question implementation plan and release/activation gate](../plans/2026-09-13-fix-pi-question-interaction-plan.md)
