@@ -4,8 +4,8 @@ type: plan
 date: 2026-09-13
 status: in_progress
 confidence: medium
-readiness: "Cross-harness research complete; revision 02 needs unified input navigation and clearer approval intents; next preview not built"
-preview_status: revisions_requested
+readiness: "Revision 03 built and HTTPS browser-verified; independent review defects fixed; awaiting human visual acceptance; production remains gated"
+preview_status: pending
 ---
 
 # hog_ask: a clear single-choice interaction
@@ -35,7 +35,7 @@ The previous [interaction plan](2026-09-13-fix-pi-question-interaction-plan.md) 
 - Dismissal belongs in the footer. Keyboard help stays visible while content scrolls.
 - Preserve explicit review/Send and neutral Back focus. This preview does not silently remove the existing review contract for decisions.
 - Keep exact approval scope and revision readable. Any custom answer or nonempty approval note still means discussion, not approval.
-- Browser conveniences such as clicking are for reviewing the prototype, not promises of terminal mouse support.
+- Pointer and keyboard routes are both first-class in the preview. Native fullscreen pointer integration is a later proof obligation; regular Pi mode does not capture the mouse.
 
 **Positive references:** native command-palette focus, Pi's existing native editor, workstation Rosé Pine Moon Calm theme, the supplied light-theme screenshot.
 
@@ -70,6 +70,18 @@ Ondrej found revision 01 better, but disliked the discussion/no-approval warning
 
 Keyboard proposal: arrows focus alternatives; Enter reviews; typing or Tab starts a custom reply. Review still begins on neutral Back, but a dedicated **Ctrl+Enter** shortcut sends from review without tabbing through buttons. In a text editor that shortcut only opens review—never both reviews and sends. Plain Enter on initial review focus still goes Back. Escape goes Back inside the flow and dismisses from the initial choice. Keep a keyboard-accessible explicit Send fallback. Ctrl+Enter transport and fullscreen paging routing are **unverified native-terminal details**, owned by the agent and blocking later implementation/rollout, not browser-preview delivery.
 
+### Ready: revision 03 (authorized after research)
+
+Ondrej's "ok go" authorizes the proposed next preview, not production changes or release.
+
+- [x] Keep one stable inline editor while focusing, clicking, typing and navigating; include it in the arrow/Tab focus route and make its marker/padding clickable.
+- [x] Present **Approve as written / Request changes / Not now** as separate intents. Approve/pause retain their canonical IDs; Request changes opens a free-text feedback answer (the existing custom response contract, up to 2,000 characters). Remove the generic note from approval review. Retain optional notes for ordinary decisions.
+- [x] Prevent a nonempty feedback draft from being silently discarded by bare approval; clearing feedback must be an explicit action. Preserve drafts on Back.
+- [x] Add real coordinate-based pointer checks, focus/geometry and caret checks, drag/refocus safety, keyboard fallback and semantic regression tests; inspect both themes and narrow layout.
+- [x] Publish the verified browser artifact, refresh evidence/docs, and record the still-pending visual/native gates.
+
+No semantics are inferred from hover or focus. Clicking an ordinary option opens review, never submits; only an explicit reviewed Send records an outcome. A Request changes activation focuses the editor without manufacturing a blank answer. Keep the unchanged core and no production/API/settings edits.
+
 ### Gated: human visual review
 - [ ] Ondrej reviews the actual styled preview and records acceptance or revisions. A runnable preview and automated tests are not visual acceptance.
 
@@ -81,7 +93,7 @@ Production implementation is out of scope for this plan. It requires accepted de
 - The first screen reads as single-choice without needing an explanation from the assistant.
 - Custom input, note editing, review, and dismissal are discoverable and keyboard usable.
 - Navigation never sends. Review initially focuses Back; Enter on Back cannot submit.
-- A qualified approval uses neutral **Send feedback** / “Let’s resolve your note first” wording and still produces `needs_discussion`, `approved: false`. Qualification is not styled as an error.
+- Approval and feedback are visibly different intents. Feedback produces `needs_discussion`, `approved: false` without a warning or an “Approve + note” intermediate state; bare approval has no generic note field.
 - Long scope/content is reachable; controls stay visible at 36-column/24-row-style bounds.
 - No live tools, runtime extensions, immutable releases, settings, package versions, or unrelated workstation work changed.
 - Reject on continued multi-select ambiguity, low-contrast focus, hidden essential scope, excessive visual noise, lost qualifications, unsafe Send focus, or web-only effects posing as terminal proof.
@@ -110,6 +122,14 @@ The browser proof must not be called a new native-terminal implementation. Nativ
 - **34 headless browser checks passed.** The main response flows use keyboard events. Normal/narrow and light/dark screenshots were inspected. Independent review found no important behavior or safety defects; its stale-proof finding was resolved by refreshing the recorded verification and manifest.
 - Pi's keybinding/terminal setup documentation confirms that native Ctrl+Enter support and fullscreen paging must be verified later. No native compatibility claim or configuration change is implied by the browser proof.
 - Installed 0.2.3 remains untouched. The only remaining plan gate is Ondrej's visual review; later production work still requires its own plan and execution authorization.
+
+### Revision 03 — ready for visual review
+
+- [Unified input and approval preview](https://ondrejs-mac-mini.tailbc79e3.ts.net/s/site--2026-09-13--0173761f/). Stable inline entry supports arrows, Tab, whole-row pointer focus and typing; approval and feedback are different intents with no generic approval note.
+- **72 browser checks passed against HTTPS**; **29 existing core/native UI/RPC regressions passed**. Served asset hashes, module MIME and unchanged core identity verified; screenshots inspected in both themes and narrow/normal layouts.
+- Independent review found two defects missed by the initial 54 checks: same-coordinate double-click could hit Send after reflow, and Back lost the caret. Continuing multi-clicks and pointer Send during a 500ms review-settling interval are now suppressed; keyboard Send remains deliberate and immediate. Selection/caret are restored. Exact overlap tests at 1280px and 390px and a narrow independent follow-up confirmed both fixes (72/72).
+- This pointer-settling behavior is a browser design measure, not a native compatibility claim. Native multi-click/refocus/reflow protection is explicitly required in later implementation proof. No production code, settings, package versions or immutable release changed.
+- Human visual acceptance is still the sole unchecked task in this preview plan. Production implementation and rollout remain separate, unauthorized phases.
 
 ## Research after revision 02
 

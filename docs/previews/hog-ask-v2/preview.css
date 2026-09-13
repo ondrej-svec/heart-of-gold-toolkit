@@ -43,26 +43,34 @@ h1 { font: 400 46px/1.15 'Iowan Old Style', 'Palatino Linotype', Palatino, Georg
 .choices { margin: 22px -1ch; }
 .choice { display: grid; grid-template-columns: 2ch minmax(0, 1fr); width: 100%; text-align: left; padding: 11px 1ch; margin: 0; line-height: 22px; outline: 0; border-left: 2px solid transparent; }
 .choice + .choice { margin-top: 0; }
-.choice:focus { background: var(--selected); }
-.choice:focus { border-left-color: var(--accent); outline: 0; }
+.choice:hover { background: var(--soft); }
+.choice:focus { background: var(--selected); border-left-color: var(--accent); outline: 0; }
+.choice[aria-disabled=true] .choice-title { color: var(--secondary); }
+.approval-entry { padding-block: 11px; }
+.approval-entry .scope { margin-top: 11px; }
+.approval-choices { margin-block: 11px; }
+.approval-choices .choice { padding-block: 5.5px; }
+.approval-choices .choice > span:last-child { display: flex; flex-wrap: wrap; gap: 0 2ch; }
 .choice .pointer { color: var(--accent); visibility: hidden; font-weight: 700; }
 .choice:focus .pointer { visibility: visible; }
 .choice-title { display: flex; gap: 1ch; flex-wrap: wrap; align-items: baseline; }
 .choice .recommendation { color: var(--text); font-weight: 400; }
 .consequence, .reason { display: block; color: var(--secondary); }
 .choice:focus .consequence, .choice:focus .reason { color: var(--text); }
-.write-area { border-top: 1px solid var(--line); padding-top: 11px; }
+.write-area { border-top: 1px solid var(--line); padding: 11px 1ch; margin-inline: -1ch; cursor: text; }
+.write-area:hover, .write-area:focus-within { background: var(--soft); }
+.write-area:focus-within { box-shadow: inset 2px 0 var(--accent); }
 .field-label { display: block; color: var(--secondary); margin: 0 0 11px; }
-.write-area .field-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+.write-area .field-label { margin-bottom: 0; }
+.write-area .field-label { cursor: text; }
+.terminal-body:not(.approval-entry) .write-area .field-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
 .editor-line { display: grid; grid-template-columns: 2ch minmax(0, 1fr); }
 .prompt-marker { color: var(--secondary); }
 .editor-line:focus-within .prompt-marker { color: var(--accent); font-weight: 700; }
 textarea { display: block; width: 100%; min-width: 0; resize: none; min-height: 22px; padding: 0; background: transparent; border: 0; border-radius: 0; line-height: 22px; caret-color: var(--text); }
 textarea:focus { outline: 0; }
 textarea::placeholder { color: var(--secondary); opacity: 1; }
-.compose { margin-top: 22px; }
 .scope { margin-top: 22px; padding: 0 0 0 2ch; border-left: 2px solid var(--line); }
-.scope-label { color: var(--secondary); }
 .scope p { margin: 0; white-space: pre-wrap; }
 .scope .scope-meta { color: var(--secondary); }
 .answer-summary { margin: 11px 0; padding-left: 2ch; border-left: 2px solid var(--accent); }
@@ -72,8 +80,6 @@ textarea::placeholder { color: var(--secondary); opacity: 1; }
 .is-review { padding-top: 11px; padding-bottom: 11px; }
 .is-review .meta, .is-review .field-label { margin-bottom: 0; }
 .is-review .scope { margin-top: 11px; }
-.policy { color: var(--secondary); margin: 0 0 11px; white-space: pre-wrap; }
-.policy:empty { display: none; }
 .error { color: var(--warning); margin: 11px 0 0; }
 .error:empty { display: none; }
 .terminal-footer { flex-shrink: 0; padding: 11px 2ch; border-top: 1px solid var(--line); background: var(--base); }
