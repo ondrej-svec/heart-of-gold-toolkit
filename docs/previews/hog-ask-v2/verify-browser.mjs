@@ -14,13 +14,13 @@ const errors = [], checks = [];
 const off = cdp.on('Runtime.exceptionThrown', (event, origin) => { if (origin === session) errors.push(event.exceptionDetails.text); });
 const evaluate = expr => cdp.evaluate(session, expr);
 const click = selector => evaluate(`document.querySelector(${JSON.stringify(selector)}).click()`);
-const focus = selector => evaluate(`document.querySelector(${JSON.stringify(selector)}).focus()`);
 const snapshot = () => evaluate('window.previewSnapshot()');
 const check = (name, fn) => { fn(); checks.push(name); };
 const keycodes = { Enter: 13, Escape: 27, Tab: 9, ArrowDown: 40, ArrowUp: 38, PageDown: 34, PageUp: 33 };
-async function key(key, shift = false) {
-  const params = { key, code: key, windowsVirtualKeyCode: keycodes[key], modifiers: shift ? 1 : 0 };
-  await cdp.send('Input.dispatchKeyEvent', { type: key === 'Enter' ? 'keyDown' : 'rawKeyDown', ...params, ...(key === 'Enter' ? { text: '\r', unmodifiedText: '\r' } : {}) }, session);
+async function key(key, { shift = false, ctrl = false, repeat = false } = {}) {
+  const text = key === 'Enter' ? '\r' : key.length === 1 && !ctrl ? key : undefined;
+  const params = { key, code: key.length === 1 ? `Key${key.toUpperCase()}` : key, windowsVirtualKeyCode: keycodes[key] || key.toUpperCase().charCodeAt(0), modifiers: (shift ? 1 : 0) | (ctrl ? 2 : 0) };
+  await cdp.send('Input.dispatchKeyEvent', { type: text ? 'keyDown' : 'rawKeyDown', ...params, autoRepeat: repeat, ...(text ? { text, unmodifiedText: text } : {}) }, session);
   await cdp.send('Input.dispatchKeyEvent', { type: 'keyUp', ...params }, session);
 }
 async function type(text) { await cdp.send('Input.insertText', { text }, session); }
@@ -31,7 +31,7 @@ async function capture(name) {
   fs.writeFileSync(path.join(output, `${name}.png`), Buffer.from(data, 'base64'));
 }
 async function setting(id, value) { await evaluate(`(() => {const el=document.getElementById(${JSON.stringify(id)});el.value=${JSON.stringify(value)};el.dispatchEvent(new Event('change'));})()`); }
-async function note(text) { await focus('#note'); await evaluate('document.querySelector("#note").value=""'); await type(text); }
+async function note(text) { await key('Tab'); assert.equal((await snapshot()).focused, 'note'); await evaluate('document.querySelector("#note").value=""'); await type(text); }
 fs.mkdirSync(output, { recursive: true });
 try {
   await cdp.send('Runtime.enable', {}, session);
@@ -45,24 +45,29 @@ try {
   await capture('01-choice-dawn');
   const ownVisible = await evaluate('(() => {const a=document.querySelector("#custom-answer").getBoundingClientRect();const b=document.querySelector("#terminal-body").getBoundingClientRect();return a.bottom<=b.bottom;})()');
   check('Custom entry visible in normal initial view', () => assert.equal(ownVisible, true));
+  await key('Enter', { ctrl: true }); s = await snapshot();
+  check('Send chord cannot skip initial choice', () => { assert.equal(s.state.step, 'choose'); assert.equal(s.state.answer, null); assert.equal(s.result, null); });
   await key('ArrowDown'); s = await snapshot();
   check('Arrow navigation does not select or send', () => { assert.equal(s.focused, 'public'); assert.equal(s.state.answer, null); assert.equal(s.result, null); });
   await key('Enter'); s = await snapshot();
   check('Choosing opens review with neutral Back focus', () => { assert.equal(s.state.answer.optionId, 'public'); assert.equal(s.state.step, 'review'); assert.equal(s.focused, 'back'); assert.equal(s.result, null); });
   await key('Enter'); s = await snapshot();
   check('Enter on initial review focus goes Back, not Send', () => { assert.equal(s.state.step, 'choose'); assert.equal(s.result, null); });
-  await key('Tab');
-  await type('Internal + support leads.\nŽluťoučký kůň — 日本語 🐈 <script>not code</script>');
+  await key('I'); s = await snapshot();
+  check('Typing opens custom entry and preserves the first character', () => { assert.equal(s.state.step, 'custom'); assert.equal(s.state.textDraft, 'I'); assert.equal(s.result, null); });
+  await type('nternal + support leads.\nŽluťoučký kůň — 日本語 🐈 <script>not code</script>');
   await capture('02-custom-dawn');
-  await key('Enter'); s = await snapshot();
+  await key('Enter', { ctrl: true }); s = await snapshot();
+  check('Send chord from custom entry only opens review', () => { assert.equal(s.state.step, 'review'); assert.equal(s.result, null); });
+  await key('Enter', { ctrl: true, repeat: true }); s = await snapshot();
+  check('Held send chord cannot carry through from editing to submission', () => assert.equal(s.result, null));
   check('Custom text and Unicode reach review literally', () => { assert.equal(s.state.answer.kind, 'custom'); assert.ok(s.state.answer.text.includes('<script>not code</script>')); assert.equal(s.focused, 'back'); });
   await key('Enter'); s = await snapshot();
   check('Back retains custom draft', () => { assert.ok(s.state.customDraft.includes('日本語')); assert.equal(s.result, null); });
   await key('Tab'); await key('Enter');
-  await note('Keep the pilot small.'); await key('Enter');
-  await key('Tab'); await key('Tab'); s = await snapshot();
-  check('Send requires an explicit focus move', () => assert.equal(s.focused, 'send'));
-  await key('Enter'); s = await snapshot();
+  await note('Keep the pilot small.'); await key('Enter', { ctrl: true }); s = await snapshot();
+  check('Send chord from note editing reviews without sending', () => { assert.equal(s.focused, 'back'); assert.equal(s.result, null); assert.equal(s.state.answer.note, 'Keep the pilot small.'); });
+  await key('Enter', { ctrl: true }); s = await snapshot();
   check('Explicit Send records custom answer and note in simulator', () => { assert.equal(s.result.status, 'answered'); assert.equal(s.result.answer.note, 'Keep the pilot small.'); assert.equal(s.result.approved, false); });
 
   await click('[data-scenario="approval"]');
@@ -70,17 +75,27 @@ try {
   const noteVisible = await evaluate('(() => {const n=document.querySelector("#note").getBoundingClientRect();const b=document.querySelector("#terminal-body").getBoundingClientRect();return n.bottom<=b.bottom;})()');
   check('Normal approval review shows the qualification without scrolling', () => assert.equal(noteVisible, true));
   const policyVisible = await evaluate('(() => {const p=document.querySelector("#policy").getBoundingClientRect();const f=document.querySelector(".terminal-footer").getBoundingClientRect();return p.top>=f.top && p.bottom<=f.bottom;})()');
-  check('Qualification warning stays with fixed controls', () => assert.equal(policyVisible, true));
-  await click('#send'); s = await snapshot();
+  check('Quiet feedback cue stays with fixed controls', () => assert.equal(policyVisible, true));
+  const cue = await evaluate('({text:document.querySelector("#policy").textContent,color:getComputedStyle(document.querySelector("#policy")).color,secondary:getComputedStyle(document.querySelector(".meta")).color,label:document.querySelector("#send").textContent})');
+  check('Qualification is neutral feedback, not an error warning', () => { assert.equal(cue.text, 'Let’s resolve your note first.'); assert.equal(cue.color, cue.secondary); assert.ok(cue.label.includes('send feedback')); });
+  await key('Enter', { ctrl: true }); s = await snapshot();
   check('Qualified Approve becomes discussion, not approval', () => { assert.equal(s.result.status, 'needs_discussion'); assert.equal(s.result.approved, false); assert.equal(s.result.answer.note, 'Yes, but let me review the final wording first.'); });
-  await click('[data-scenario="bare"]'); await key('Enter'); await click('#send'); s = await snapshot();
+  await click('[data-scenario="bare"]'); await key('Enter'); await key('Enter', { ctrl: true }); s = await snapshot();
   check('Bare approval keeps exact scope in simulated outcome', () => { assert.equal(s.result.status, 'answered'); assert.equal(s.result.approved, true); assert.equal(s.result.question.scope.revision, 'demo-r1'); });
-  await click('[data-scenario="bare"]'); await key('Enter'); await note('thanks'); await click('#send'); s = await snapshot();
+  await click('[data-scenario="bare"]'); await key('Enter'); await note('thanks'); await key('Enter'); await key('Enter', { ctrl: true }); s = await snapshot();
   check('Even a courtesy note prevents approval', () => { assert.equal(s.result.status, 'needs_discussion'); assert.equal(s.result.approved, false); });
-  await click('[data-scenario="bare"]'); await key('Tab'); await type('Yes, but test first.'); await key('Enter'); await click('#send'); s = await snapshot();
+  await click('[data-scenario="bare"]'); await key('Tab'); await type('Yes, but test first.'); await key('Enter'); await key('Enter', { ctrl: true }); s = await snapshot();
   check('Custom approval text cannot approve', () => { assert.equal(s.result.status, 'needs_discussion'); assert.equal(s.result.approved, false); });
 
-  await click('[data-scenario="decision"]'); await key('Escape'); s = await snapshot();
+  await click('[data-scenario="decision"]'); await key('Enter'); await key('Tab'); s = await snapshot();
+  check('Tab goes directly to note editing', () => assert.equal(s.focused, 'note'));
+  await key('Tab'); s = await snapshot();
+  check('Explicit Send remains available without modified Enter', () => { assert.equal(s.focused, 'send'); assert.equal(s.result, null); });
+  await key('Enter'); s = await snapshot();
+  check('Keyboard fallback sends only on explicit activation', () => assert.equal(s.result.status, 'answered'));
+  await click('[data-scenario="decision"]'); await key('Enter'); await key('Escape'); s = await snapshot();
+  check('Escape goes back from review without answering', () => { assert.equal(s.state.step, 'choose'); assert.equal(s.result, null); });
+  await key('Escape'); s = await snapshot();
   check('Escape dismisses with no answer', () => { assert.equal(s.result.status, 'dismissed'); assert.equal(s.result.answer, null); assert.equal(s.result.approved, false); });
   await click('[data-scenario="custom"]');
   await evaluate('document.querySelector("#custom-answer").value=""'); await key('Enter'); s = await snapshot();

@@ -1,53 +1,53 @@
-# hog_ask visual preview — revision 01
+# hog_ask visual preview — revision 02
 
-**Browser design prototype. Not installed, not a native-terminal screenshot, and not a real approval surface.** Human visual review is pending; production code, 0.2.3 publication, installed releases and Pi settings are unchanged.
+**Browser design prototype. Not installed, not a native-terminal screenshot, and not a real approval surface.** Human visual review is pending; production code, immutable releases, and Pi settings are unchanged.
 
-[Open the interactive preview](https://ondrejs-mac-mini.tailbc79e3.ts.net/s/site--2026-09-13--85d53b33/) · [Plan and review gate](../../plans/2026-09-13-design-hog-ask-visual-preview-plan.md)
+[Open revision 02](https://ondrejs-mac-mini.tailbc79e3.ts.net/s/site--2026-09-13--36963640/) · [Plan and review gate](../../plans/2026-09-13-design-hog-ask-visual-preview-plan.md)
 
-The page uses one direction across three main states: choose, write a custom answer, and review a qualified approval. Dark/light, 36-column, bare approval, long scope, and four-alternative views are available in its review controls. Controls outside the bordered terminal area are the browser review sheet—not a proposal to add those tabs to Pi.
+Ondrej found [revision 01](https://ondrejs-mac-mini.tailbc79e3.ts.net/s/site--2026-09-13--85d53b33/) better, but asked for quieter approval copy and a cleaner keyboard-first interface. This revision responds to that feedback; it is not yet accepted for production.
 
-## What changed visually
+## The revision
 
-- A focused row replaces checkbox-like markers; the list contains only real alternatives.
-- The question leads; rationale sits with its recommendation, without duplicate copy.
-- Custom answers have their own directly editable field.
-- Notes sit beside the draft review instead of behind another menu.
-- Back starts focused. Send remains explicit. A qualified approval changes the button to **Send for discussion** and keeps the no-approval warning visible.
-- The body can scroll independently; the footer, overflow hint, and keyboard help stay visible in a 24-row-style height budget.
+- **Type to reply.** Arrows focus real alternatives; typing or Tab opens a custom answer, preserving the first character and any retained draft.
+- **A terminal-style editor, not a web form.** No boxed/resizable textareas or rectangular action-button row. The footer is a compact shortcut strip; browser clicks remain optional conveniences.
+- **Quiet feedback.** “Let’s resolve your note first” and **send feedback** replace the discussion/no-approval warning block. The qualification is not an error. Conservative approval semantics are unchanged.
+- **Review without a button tour.** Ctrl+Enter sends from review. While editing, it only opens review; a held key cannot carry through into submission. Initial review focus remains Back, so plain Enter does not submit by default.
+- **Keyboard fallback.** From Back, Tab moves directly to the note, then Tab to explicit Send; Enter activates it. Escape backs out of the current stage and dismisses from initial choice.
+- **Less chrome.** The question, answer, and note do the work. Machine-readable result details are collapsed behind a disclosure instead of dominating the simulated completion.
 
-The browser adapter imports a build-time byte-identical copy of `extensions/pi/hog-ask-core.mjs`. It does not call Pi, execute actions, persist responses, or grant actual permissions. Browser clicking, textarea resizing, and DOM accessibility are not promises of equivalent native-terminal behavior. The semantic review contract is preserved; this is not a proposal to make Enter immediately submit an ordinary decision.
+Review-sheet controls outside the terminal surface are not proposed Pi tabs. The page includes light/dark, 36-column, bare approval, long scope and four-alternative cases.
 
-Dawn's `#f9f2eb` background, `#4c496c` text, `#6d6a87` secondary text and `#83709d` accent were sampled from the supplied screenshot. New light surfaces use Rosé Pine tokens. Moon uses the checked-in workstation Calm palette. The separate `rose-pine-dawn-calm` source was not found; no configuration repair was attempted. Local JetBrains Mono is preferred, with system monospace fallback; no font download occurs.
+## Boundaries
+
+The browser adapter uses a build-time byte-identical copy of `extensions/pi/hog-ask-core.mjs`. It does not call Pi, execute actions, persist responses, or grant actual permissions. Any custom approval answer or nonempty note still yields `needs_discussion`, `approved: false`.
+
+**Browser key behavior is not native-terminal proof.** Pi documents that some terminals cannot distinguish Ctrl+Enter, and its fullscreen mode reserves PageUp/Down for transcript scrolling. Native key transport/routing, configurable bindings, paste/IME and lifecycle checks are agent-owned gates before later implementation/rollout. No terminal configuration was changed to make the browser demo work.
+
+Dawn's background/text/secondary/accent are sampled from the supplied screenshot; new light surfaces use Rosé Pine tokens. Moon uses the checked-in Calm palette. The separately managed `rose-pine-dawn-calm` source was not found. Local JetBrains Mono is preferred, with system monospace fallback; no font download occurs.
 
 ## Reproduce
-
-From the toolkit repository:
 
 ```sh
 node docs/previews/hog-ask-v2/build.mjs
 ```
 
-This prints a fresh temporary static-site directory. Serve that directory with a local static server or the configured `share-html` helper. Opening the unbuilt source HTML directly is not supported: module files are assembled by the build. `.js` output is intentional because the configured share server serves `.mjs` as `application/octet-stream`, which browsers reject for ES modules.
+This prints a fresh temporary static-site directory. Serve it with a local static server or the configured `share-html` helper; opening unbuilt source HTML directly is unsupported. The build uses `.js` output because the share server serves `.mjs` as `application/octet-stream`, which browsers reject for modules. `manifest.json` hashes all four served assets and identifies the unchanged controller.
 
-The build emits `manifest.json` with the source controller SHA-256 and hashes of all four served assets.
-
-For the optional browser proof, start the workstation browser helper on an unused isolated port, then:
+For the optional browser proof, start the workstation browser helper on an unused isolated port:
 
 ```sh
 BROWSER_CDP_MODULE=/absolute/path/to/web-browser/scripts/cdp.js \
 BROWSER_DEBUG_PORT=9337 \
 node docs/previews/hog-ask-v2/verify-browser.mjs \
-  http://127.0.0.1:4816/s/your-preview/ /tmp/hog-ask-preview-proof
+  http://127.0.0.1:4816/s/your-preview/ /tmp/hog-ask-preview-r2-proof
 ```
 
-The script creates and closes only its own browser target. It writes cropped screenshots, a whole-page overview, and `verification.json`. It makes no model calls or credentialed operations.
+The script creates and closes only its own browser target. Scenario/view setup uses the review sheet; answering, editing, backing out, sending and dismissing are exercised with keyboard events, not clicks on answer controls. It makes no model calls or credentialed operations.
 
 ## Verification checkpoint
 
-- **25 headless browser checks passed:** actual keyboard navigation, neutral Back focus, explicit Send, custom/Unicode text, retained drafts and notes, dismissal, blank/line-limit validation, bare/qualified/custom approval outcomes, narrow scrolling, fixed controls, and no runtime exceptions.
-- Screenshots inspected: light and dark selection/review, custom entry, 36-column choices and approval, long-scope scrolling, and a small browser viewport.
-- Normal-width review displays the qualification without scrolling; narrow views retain a clear overflow hint and the discussion warning.
-- Independent read-only review found no blocking or important correctness findings. This is not Ondrej's visual acceptance.
-- Native TUI keybindings, paste/IME, terminal cell rendering, fullscreen interaction, RPC compatibility and lifecycle behavior remain future implementation-stage checks.
-
-Evidence for this revision: [25 browser checks](verification.json), [verified asset manifest](verified-manifest.json), and local screenshots in `/tmp/hog-ask-preview-proof/`; the browser-facing tailnet URL above serves the exact verified artifact. The [plan](../../plans/2026-09-13-design-hog-ask-visual-preview-plan.md) owns the human review gate. No production work is authorized by the existence of this preview.
+- **34 headless browser checks passed**, including type-to-reply, review-only chords while editing, repeat protection, explicit Send fallback, conservative approval, text/line-limit safety, paging and narrow bounds. No runtime exceptions.
+- Light/dark and normal/narrow screenshots inspected. The revised narrow approval fits its scope, response and note without needing the previous large warning/button region.
+- Independent review found no important behavior or safety defects; its stale-proof finding was resolved by refreshing both versioned evidence files and these references.
+- [Verification results](verification.json) · [verified asset manifest](verified-manifest.json). Screenshots: `/tmp/hog-ask-preview-r2-proof/`.
+- Human visual acceptance and native-terminal proof remain outstanding; the [plan](../../plans/2026-09-13-design-hog-ask-visual-preview-plan.md) owns that boundary.
