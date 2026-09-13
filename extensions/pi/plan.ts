@@ -13,9 +13,9 @@ export default function planExtension(pi: ExtensionAPI) {
 			const prompt = `/skill:plan ${source}`;
 
 			if (ctx.isIdle()) {
-				pi.sendUserMessage(prompt);
+				pi.sendUserMessage(prompt, { expandPromptTemplates: true });
 			} else {
-				pi.sendUserMessage(prompt, { deliverAs: "followUp" });
+				pi.sendUserMessage(prompt, { deliverAs: "followUp", expandPromptTemplates: true });
 				ctx.ui.notify("Plan queued as follow-up", "info");
 			}
 		},

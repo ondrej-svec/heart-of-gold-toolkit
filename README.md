@@ -49,9 +49,9 @@ When installed as a Pi package, Heart of Gold exposes Pi-native extension comman
 - `/share-server-control` — control the local share server lifecycle through the portable `share-server-control` skill
 - `/marvin-work` — start executing a plan (with always-on safety guardrails)
 
-Pi package installs also include a Pi-only guided workflow enhancer for supported Heart of Gold skills. For `brainstorm`, `plan`, and `architect`, when the assistant asks a high-confidence structured question, Pi can upgrade it into a custom interactive TUI and feed the answer back into the same workflow. Shared skills remain plain-text portable in every other harness.
+Workflow replies now stay conversational: lists, progress reports, and questions never automatically open a form or call a second extraction model. Answer in plain text. If your separately installed workstation package provides `/answer`, you may invoke it yourself; Heart of Gold neither supplies nor requires it.
 
-For extension debugging, Pi also exposes `/deep-thought-guided-debug` to toggle notices explaining when a guided prompt was extracted, skipped, dismissed, or answered.
+The automatic guided enhancer and `/deep-thought-guided-debug` are retired; there is no legacy-mode switch. Explicit launcher input dialogs and work-guard confirmations remain available in TUI and RPC. A future deliberate decision card is planned but is **not implemented**. See the [interaction architecture and migration notes](docs/architecture/pi-guided-workflows.md).
 
 The skills themselves enforce their own boundaries (read-only for brainstorm/plan, safe commands for work) via `allowed-tools` and prompt constraints — no manual mode switching needed.
 

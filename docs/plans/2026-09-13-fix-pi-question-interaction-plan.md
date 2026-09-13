@@ -2,9 +2,9 @@
 title: "fix: make Pi questions intentional and preserve conversational planning"
 type: plan
 date: 2026-09-13
-status: draft
+status: in_progress
 confidence: medium
-readiness: "Phase 1 is technically scoped; implementation has not been requested"
+readiness: "Phases 1–2 authorized; Phase 3 waits for user preview review"
 preview_status: "Structural preview included; user review required before decision-card implementation"
 related:
   - docs/plans/2026-04-14-feat-pi-guided-workflow-enhancement-plan.md
@@ -18,7 +18,7 @@ Stop converting reports into choices. Keep conversation natural, ask deliberatel
 
 ## Context and authorization
 
-This plan captures the investigation and external research discussed with Ondrej on 2026-09-13. The direction was agreed; the latest request authorizes writing this plan, not implementing it, approving the proposed card, publishing packages, or changing the installed Pi profile. No separate brainstorm document exists for this discussion.
+This plan captures the investigation and external research discussed with Ondrej on 2026-09-13. After the planning commit, Ondrej requested implementation ("ok lets go"). Phases 1–2 may proceed; the explicit Phase 3 preview gate still requires user review. Publishing packages and changing the installed Pi profile are not authorized by this request. No separate brainstorm document exists for this discussion.
 
 Detail: **standard**, with explicit phase gates because the work changes facilitation and approval semantics. Confidence is high in the reproduced defect and the desired interaction split, medium in the proposed card's usability until preview review and a terminal proof slice.
 
@@ -163,15 +163,15 @@ No option selected. Review before sending.
 
 ## Implementation tasks and phase gates
 
-All checkboxes below track future implementation, not completion of this planning session.
+Checkboxes track implementation progress. Phase 3 stays gated on preview review; completing an earlier phase does not approve that preview.
 
 ### Phase 1 — Remove the false-choice path (independently shippable)
 
-- [ ] Add regression fixtures and a mocked production-event test demonstrating required steps, unchecked checklists, completed-work lists, acceptance criteria, and a task list before a real question. Capture the old `none`-to-selector failure before changing behavior.
-- [ ] Retire automatic `agent_end` extraction and its workflow detection, list heuristics, loader, and hidden extraction-model routing. Remove dead code rather than leave a configurable unsafe path. Keep `brainstorm`, `plan`, `architect`, sharing, and work-guard entrypoints intact.
-- [ ] Replace obsolete extractor tests with extension-level assertions: no form, secondary model request, or synthetic answer after ordinary assistant output, regardless of slash-command entry, natural-language transition, model-result fixture, or queued follow-up. Preserve tests for still-used standard-dialog helpers; migrate/remove unused helpers with their callers.
-- [ ] Update `README.md` and `docs/architecture/pi-guided-workflows.md` in this phase: remove active-enhancer/debug claims, document retirement of `/deep-thought-guided-debug`, and explain plain-text answering and the optional separately installed `/answer`. Identify the April enhancer plan as historical. Verify package discovery remains singular and launcher commands actually load the intended skill using the installed Pi API's expansion semantics.
-- [ ] Run the new event regressions and `npm run test:pi`, including package-load and RPC launcher smoke coverage, before treating Phase 1 as shippable. Any standalone release must also satisfy the Phase 4 release/activation boundaries and applicable publishing checks; do not defer correctness verification until the card exists.
+- [x] Add regression fixtures and a mocked production-event test demonstrating required steps, unchecked checklists, completed-work lists, acceptance criteria, and a task list before a real question. Capture the old `none`-to-selector failure before changing behavior.
+- [x] Retire automatic `agent_end` extraction and its workflow detection, list heuristics, loader, and hidden extraction-model routing. Remove dead code rather than leave a configurable unsafe path. Keep `brainstorm`, `plan`, `architect`, sharing, and work-guard entrypoints intact.
+- [x] Replace obsolete extractor tests with extension-level assertions: no form, secondary model request, or synthetic answer after ordinary assistant output, regardless of slash-command entry, natural-language transition, model-result fixture, or queued follow-up. Preserve tests for still-used standard-dialog helpers; migrate/remove unused helpers with their callers.
+- [x] Update `README.md` and `docs/architecture/pi-guided-workflows.md` in this phase: remove active-enhancer/debug claims, document retirement of `/deep-thought-guided-debug`, and explain plain-text answering and the optional separately installed `/answer`. Identify the April enhancer plan as historical. Verify package discovery remains singular and launcher commands actually load the intended skill using the installed Pi API's expansion semantics.
+- [x] Run the new event regressions and `npm run test:pi`, including package-load and RPC launcher smoke coverage, before treating Phase 1 as shippable. Any standalone release must also satisfy the Phase 4 release/activation boundaries and applicable publishing checks; do not defer correctness verification until the card exists.
 
 **Exit:** ordinary workflow turns never auto-open question UI; the focused/full Pi checks pass and the migration docs match the shipped behavior. Existing launcher/guard behavior and RPC availability are preserved. This fix does not wait for decision-card preview approval; it requires its own explicit implementation authorization.
 
@@ -236,9 +236,19 @@ Depends on Phases 1–2 and Ondrej's preview approval; do not substitute autonom
 | Source push may be mistaken for installation | User runs a pinned release path | Record distinct source, release, and activation states; activation needs authorization |
 | Unrelated workstation changes are already present | Verified at planning time | Stage only owned files, do not stash/reset others, do not publish a dirty checkout |
 
+## Implementation record
+
+### Phase 1 — verified source, not activated
+
+- Before deletion, the full Pi suite passed 53 tests. A separate invocation of the actual production handler with a stubbed high-confidence `none` model response failed the required-work assertion: it opened the mandatory-three-steps selector and injected its first label (two effects instead of zero). No real model/UI or publication operation was used.
+- Removed the enhancer/core and obsolete extraction/dialog fixtures. Added eight conversational fixtures and actual-entrypoint event/launcher tests. Existing work guards were not changed beyond the launcher's skill-expansion option.
+- Current Pi 0.85.1 documents `expandPromptTemplates: true` as required for extension-emitted skill expansion. All seven launchers now opt in, both idle and queued; tests assert the exact target and delivery options. A real isolated offline RPC profile still discovers skills and opens/cancels the standard plan editor.
+- Verification: **96 Pi tests passed**, plus compatibility, publish-safety (279 packaged files), security regression, and diff-whitespace checks. Root source version is 0.2.1; no package was published and no installed profile was changed.
+- Phase 3 previews remain unreviewed. The separate workstation `/answer` and pre-existing workstation edits remain untouched.
+
 ## References and research provenance
 
-Local paths are relative to the toolkit repository root. Proposed new files are identified as such above.
+Local paths are relative to the toolkit repository root. Proposed new files are identified as such above. Deleted enhancer files and their old tests below refer to the pre-fix source at `66ee035`; they are historical evidence, not current dependencies.
 
 - `extensions/pi/guided-workflows.ts` — extraction fallback, generic card, model routing, `agent_end` orchestration.
 - `extensions/pi/guided-workflows-core.js` — arbitrary-list extraction and standard-dialog helper.

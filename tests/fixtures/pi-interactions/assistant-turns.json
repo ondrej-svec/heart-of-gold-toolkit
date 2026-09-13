@@ -1,0 +1,34 @@
+[
+  {
+    "name": "mandatory steps (the reproduced none-to-selector failure)",
+    "text": "All three steps are required:\n1. Verify the API contract\n2. Add regression tests\n3. Update rollout documentation"
+  },
+  {
+    "name": "unchecked task checklist",
+    "text": "Remaining required work:\n- [ ] Verify the API contract\n- [ ] Add regression tests\n- [ ] Update rollout documentation"
+  },
+  {
+    "name": "completed work report",
+    "text": "Completed:\n- Verified the API contract\n- Added regression tests\n- Updated rollout documentation"
+  },
+  {
+    "name": "acceptance criteria",
+    "text": "Acceptance criteria:\n1. Existing users can sign in\n2. Expired tokens are rejected\n3. Logs contain no credentials"
+  },
+  {
+    "name": "task list before a genuine question",
+    "text": "These steps are required:\n1. Verify the API contract\n2. Add regression tests\n3. Update rollout documentation\n\nShould the first rollout be internal-only or public?"
+  },
+  {
+    "name": "explicit alternatives stay in prose too",
+    "text": "Which rollout should we use?\n1. Internal only — a smaller pilot\n2. Public — wider exposure"
+  },
+  {
+    "name": "open-ended question",
+    "text": "What should a successful first week look like?"
+  },
+  {
+    "name": "no question or list",
+    "text": "Research complete. I'll write the plan now."
+  }
+]

@@ -113,6 +113,9 @@ test('temporary Pi RPC profile loads skills and uses a standard editor request',
       assert.ok(names.has(name), `${name} is missing from the temporary RPC profile`);
     }
 
+    assert.equal(names.has('deep-thought-guided-debug'), false);
+    assert.equal(names.has('answer'), false, 'standalone toolkit does not claim the workstation command');
+
     rpc.send({ id: 'plan', type: 'prompt', message: '/deep-thought-plan' });
     const editor = await rpc.waitFor(
       (event) => event.type === 'extension_ui_request' && event.method === 'editor' && event.title === 'Plan topic or brainstorm path',

@@ -54,9 +54,9 @@ export default function workExtension(pi: ExtensionAPI) {
 			const prompt = `/skill:work ${planPath}`;
 
 			if (ctx.isIdle()) {
-				pi.sendUserMessage(prompt);
+				pi.sendUserMessage(prompt, { expandPromptTemplates: true });
 			} else {
-				pi.sendUserMessage(prompt, { deliverAs: "followUp" });
+				pi.sendUserMessage(prompt, { deliverAs: "followUp", expandPromptTemplates: true });
 				ctx.ui.notify("Work queued as follow-up", "info");
 			}
 		},

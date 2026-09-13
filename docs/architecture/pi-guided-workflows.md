@@ -1,133 +1,35 @@
-# Pi Guided Workflows
+# Pi workflow interactions
 
-This note defines the Pi-only enhancement layer for guided Heart of Gold workflows.
+## Current behavior
 
-## Purpose
+Shared skills own conversational meaning and workflow policy. The Pi extension owns explicit launch commands and existing work guardrails, not interpretation of the assistant's prose.
 
-Heart of Gold shared skills remain portable and usable in plain text. Pi may add richer interaction for workflows that naturally benefit from structured questions, explicit option selection, and focused answer entry.
+- Ordinary answers, questions, task lists, acceptance criteria, and progress reports remain ordinary chat. There is no `agent_end` extraction, workflow-detection state, hidden model routing, heuristic list-to-choice fallback, or automatic answer injection.
+- Users answer in plain text. A separately installed workstation may provide a user-invoked `/answer`; Heart of Gold does not register or depend on it.
+- `/deep-thought-brainstorm`, `/deep-thought-plan`, `/deep-thought-architect`, `/marvin-work`, and the three sharing launchers remain. Launchers send their intended `/skill:…` with `expandPromptTemplates: true` under the current Pi API, including queued follow-ups. Without that option, current Pi sends the slash text literally instead of expanding the skill.
+- Explicit launcher input dialogs still use standard `editor` requests, including over RPC. Work guards still protect paths, block unsafe command patterns, and require their existing publication confirmation. No guard semantics changed.
+- There is no deliberate decision-card tool yet. The proposed `hog_ask` remains gated on preview review in the [implementation plan](../plans/2026-09-13-fix-pi-question-interaction-plan.md).
 
-The first guided workflows are:
-- `brainstorm`
-- `plan`
-- `architect`
+## Migration from the automatic enhancer
 
-## Canonical Boundary
+The old enhancer parsed final assistant messages during supported workflows. It could turn required checklist steps into a single-choice popup, even after the extraction model returned a high-confidence `none` result. Selecting one injected only that task's label as a user reply.
 
-The shared `SKILL.md` files remain the source of truth for:
-- workflow phases
-- reasoning behavior
-- expected outputs
-- plain-text fallback interaction
+That entire automatic path is retired, not disabled behind a setting. `/deep-thought-guided-debug` and its extraction helpers/fixtures are removed with it. No replacement configuration or command is necessary: keep conversing normally. Users of the old `test:pi-guided` script should use `test:pi-interactions` or the full `test:pi` suite.
 
-The Pi extension may:
-- detect when the user entered a supported workflow
-- inspect the last assistant response
-- upgrade a high-confidence question into interactive UI
-- send the chosen answer back as a normal user message
+The [April enhancer plan](../plans/2026-04-14-feat-pi-guided-workflow-enhancement-plan.md) describes historical behavior, not the current shipped-source contract. Its portable-skills principle survives; its automatic UI design does not.
 
-The Pi extension may not:
-- redefine the workflow
-- require Pi-specific primitives in shared skills
-- change the semantic meaning of the assistant's question
-- auto-answer on the user's behalf
+A source commit or push does **not** update an installed immutable release. Publishing, staging a new release, and changing the pinned Pi source require separate authorization. Never edit an installed release in place. Until activation is explicitly performed, an existing pinned installation may still contain the enhancer.
 
-## Activation Rules
+## Verification
 
-Guided enhancement only activates for known Heart of Gold workflow entrypoints.
+- `tests/pi-interactions.test.mjs` exercises the actual extension entrypoint and registered handlers with mocked context/UI. Required lists, checklists, completion reports, acceptance criteria, mixed report/question messages, and genuine questions produce no unsolicited UI, model access, or synthetic answer across TUI/RPC/no-UI contexts, workflow transitions, and pending follow-ups.
+- Launcher tests assert explicit skill expansion, idle/queued delivery, standard editor requests, and cancellation. `tests/pi-work-guard.test.mjs` retains the independent guard regressions.
+- `tests/pi-package-contract.test.mjs` checks skill exports and the singular package entrypoint. `tests/pi-rpc-smoke.test.mjs` loads the real package in an isolated, offline Pi RPC profile and cancels a real standard editor request without a model call.
+- The old handler was reproduced with stubbed model/UI before deletion: the mandatory-three-steps fixture opened a selector and injected its first item despite the model veto. The replacement event tests assert the absence of that entire behavior rather than testing a new parser.
 
-Currently supported:
-- `/skill:brainstorm`
-- `/brainstorm`
-- `/deep-thought:brainstorm`
-- `/deep-thought-brainstorm`
-- `/skill:plan`
-- `/plan`
-- `/deep-thought:plan`
-- `/deep-thought-plan`
-- `/skill:architect`
-- `/architect`
-- `/deep-thought:architect`
-- `/deep-thought-architect`
+Validated against local Pi 0.85.1. No user settings, workstation `/answer`, external question packages, credentials, or installed-release files are changed by this migration.
 
-Guided enhancement resets when the user enters a different slash command outside the supported set.
+## Related contracts
 
-## Prompt Kinds
-
-The first implementation supports only conservative prompt kinds.
-
-### 1. Single choice
-
-Used when the assistant clearly presents 2-4 explicit options, for example:
-
-- numbered options
-- short bullet options
-- next-step handoff menus
-
-Pi realization:
-- model-backed extraction when available, with heuristic fallback
-- custom TUI selector rendered with `ctx.ui.custom(...)`
-
-Fallback:
-- shared skill already remains usable in plain text
-
-### 2. Focused free-text question
-
-Used when the assistant asks one clearly scoped question and expects a short text answer.
-
-Pi realization:
-- model-backed extraction when available, with heuristic fallback
-- custom TUI editor rendered with `ctx.ui.custom(...)`
-
-Fallback:
-- user can answer in ordinary text
-
-## Extraction Strategy
-
-The implementation now prefers a small-model extraction pass inspired by Mitsuhiko's `/answer` extension, with conservative heuristics as fallback.
-
-Current behavior:
-- try to extract one prompt from the latest assistant message using a fast model
-- accept only non-ambiguous prompts with medium/high confidence
-- fall back to heuristics for explicit option lists and focused single questions
-- ignore ambiguous responses
-
-This keeps the enhancement useful without making the shared skill depend on model extraction.
-
-## Delivery Strategy
-
-Collected answers are injected with `pi.sendUserMessage(...)` so the assistant sees them as normal user replies and the shared workflow continues naturally.
-
-If the agent is still active, the message is queued as a follow-up.
-
-## Debug Mode
-
-Pi exposes `/deep-thought-guided-debug` to toggle lightweight notices for the guided workflow enhancer.
-
-When enabled, it reports:
-- whether extraction used the model-backed path or heuristic fallback
-- whether a prompt was skipped and why
-- whether the user answered or dismissed the guided prompt
-
-This is Pi-only observability for iteration and does not change the shared skill contract.
-
-## Validation Strategy
-
-The core workflow-detection and heuristic extraction logic is factored into a small shared helper module so it can be validated with Node tests.
-
-Current automated coverage includes fixture-driven examples for realistic assistant turns from shared Heart of Gold workflows:
-- `brainstorm` option lists and negative non-interactive cases
-- `plan` brainstorm-selection and negative progress-report cases
-- `architect` context-selection and handoff choices
-- workflow entrypoint detection
-- unrelated command reset behavior
-- markdown-wrapped JSON parsing for model output
-- rejection of low-confidence prompts
-
-These fixtures validate Pi-only interpretation behavior. They do not change the shared skill contract for Claude Code, Codex, OpenCode, or other harnesses.
-
-## Why This Exists
-
-This design preserves the multi-harness contract:
-- Claude Code, Codex, OpenCode, and other harnesses continue to use the shared skills directly
-- Pi gets richer UX only through `extensions/pi/`
-- the workflow remains portable even when Pi-specific UI is unavailable
+- [Shared skill portability](pi-cross-harness-contract.md)
+- [Intentional-question implementation plan and pending UI preview](../plans/2026-09-13-fix-pi-question-interaction-plan.md)

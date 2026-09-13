@@ -1,14 +1,12 @@
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 
-import architectExtension from "./architect";
-import brainstormExtension from "./brainstorm";
-import guidedWorkflowsExtension from "./guided-workflows";
-import planExtension from "./plan";
-import shareExtension from "./share";
-import workExtension from "./work";
+import architectExtension from "./architect.ts";
+import brainstormExtension from "./brainstorm.ts";
+import planExtension from "./plan.ts";
+import shareExtension from "./share.ts";
+import workExtension from "./work.ts";
 
 export default function heartOfGoldPiExtensions(pi: ExtensionAPI) {
-	guidedWorkflowsExtension(pi);
 	brainstormExtension(pi);
 	planExtension(pi);
 	architectExtension(pi);

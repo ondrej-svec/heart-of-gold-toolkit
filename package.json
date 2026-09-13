@@ -1,6 +1,6 @@
 {
   "name": "@heart-of-gold/toolkit",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "type": "module",
   "description": "Cross-platform installer for Heart of Gold skills — works with Codex, OpenCode, Pi, Claude Code, and more",
   "bin": {
@@ -11,7 +11,7 @@
     "check:publish-safety": "python3 scripts/check-publish-safety.py",
     "check:security": "python3 scripts/check-security-regressions.py",
     "check:compat": "python3 scripts/check-harness-compatibility.py",
-    "test:pi-guided": "node --test tests/pi-guided-workflows.test.mjs",
+    "test:pi-interactions": "node --test tests/pi-interactions.test.mjs",
     "test:pi": "node --test tests/pi-*.test.mjs",
     "test:visualize": "node --test tests/visualize-smart-render.test.mjs",
     "test:workstation": "node --test workstation/tests/*.test.mjs",

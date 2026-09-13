@@ -13,9 +13,9 @@ export default function brainstormExtension(pi: ExtensionAPI) {
 			const prompt = `/skill:brainstorm ${topic}`;
 
 			if (ctx.isIdle()) {
-				pi.sendUserMessage(prompt);
+				pi.sendUserMessage(prompt, { expandPromptTemplates: true });
 			} else {
-				pi.sendUserMessage(prompt, { deliverAs: "followUp" });
+				pi.sendUserMessage(prompt, { deliverAs: "followUp", expandPromptTemplates: true });
 				ctx.ui.notify("Brainstorm queued as follow-up", "info");
 			}
 		},
