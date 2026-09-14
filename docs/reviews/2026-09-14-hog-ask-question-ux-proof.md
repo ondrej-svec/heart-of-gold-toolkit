@@ -51,6 +51,8 @@ Pi reviewer **openai-codex/gpt-5.6-terra / medium**, session `0d6e1c18-ec4e-4e52
 
 ## Handoff boundaries
 
+**Activation update:** the exact corrected preview was subsequently authorized in conversation, globally pinned, and verified offline. See the [activation record](2026-09-14-hog-ask-025-preview-activation.md). The source-proof JSON below intentionally remains a pre-activation checkpoint; user reload and native acceptance are still pending.
+
 The separate launcher was rejected; delivery is a newly identified immutable local preview source for `/reload` **in this session**, not another terminal or browser recreation. Preparation, exact pin authorization, activation, loaded-source verification and human acceptance are separate steps. No npm publication, installed-release patch, dependency/theme/keybinding/trust changes, automatic reload or background-helper work belongs to this scope.
 
 The machine record describes the source-proof checkpoint before activation; any later exact activation belongs in its candidate receipt. Native acceptance and RPC/guidance alignment remain pending. Earlier pre-reload acceptance, dismissal, historical approval and automated proof do not establish acceptance of this correction. Physical-terminal/OS IME/live-model usability and a full clean release archive remain unclaimed.

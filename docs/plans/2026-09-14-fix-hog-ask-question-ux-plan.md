@@ -4,7 +4,7 @@ type: plan
 date: 2026-09-14
 status: in_progress
 confidence: high
-readiness: "Two-Enter native approval correction verified and independently reviewed; exact preview activation and human acceptance pending"
+readiness: "Exact corrected preview globally pinned and offline verified; user reload here and native acceptance pending"
 preview_status: pending
 ---
 
@@ -18,7 +18,7 @@ After the actual reload, Ondrej rejected the ordinary decision flow: selecting a
 
 The earlier “Looks good” answer preceded a confirmed reload and is not acceptance of the installed redesign. The subsequent card was dismissed, followed by explicit negative feedback. Publication of the retained 0.2.4 archive is stopped. npm login has been restored, but authentication is not the remaining gate.
 
-Ondrej accepted the recommendation to simplify ordinary questions, then requested: **“also lets make sure that ours is similar to the question in design and that we do the user interaction right.”** This authorizes the correction's native proof slice and tests. The existing bundled question is the accepted reference; the completed native slice must be shown for human review before broadening the correction or preparing another rollout. No new publication, activation, settings change, forced reload or rollback is authorized here. The previously approved archive is not the corrected artifact.
+Ondrej accepted the recommendation to simplify ordinary questions, then requested: **“also lets make sure that ours is similar to the question in design and that we do the user interaction right.”** This authorizes the correction's native proof slice and tests. The existing bundled question is the accepted reference; the completed native slice must be shown for human review before broadening the correction or preparing another rollout. That initial proof-slice authorization did not permit publication, activation, settings changes, forced reload or rollback. The later exact local-preview authorization and completed source-only activation are recorded below. The previously approved archive is not the corrected artifact.
 
 ## Interaction contract
 
@@ -76,8 +76,9 @@ After the native checkpoint, Ondrej explicitly rejected mandatory Tab → Enter 
 - [x] Replace old fail-closed/Tab tests with exact two-input outcomes, reported-repeat/release non-activation, Esc/re-entry, refocus restart and retained feedback/caret.
 - [x] Run the corrected actual CLI/PTY driver in all four profiles and remapped bindings: **40/40** (`hog-approval-enter-r1`). Legacy approval needs exactly two raw Enters, no injected releases or Tab.
 - [x] Complete focused independent review and fresh source-bound checks/captures: bounded Terra/medium PASS, independent UI/core **50/50**; full working-tree **37 interaction / 151 Pi / 254 workstation / 2 visualization**. Six fresh cropped native-cell inputs are byte-identical to existing PNG inputs; reference proof remains historical. See the current proof record.
-- [ ] Prepare the corrected committed preview identity and obtain exact local pin authorization; do not execute the paused e8a41e3 activation script.
-- [ ] Ask Ondrej to `/reload` here and judge the actual native flow. No forced reload or separate preview launcher.
+- [x] Prepare the corrected committed preview identity and obtain exact local pin authorization: Ondrej answered **“yes”** to `0.2.4-6e9eab3ce023` → `0.2.5-preview-fc565ca7a034`. The paused e8a41e3 activation script was not executed.
+- [x] Create/seal the 284 committed files, atomically replace only the global toolkit source, and verify a fresh offline global-profile process. One `hog_ask`, exact new toolkit paths, unchanged `/answer`, standard editor cancellation, zero model calls/errors; verifier exited and was confirmed absent. Other settings/resource filters and all three prior releases remain unchanged. [Exact activation record](../reviews/2026-09-14-hog-ask-025-preview-activation.md).
+- [ ] Ondrej: `/reload` here and judge the actual native flow. No forced reload or separate preview launcher. This source pin is not post-reload human acceptance.
 
 ## Historical native preview checkpoint (e8a41e3)
 
