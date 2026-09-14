@@ -9,7 +9,7 @@ status: verified
 
 Scope: the [accepted design and Enter amendment](../plans/2026-09-13-design-hog-ask-visual-preview-plan.md#design-acceptance--2026-09-13), implemented under [the native plan](../plans/2026-09-13-feat-hog-ask-native-design-plan.md). Ondrej authorized implementation with “ok lets work on it then” and subsequently selected **Tab → Enter on older terminals** in the answered `hog-ask-legacy-confirmation` decision (`legacy-tab-enter`). Continuing to completion does not expand the plan's explicit publication/activation exclusions.
 
-**Source 0.2.4 is not published or activated.** The active immutable source remains `0.2.3-6a1713667c14`. No installed release, user settings, themes, keybindings, credentials, or unrelated workstation work was changed. Core/schema semantics remain byte-identical to HEAD before this implementation.
+**At the implementation handoff, source 0.2.4 was not published or activated.** The active immutable source then remained `0.2.3-6a1713667c14`. That implementation did not change installed releases, user settings, themes, keybindings, credentials, or unrelated workstation work. The subsequent [0.2.4 rollout record](../plans/2026-09-14-chore-hog-ask-024-rollout-plan.md) tracks separately authorized activation and publication. Core/schema semantics remain byte-identical to HEAD before this implementation.
 
 Implementation **`369ab9edbae2c682143643e71db3bdc7196db638`** is committed and pushed on `feat/workstation-guide`. All 284 curated distributable hashes match that committed source. Only unrelated workstation/private working state remains dirty.
 

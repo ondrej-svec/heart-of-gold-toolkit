@@ -2,7 +2,7 @@
 
 ## Current behavior
 
-Shared skills own conversational meaning and workflow policy. The Pi extension owns explicit launch commands, optional decision presentation and existing work guardrails, not interpretation of the assistant's prose. This describes source version 0.2.4, whose native design implementation is separate from rollout. Published/activated immutable 0.2.3 remains unchanged; 0.2.4 has not been published or installed. The [native proof record](../reviews/2026-09-13-hog-ask-native-proof.md) distinguishes source evidence from physical-terminal and live usability claims.
+Shared skills own conversational meaning and workflow policy. The Pi extension owns explicit launch commands, optional decision presentation and existing work guardrails, not interpretation of the assistant's prose. This describes version 0.2.4, whose native design implementation is separate from rollout. Immutable local 0.2.4 is activated and fresh-process verified; npm publication is approved but awaits normal login, and existing sessions still require reload. See the [rollout record](../plans/2026-09-14-chore-hog-ask-024-rollout-plan.md) for exact scope and status. The [native proof record](../reviews/2026-09-13-hog-ask-native-proof.md) distinguishes source evidence from physical-terminal and live usability claims.
 
 - Ordinary answers, questions, task lists, acceptance criteria, and progress reports remain ordinary chat. There is no `agent_end` extraction, workflow-detection state, hidden model routing, heuristic list-to-choice fallback, or automatic answer injection.
 - Users answer in plain text. A separately installed workstation may provide a user-invoked `/answer`; Heart of Gold does not register or depend on it.

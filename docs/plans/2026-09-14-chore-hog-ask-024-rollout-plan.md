@@ -4,7 +4,7 @@ type: plan
 date: 2026-09-14
 status: in_progress
 confidence: high
-readiness: "Clean release preparation authorized; exact publication and activation approvals pending"
+readiness: "Local activation verified; exact publication approved, awaiting npm login; user reload pending"
 preview_status: approved
 ---
 
@@ -35,8 +35,8 @@ The accepted design and [32-case native proof](../reviews/2026-09-13-hog-ask-nat
 - [x] Make packaged release wording time-independent; commit only rollout-owned documentation. Preserve historical implementation proof and private state. Preparation commit: `6e9eab3ce0231cccabffebd83bde2553443bcf12`.
 - [x] Export the committed source; run full prepublish and visualization checks, then fresh actual CLI/PTY proof with no model calls. Verify implementation hashes against the retained native proof.
 - [x] Pack the clean source, verify every archived file, retain hashes/logs and test the extracted candidate's actual registration/RPC behavior in an isolated profile. Do not install or change the live profile yet.
-- [ ] Obtain approval for the exact public archive/version/tag; publish that archive and verify unauthenticated registry bytes/integrity. Record actual authentication attempts without exposing credentials.
-- [ ] Obtain approval for the exact immutable local release and source-only settings update; stage without overwriting an existing release, seal, activate and verify fresh-process loaded paths/registration plus a benign interaction. Recheck settings and old-release identity before writing.
+- [ ] Publish the exact approved archive/version/tag and verify unauthenticated registry bytes/integrity. Approval is recorded below; normal npm login remains required. Record actual authentication attempts without exposing credentials.
+- [x] Obtain approval for the exact immutable local release and source-only settings update; stage without overwriting an existing release, seal, activate and verify fresh-process loaded paths/registration plus a benign interaction. Recheck settings and old-release identity before writing.
 - [ ] Ask Ondrej to reload this session after activation, then confirm the new source and actual native interaction. Do not force other sessions to reload.
 - [ ] Record publication, activation, verification and rollback separately; commit/push intended documentation and report preserved unrelated dirt. Mark complete only after required gates actually close.
 
@@ -50,7 +50,17 @@ The committed tree `e36836d5b5d66d79b53ef13239102a5b2e2751f7` exactly matches th
 - npm integrity: `sha512-+osD1u5tI3jIjqRFNapPqxi1ypEFZaAumRXU9zdgLCt6uuzj9BtfTsONipcOkXwsgW+5KtNm7zqwFp9jFtiOpw==`.
 - Private receipt, manifest, logs and native cell captures are retained under `$HOME/.local/lib/heart-of-gold/artifacts/0.2.4-6e9eab3ce023/`; they are not committed or packaged.
 - Public registry preflight: `latest` is **0.2.3** and **0.2.4 does not exist**. `npm whoami` returned **E401**; normal npm login is required. No publication was attempted and no authentication check was bypassed.
-- Live settings and the protected unrelated tracked files still match their preparation hashes. Publication and activation approvals remain pending; the proposed immutable target is `0.2.4-6e9eab3ce023`.
+- Before activation, live settings and protected unrelated tracked files matched their preparation hashes. The immutable target is `0.2.4-6e9eab3ce023`; exact approvals and activation are recorded below.
+
+## Exact approvals and local activation
+
+Ondrej submitted bare approval to **`hog-ask-024-activate`**, covering this exact archive/source, creation and sealing of the new immutable release, replacement of only the existing toolkit package source, and offline verification. npm publication, runtime upgrades, theme/keybinding/trust changes, model calls, background-helper work and automatic existing-session reload were explicitly excluded.
+
+Local activation then completed: all **284** regular files match the approved archive, the new directory/files are read-only, and the old immutable 0.2.3 tree is unchanged. Only the existing toolkit source string changed in settings; its filters and all other settings were preserved. A private settings backup and receipt were retained. A fresh process using the actual global profile confirmed the new extension/skill paths, exactly one `hog_ask`, the unchanged `/answer`, no retired debug command or load errors, and a real standard plan-editor open/cancel. The verifier's owned PID was absent afterward. The sealed release separately passed **6/6** offline RPC/registration cases, including approval feedback and cancellation. No model calls occurred.
+
+Ondrej then submitted bare approval to **`hog-ask-024-publish`**, covering public npm publication of the exact retained archive as `@heart-of-gold/toolkit@0.2.4` with tag `latest` and registry-byte verification, through normal npm authentication. It excludes repacking, another version, dependency/settings changes and session reload. Publication is authorized but **not yet performed**: the normal npm-login gate remains open after E401. Local activation was independently authorized and verified rather than being held behind this unrelated authentication gate.
+
+Existing sessions have not been forcibly reloaded. User `/reload` and a benign interaction in the refreshed session remain outstanding; fresh-process verification does not substitute for that acknowledgment.
 
 ## Acceptance and rollback
 

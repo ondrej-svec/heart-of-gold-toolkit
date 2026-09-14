@@ -81,7 +81,7 @@ Captured native cells were inspected in light/dark and narrow layouts. Physical-
 
 Implementation commit **`369ab9edbae2c682143643e71db3bdc7196db638`** was pushed to `feat/workstation-guide`. All 284 verified distributable hashes were checked again against the committed files. Implementation-owned paths are clean. Intentionally preserved unrelated changes remain in `.github/workflows/workstation.yml`, `workstation/**` and private `.pi/**`; none entered the implementation commit.
 
-The source implementation is complete. Publication, immutable-release preparation/activation and live-session reload were not performed and remain separately authorized rollout work.
+The source implementation is complete. Publication, immutable-release preparation/activation and live-session reload were not performed by this implementation plan. The separately authorized [0.2.4 rollout](2026-09-14-chore-hog-ask-024-rollout-plan.md) now tracks those later gates and their actual status.
 
 ## Acceptance / rejection criteria
 
