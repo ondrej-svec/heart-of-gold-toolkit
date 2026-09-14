@@ -32,13 +32,25 @@ The accepted design and [32-case native proof](../reviews/2026-09-13-hog-ask-nat
 ## Tasks and gates
 
 - [x] Recheck source/upstream identity, installed Pi version, active toolkit source and unrelated working state. Source is `ef62b0864377f5d4d0f238dfa20afde29036ec47`, equal to the remote branch; active toolkit remains immutable 0.2.3.
-- [ ] Make packaged release wording time-independent; commit only rollout-owned documentation. Preserve historical implementation proof and private state.
-- [ ] Export the committed source; run full prepublish and visualization checks, then fresh actual CLI/PTY proof with no model calls. Verify implementation hashes against the retained native proof.
-- [ ] Pack the clean source, verify every archived file, retain hashes/logs and test the extracted candidate's actual registration/RPC behavior in an isolated profile. Do not install or change the live profile yet.
+- [x] Make packaged release wording time-independent; commit only rollout-owned documentation. Preserve historical implementation proof and private state. Preparation commit: `6e9eab3ce0231cccabffebd83bde2553443bcf12`.
+- [x] Export the committed source; run full prepublish and visualization checks, then fresh actual CLI/PTY proof with no model calls. Verify implementation hashes against the retained native proof.
+- [x] Pack the clean source, verify every archived file, retain hashes/logs and test the extracted candidate's actual registration/RPC behavior in an isolated profile. Do not install or change the live profile yet.
 - [ ] Obtain approval for the exact public archive/version/tag; publish that archive and verify unauthenticated registry bytes/integrity. Record actual authentication attempts without exposing credentials.
 - [ ] Obtain approval for the exact immutable local release and source-only settings update; stage without overwriting an existing release, seal, activate and verify fresh-process loaded paths/registration plus a benign interaction. Recheck settings and old-release identity before writing.
 - [ ] Ask Ondrej to reload this session after activation, then confirm the new source and actual native interaction. Do not force other sessions to reload.
 - [ ] Record publication, activation, verification and rollback separately; commit/push intended documentation and report preserved unrelated dirt. Mark complete only after required gates actually close.
+
+## Verified artifact checkpoint
+
+The committed tree `e36836d5b5d66d79b53ef13239102a5b2e2751f7` exactly matches the verification export. Full clean checks passed: **37 interaction-policy / 143 Pi / 148 workstation / 2 visualization**, plus publish-safety/security/compatibility. All **16** retained implementation/proof hashes match. Fresh actual CLI/PTY checks passed **32/32** from the clean source and independently **32/32** against the extracted archive. Extracted-archive RPC/registration checks passed **6/6**, including standalone, skills-only and `/answer` coexistence, feedback/cancellation, print-mode unavailability and exact source paths. These are offline native process checks, with no model calls or new independent code review.
+
+- Package: **284 files**, **551,340 bytes**; every archived file matches the clean committed source.
+- Archive: `heart-of-gold-toolkit-0.2.4.tgz`.
+- SHA-256: `48097c0b01383ed67a4594658d54d2400e0bd045015e69ae7739f1b8cace993d`.
+- npm integrity: `sha512-+osD1u5tI3jIjqRFNapPqxi1ypEFZaAumRXU9zdgLCt6uuzj9BtfTsONipcOkXwsgW+5KtNm7zqwFp9jFtiOpw==`.
+- Private receipt, manifest, logs and native cell captures are retained under `$HOME/.local/lib/heart-of-gold/artifacts/0.2.4-6e9eab3ce023/`; they are not committed or packaged.
+- Public registry preflight: `latest` is **0.2.3** and **0.2.4 does not exist**. `npm whoami` returned **E401**; normal npm login is required. No publication was attempted and no authentication check was bypassed.
+- Live settings and the protected unrelated tracked files still match their preparation hashes. Publication and activation approvals remain pending; the proposed immutable target is `0.2.4-6e9eab3ce023`.
 
 ## Acceptance and rollback
 
