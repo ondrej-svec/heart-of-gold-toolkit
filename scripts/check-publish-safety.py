@@ -8,6 +8,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 
 BLOCKED_FILE_PATTERNS = [
+    re.compile(r"^scripts/pi-(hog-ask|question-reference)-proof\.py$"),
     re.compile(r"(^|/)\.env($|\.)"),
     re.compile(r"(^|/)\.serena(/|$)"),
     re.compile(r"(^|/)\.pi(/|$)"),

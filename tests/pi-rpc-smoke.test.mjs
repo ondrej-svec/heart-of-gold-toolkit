@@ -170,6 +170,41 @@ test('real print/JSON run returns unavailable without any model or UI request', 
   } finally { await rpc.stop(); }
 });
 
+const preset = labels => labels.find(label => label.startsWith('Option [internal]:'));
+for (const scenario of [
+  { name: 'one-response preset', responses: [preset], expected: { optionId: 'internal', note: '' } },
+  { name: 'direct custom', responses: ['Action: Write a different answer', 'Support 🦊'], expected: { text: 'Support 🦊', note: '' } },
+  { name: 'preset with optional note', responses: ['Action: Answer with a note', preset, 'Include support'], expected: { optionId: 'internal', note: 'Include support' }, noteFor: 'Internal only' },
+  { name: 'custom with optional note', responses: ['Action: Answer with a note', 'Action: Write a different answer', 'Support 🦊', 'Dry run'], expected: { text: 'Support 🦊', note: 'Dry run' }, noteFor: 'Support 🦊' },
+  { name: 'invalid note then correction', responses: ['Action: Answer with a note', preset, 'n'.repeat(1001), 'Corrected'], expected: { optionId: 'internal', note: 'Corrected' }, noteFor: 'Internal only', invalidNote: true },
+  { name: 'note cancellation', responses: ['Action: Answer with a note', preset, undefined], dismissed: true },
+]) {
+  test(`real offline RPC ordinary ${scenario.name} has no mandatory review`, { timeout: 20_000 }, async () => {
+    const rpc = startRpc('proof'), seen = new Set(), dialogs = [];
+    try {
+      rpc.send({ id: 'ordinary', type: 'prompt', message: '/hog-ask-proof decision' });
+      for (const value of scenario.responses) {
+        const dialog = await rpc.waitFor(e => e.type === 'extension_ui_request' && ['select', 'input'].includes(e.method) && !seen.has(e.id), 'ordinary dialog');
+        seen.add(dialog.id); dialogs.push(dialog);
+        assert.doesNotMatch(dialog.title, /Review before sending/);
+        rpc.send({ type: 'extension_ui_response', id: dialog.id, ...(value === undefined ? { cancelled: true } : { value: typeof value === 'function' ? value(dialog.options) : value }) });
+      }
+      const event = await rpc.waitFor(e => e.type === 'message_end' && e.message?.customType === 'hog-ask-proof', 'ordinary outcome');
+      const result = event.message.details;
+      assert.equal(result.status, scenario.dismissed ? 'dismissed' : 'answered');
+      assert.equal(result.approved, false);
+      if (scenario.dismissed) assert.equal(result.answer, null);
+      else for (const [key, value] of Object.entries(scenario.expected)) assert.equal(result.answer[key], value);
+      assert.equal((await rpc.waitFor(e => e.type === 'response' && e.id === 'ordinary', 'ordinary completed')).success, true);
+      assert.equal(rpc.events.filter(e => e.type === 'extension_ui_request').length, scenario.responses.length);
+      if (scenario.noteFor) assert.ok(dialogs.at(-1).title.includes(`Note for: ${scenario.noteFor}`));
+      if (scenario.invalidNote) { assert.match(dialogs.at(-1).title, /note must be/); assert.ok(dialogs.at(-1).title.includes('n'.repeat(1001))); }
+      assert.equal(rpc.events.some(e => ['agent_start', 'extension_error', 'invalid-json'].includes(e.type)), false);
+      assert.doesNotMatch(rpc.getStderr(), /failed to load|extension error/i);
+    } finally { await rpc.stop(); }
+  });
+}
+
 test('real offline RPC presents approval feedback separately and preserves cancellation', { timeout: 20_000 }, async () => {
   const rpc = startRpc('proof');
   const seen = new Set();
@@ -188,6 +223,7 @@ test('real offline RPC presents approval feedback separately and preserves cance
     const qualified = await nextDialog();
     assert.match(qualified.title, /Request changes: yes, but only after a dry run/);
     assert.ok(!qualified.options.includes('Action: Add / edit note'));
+    assert.equal(qualified.options[0], 'Action: Send feedback');
     answer(qualified, 'Action: Send feedback');
     const result = await rpc.waitFor((e) => e.type === 'message_end' && e.message?.customType === 'hog-ask-proof', 'proof result');
     assert.equal(result.message.details.status, 'needs_discussion');

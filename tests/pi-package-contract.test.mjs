@@ -56,6 +56,12 @@ test('private Pi session and todo state is excluded and blocked from publication
   assert.ok(readFileSync(join(ROOT, 'scripts/check-publish-safety.py'), 'utf8').includes('(^|/)\\.pi(/|$)'));
 });
 
+test('development-only native and reference proof drivers are excluded from publication', () => {
+  const ignore = readFileSync(join(ROOT, '.npmignore'), 'utf8').split('\n');
+  for (const file of ['scripts/pi-hog-ask-proof.py', 'scripts/pi-question-reference-proof.py']) assert.ok(ignore.includes(file), file);
+  assert.ok(readFileSync(join(ROOT, 'scripts/check-publish-safety.py'), 'utf8').includes('^scripts/pi-(hog-ask|question-reference)-proof'));
+});
+
 test('the Pi package entrypoint is singular', () => {
   const pkg = readJson(join(ROOT, 'package.json'));
   assert.deepEqual(pkg.pi.extensions, ['./extensions/pi']);

@@ -16,8 +16,9 @@ pytest.ini
 bun.lock
 bun.lockb
 
-# Development-only PTY proof depends on unpackaged test fixtures
+# Development-only PTY/reference proofs depend on unpackaged fixtures and local Pi
 scripts/pi-hog-ask-proof.py
+scripts/pi-question-reference-proof.py
 
 # Plugin test dirs
 **/tests/

@@ -76,21 +76,91 @@ test('controller has no preselection and only a reviewed, unqualified approve gr
   assert.equal(c.submit().details.approved, false);
 });
 
-test('RPC maps IDs explicitly and reviews selected answer, scope, recommendation and note', async () => {
-  const q = normalizeQuestion(decision);
-  const ui = scripted(option('public'), action('Add / edit note'), 'Include support', action('Send answer'));
+test('RPC preset submits in exactly one select response without review', async () => {
+  const q = normalizeQuestion(decision), ui = scripted(option('public'));
   const result = await askRpc(q, ui, new AbortController().signal);
-  assert.equal(result.details.answer.optionId, 'public');
-  assert.equal(result.details.answer.note, 'Include support');
+  assert.deepEqual(result.details.answer, { kind: 'option', optionId: 'public', label: 'Public', note: '' });
   assert.equal(result.details.status, 'answered');
-  assert.ok(ui.calls.every((call) => call.title.includes(q.question) && call.title.includes('Lower risk.')));
-  assert.equal(ui.calls[1].arg[0], action('Back / change answer'));
-  assert.match(ui.calls.at(-1).title, /Note: Include support/);
+  assert.equal(ui.calls.length, 1);
+  assert.match(ui.calls[0].title, /Select an answer to submit immediately/);
+});
+
+test('RPC custom input submits immediately; invalid drafts stay editable without review', async () => {
+  const invalid = 'x'.repeat(2001);
+  const ui = scripted(action('Write a different answer'), invalid, 'Support + internal 🦊');
+  const result = await askRpc(normalizeQuestion(decision), ui, new AbortController().signal);
+  assert.deepEqual(result.details.answer, { kind: 'custom', text: 'Support + internal 🦊', note: '' });
+  assert.deepEqual(ui.calls.map(c => c.method), ['select', 'input', 'input']);
+  assert.match(ui.calls[2].title, /answer must be/);
+  assert.ok(ui.calls[2].title.includes(invalid));
+  assert.ok(ui.calls.slice(1).every(c => !c.arg.includes('reviewed')));
+});
+
+test('RPC opt-in notes show the exact answer and submit both without a review screen', async () => {
+  for (const custom of [false, true]) {
+    for (const note of ['Include support', '']) {
+      const ui = scripted(action('Answer with a note'), ...(custom ? [action('Write a different answer'), 'Support 🦊'] : [option('public')]), note);
+      const result = await askRpc(normalizeQuestion(decision), ui, new AbortController().signal);
+      assert.equal(result.details.answer.note, note);
+      assert.equal(custom ? result.details.answer.text : result.details.answer.optionId, custom ? 'Support 🦊' : 'public');
+      assert.equal(ui.calls.length, custom ? 4 : 3);
+      assert.ok(ui.calls.every(c => c.title.includes(decision.question) && c.title.includes('Lower risk.')));
+      assert.match(ui.calls.at(-1).title, custom ? /Note for: Support 🦊/ : /Note for: Public/);
+      assert.ok(ui.calls.every(c => !c.title.includes('Review before sending')));
+    }
+  }
+});
+
+test('RPC note errors retain the draft and current association; note mode can be exited before answering', async () => {
+  const invalid = 'n'.repeat(1001);
+  const ui = scripted(action('Answer with a note'), option('public'), invalid, 'Corrected note');
+  const result = await askRpc(normalizeQuestion(decision), ui, new AbortController().signal);
+  assert.equal(result.details.answer.note, 'Corrected note');
+  assert.equal(ui.calls.length, 4);
+  assert.match(ui.calls.at(-1).title, /Note for: Public/);
+  assert.match(ui.calls.at(-1).title, /note must be/);
+  assert.ok(ui.calls.at(-1).title.includes(invalid));
+  const direct = scripted(action('Answer with a note'), action('Answer without a note'), option('internal'));
+  assert.equal((await askRpc(normalizeQuestion(decision), direct, new AbortController().signal)).details.answer.note, '');
+  assert.ok(direct.calls.every(c => c.method === 'select'));
+});
+
+for (const prefix of [[], [action('Write a different answer')], [action('Answer with a note')], [action('Answer with a note'), option('public')]]) {
+  test(`RPC ordinary cancellation after ${prefix.length} responses is final`, async () => {
+    const ui = scripted(...prefix, undefined);
+    const result = await askRpc(normalizeQuestion(decision), ui, new AbortController().signal);
+    assert.equal(result.details.status, 'dismissed');
+    assert.equal(result.details.answer, null);
+    assert.equal(ui.calls.length, prefix.length + 1);
+  });
+}
+
+test('RPC approval still requires two responses with exact review and Send first, never Back by default', async () => {
+  const ui = scripted(option('approve'), labels => { assert.equal(labels[0], action('Send approval')); return labels[0]; });
+  const result = await askRpc(normalizeQuestion(approval), ui, new AbortController().signal);
+  assert.equal(ui.calls.length, 2);
+  assert.match(ui.calls[1].title, /Review before sending/);
+  assert.match(ui.calls[1].title, /docs\/plans\/test\.md/);
+  assert.match(ui.calls[1].title, /Revision: r1/);
+  assert.ok(ui.calls[1].arg.includes(action('Back / change answer')));
+  assert.equal(result.details.approved, true);
+});
+
+test('RPC immediate answers cannot win an abort at the final select or input boundary', async () => {
+  for (const stage of ['preset', 'custom', 'note']) {
+    const signal = new AbortController();
+    const final = labels => { signal.abort(); return stage === 'preset' ? option('public')(labels) : 'Answer'; };
+    const ui = scripted(...(stage === 'preset' ? [] : stage === 'custom' ? [action('Write a different answer')] : [action('Answer with a note'), option('public')]), final);
+    const result = await createInteractions(() => assert.fail('No native adapter')).run(normalizeQuestion(decision), ctx(ui), signal.signal);
+    assert.equal(result.details.status, 'aborted');
+    assert.equal(result.details.answer, null);
+    assert.equal(ui.calls.length, stage === 'preset' ? 1 : stage === 'custom' ? 2 : 3);
+  }
 });
 
 test('RPC generated actions never collide with model option labels', async () => {
   const q = normalizeQuestion({ ...decision, options: [{ ...decision.options[0], label: 'Action: Write a different answer' }, decision.options[1]] });
-  const ui = scripted(option('internal'), action('Send answer'));
+  const ui = scripted(option('internal'));
   const result = await askRpc(q, ui, new AbortController().signal);
   assert.equal(new Set(ui.calls[0].arg).size, ui.calls[0].arg.length);
   assert.equal(result.details.answer.kind, 'option');
@@ -114,13 +184,13 @@ test('RPC approval presents stable intents, sends feedback only through Request 
 
 test('RPC approval requires explicit clearing of valid or invalid feedback drafts before approval', async () => {
   const q = normalizeQuestion(approval);
-  for (const draft of ['Changes needed', 'x'.repeat(2001)]) {
+  for (const draft of ['Changes needed', '   ', 'x'.repeat(2001)]) {
     const clear = (labels) => {
       assert.ok(labels.includes(action('Clear feedback draft')));
       assert.ok(!labels.some((label) => label.startsWith('Option [approve]:')));
       return action('Clear feedback draft');
     };
-    const ui = scripted(option('revise'), draft, ...(draft.length <= 2000 ? [action('Back / change answer')] : []), clear, option('approve'), action('Send approval'));
+    const ui = scripted(option('revise'), draft, ...(draft.trim() && draft.length <= 2000 ? [action('Back / change answer')] : []), clear, option('approve'), action('Send approval'));
     const result = await askRpc(q, ui, new AbortController().signal);
     assert.equal(result.details.status, 'answered'); assert.equal(result.details.approved, true);
     assert.doesNotMatch(ui.calls.at(-1).title, /Approve as written: Approve as written/);

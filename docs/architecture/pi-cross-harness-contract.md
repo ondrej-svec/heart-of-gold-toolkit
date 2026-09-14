@@ -82,7 +82,8 @@ contract.
 - **Conversation:** ordinary prose, optionally assisted by a separately installed,
   user-invoked `/answer`. No post-turn extraction or answer injection.
 - **Decision/approval:** optional agent-invoked `hog_ask`, one question at a time.
-  Native TUI card; standard abortable RPC select/input with final review;
+  Native TUI card; standard abortable RPC select/input. Ordinary answers submit
+  directly, optional notes precede sending, and only approvals require review;
   print/JSON returns `unavailable`. Skills-only installs still work in prose.
 - **Progress:** non-interactive reports from the authoritative Markdown plan,
   not a second tracker or a menu of required tasks.

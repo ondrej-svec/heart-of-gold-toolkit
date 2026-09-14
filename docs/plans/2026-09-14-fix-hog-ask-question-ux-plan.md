@@ -4,7 +4,7 @@ type: plan
 date: 2026-09-14
 status: in_progress
 confidence: high
-readiness: "Current-session native preview accepted; wider RPC/guidance implementation and release remain separate unfinished scope"
+readiness: "Native preview accepted; user authorized RPC/guidance completion and release preparation; exact artifact publication/activation gates remain"
 preview_status: approved
 ---
 
@@ -64,7 +64,7 @@ Approval shares this quieter visual language, but still shows the exact action/a
 - [x] Implement the **native proof slice only** in `hog-ask-ui.ts`, with focused regressions for direct preset/custom submission, notes before submission, draft preservation, keyboard/pointer parity and unchanged approval guards. Replace tests that enshrine Enter → Back; do not merely change their expected text.
 - [x] Run the actual offline Pi CLI against this component in regular/fullscreen and narrow/light/dark cases. Present native-cell captures of preset, custom, note and approval flows, plus an explicit key-by-key result record. No new browser-only simulation or live settings change.
 - [x] Obtain Ondrej's acceptance of the native preview here: approval test `hog-025-native-approval-test`, followed by explicit **“yes it was good”** to the two-Enter/no-Tab question; ordinary check `hog-025-native-question-check` returned **“Looks right”** for the compact layout/direct submission. These answers accept the tested native flow, not publication or further implementation.
-- [ ] After preview acceptance, align the RPC ordinary-question path and guidance with the accepted semantics, preserving exact IDs, optional notes, cancellation and conservative approval results. Keep the core/schema outcome contract unless a separately justified change is necessary.
+- [x] Align the RPC ordinary-question path and guidance after native acceptance: direct preset/custom answers, opt-in answer-labelled notes before sending, and approval Send first. Exact IDs, cancellation/owner guards, conservative approval and core/schema are preserved.
 - [ ] Run full native/RPC/interaction/package suites, independent focused review and all updated actual CLI/PTY cases. Record limitations and preserve unrelated workstation/private dirt; commit/push only correction-owned paths.
 - [ ] Prepare a newly identified immutable release candidate with a distinct version/source identity, verify its complete archive, and seek new exact publication/activation authorization. Never publish the rejected 0.2.4 archive or patch an installed release in place.
 
@@ -79,6 +79,21 @@ After the native checkpoint, Ondrej explicitly rejected mandatory Tab → Enter 
 - [x] Prepare the corrected committed preview identity and obtain exact local pin authorization: Ondrej answered **“yes”** to `0.2.4-6e9eab3ce023` → `0.2.5-preview-fc565ca7a034`. The paused e8a41e3 activation script was not executed.
 - [x] Create/seal the 284 committed files, atomically replace only the global toolkit source, and verify a fresh offline global-profile process. One `hog_ask`, exact new toolkit paths, unchanged `/answer`, standard editor cancellation, zero model calls/errors; verifier exited and was confirmed absent. Activation preserved other settings/resource filters and all three prior releases. A later theme-only settings change was observed, left untouched, and the current global profile passed a separate fresh recheck. [Exact activation record](../reviews/2026-09-14-hog-ask-025-preview-activation.md).
 - [x] Following the activation and `/reload` handoff, test both actual native interactions here and obtain human acceptance. Approval used Enter → review → Enter with no Tab according to Ondrej; the ordinary question's compact layout/direct submission received “Looks right.” No forced reload or separate launcher. This is current-session behavioral acceptance, not a separate module-path or physical-key telemetry attestation.
+
+## Publication completion — authorized scope
+
+Ondrej subsequently asked **“ok can we publish it and make it available for us?”** This authorizes finishing the remaining RPC/guidance work, verification and clean release preparation. The assistant retained confirmation of the newly identified exact artifact before npm publication. Do not reuse 0.2.4 or preview approvals for different bytes. The accepted native UI stays unchanged; global activation remains a separately named source-only scope with no forced reload.
+
+RPC uses only Pi 0.85.1's abortable standard select/input transport; clients own layout, keys and physical input provenance. Ordinary preset selection submits immediately; a valid custom input submits immediately. To compose a note, explicitly choose **Answer with a note** before selecting/writing the answer, then enter the note in an answer-labelled input; submitting that input sends both (blank means no note). This opt-in route replaces ordinary review; it is not another mandatory screen. Invalid input stays a visible draft and cannot send. Cancellation of any RPC dialog dismisses the interaction, preserving existing transport cancellation semantics rather than pretending RPC supports native Editor Back/caret operations.
+
+Approval still opens exact-scope review, with the named Send action first and Back/change explicit, never a primary Enter-to-Back default. Preserve feedback-clearing, strict label-to-ID mapping, invalid-response failure, cancellation/owner/stale-completion behavior and conservative core/schema outcomes. No RPC key-repeat guarantee is claimed.
+
+- [x] Align RPC direct answers, opt-in pre-submit notes and approval primary action; add red-first unit and actual offline RPC regressions. Red: **17 pass / 9 fail** against the old RPC flow; initial green focused native/core/RPC/package: **74/74**.
+- [x] Align tool metadata and current documentation without changing accepted native bytes, portable interaction policy, dependencies or unrelated workstation work. Packaging inspection also caught the new reference proof script missing an npm exclusion; a red-first package regression now covers both development-only proof drivers and the safety checker blocks them.
+- [ ] Independent focused review; clean committed export full checks and fresh native/RPC proof.
+- [ ] Pack once from the verified clean source; verify all archive paths/modes/bytes and extracted registration. Retain exact SHA-256/SRI/source identity.
+- [ ] Confirm and execute publication of that exact archive through normal npm authentication, then verify registry bytes and install instructions.
+- [ ] Separately confirm final source-only local activation if needed; preserve filters/other settings/old releases and verify a fresh offline profile. Never overwrite the later theme setting or force session reloads.
 
 ## Historical native preview checkpoint (e8a41e3)
 
