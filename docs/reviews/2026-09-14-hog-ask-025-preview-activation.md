@@ -36,6 +36,12 @@ The private candidate receipt and manifest are retained under the artifact direc
 
 The [source proof](2026-09-14-hog-ask-question-ux-proof.md) records native **40/40**, independent UI/core **50/50** with bounded PASS, and working-tree **37 interaction / 151 Pi / 254 workstation / 2 visualization**. These are separate evidence from fresh global-profile verification and do not certify every physical terminal or human usability.
 
+## Later settings observation, preserved
+
+The end-of-session full-settings equality check **failed** after successful activation and initial global-profile verification: the only changed top-level key was `theme`. The toolkit source and complete package/resource composition still matched. The actor responsible for that later change was not identified; no setting was overwritten or restored. The original activation settings hash and initial successful verification remain historical records, not a claim that all settings stayed frozen afterward.
+
+One bounded fresh global-profile recheck against the observed current settings passed the same registration, path, `/answer`, editor-cancellation, no-model/no-error and process-exit checks. It left settings unchanged. The failed equality check and subsequent observation/recheck are recorded separately in the private receipt; passing the recheck does not erase the earlier difference.
+
 ## Remaining gates
 
 - Ondrej runs `/reload` **in this session**; no session was forcibly reloaded. Future/reloaded sessions use the new global source, while already-running sessions keep their loaded code until reload.
