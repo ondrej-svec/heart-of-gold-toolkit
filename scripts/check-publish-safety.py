@@ -10,6 +10,7 @@ ROOT = Path(__file__).resolve().parent.parent
 BLOCKED_FILE_PATTERNS = [
     re.compile(r"(^|/)\.env($|\.)"),
     re.compile(r"(^|/)\.serena(/|$)"),
+    re.compile(r"(^|/)\.pi(/|$)"),
     re.compile(r"(^|/)\.npmrc$"),
     re.compile(r"(^|/)auth\.json$"),
     re.compile(r"(^|/)secrets?/", re.IGNORECASE),

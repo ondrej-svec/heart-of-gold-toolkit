@@ -37,7 +37,7 @@ test('Pi package exports every skill emitted by an extension command', () => {
 
 test('Pi package uses only the current Earendil namespace', () => {
   const pkg = readJson(join(ROOT, 'package.json'));
-  assert.equal(pkg.version, '0.2.3');
+  assert.equal(pkg.version, '0.2.4');
   assert.deepEqual(
     Object.keys(pkg.peerDependencies).sort(),
     ['@earendil-works/pi-ai', '@earendil-works/pi-coding-agent', '@earendil-works/pi-tui', 'typebox'],
@@ -49,6 +49,11 @@ test('Pi package uses only the current Earendil namespace', () => {
     if (source.includes('@mariozechner/')) stale.push(file);
   }
   assert.deepEqual(stale, []);
+});
+
+test('private Pi session and todo state is excluded and blocked from publication', () => {
+  assert.match(readFileSync(join(ROOT, '.npmignore'), 'utf8'), /^\.pi\/$/m);
+  assert.ok(readFileSync(join(ROOT, 'scripts/check-publish-safety.py'), 'utf8').includes('(^|/)\\.pi(/|$)'));
 });
 
 test('the Pi package entrypoint is singular', () => {

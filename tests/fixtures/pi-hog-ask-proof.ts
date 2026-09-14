@@ -1,5 +1,6 @@
 // Benign manual/automated proof only, never a packaged extension entrypoint.
 // Load instead of the package's extension (skills may still come from the package).
+import { appendFileSync } from "node:fs";
 import type { ExtensionAPI, ToolDefinition } from "@earendil-works/pi-coding-agent";
 import heartOfGold from "../../extensions/pi/index.ts";
 
@@ -26,9 +27,12 @@ export default function proof(pi: ExtensionAPI) {
 				...(purpose === "decision" ? {
 					options: [{ id: "internal", label: "Internal only", description: "Validate with support before wider exposure." }, { id: "public", label: "Public", description: "Wider reach and greater rollout risk." }],
 					recommendation: { optionId: "internal", reason: "A smaller pilot reduces risk." },
-				} : { scope: { action: `${args.trim() === "long" ? "Demo verification note. ".repeat(40) + "END_SCOPE. " : ""}Record this demo answer only. No real-world operation is authorized.`, artifactPath: "demo/plan.md", revision: "demo-r1" } }),
+				} : { scope: { action: `${args.trim() === "long" ? "START_SCOPE. " + "Demo verification note. ".repeat(40) + "END_SCOPE. " : ""}Record this demo answer only. No real-world operation is authorized.`, artifactPath: "demo/plan.md", revision: "demo-r1" } }),
 			};
 			const result = await ask.execute("demo", question, undefined, undefined, ctx);
+			// Optional owned PTY evidence, never an application action. Avoid proving
+			// success by matching an old result still visible in terminal scrollback.
+			if (process.env.HOG_ASK_PROOF_OUTPUT) appendFileSync(process.env.HOG_ASK_PROOF_OUTPUT, JSON.stringify(result.details) + "\n");
 			pi.sendMessage({ customType: "hog-ask-proof", content: result.content, details: result.details, display: true });
 		},
 	});

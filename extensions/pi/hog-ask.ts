@@ -1,33 +1,51 @@
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
+import type { TuiMouseEvent } from "@earendil-works/pi-tui";
 import { AskSchema } from "./hog-ask-schema.ts";
 import { normalizeQuestion, outcome } from "./hog-ask-core.mjs";
 import { createInteractions } from "./hog-ask-runtime.mjs";
 import { AskCard } from "./hog-ask-ui.ts";
+import { observeTerminalFocus } from "./hog-ask-focus.mjs";
 
-export function presentTui(question: ReturnType<typeof normalizeQuestion>, ctx: ExtensionContext, signal: AbortSignal) {
-	return ctx.ui.custom((tui, theme, keybindings, done) => {
-		let settled = false;
-		let card: AskCard;
-		const finish = (result: ReturnType<typeof outcome>) => {
-			if (settled) return;
-			settled = true;
-			signal.removeEventListener("abort", abort);
-			card?.dispose();
-			done(signal.aborted ? outcome(question, "aborted") : result);
-		};
-		const abort = () => finish(outcome(question, "aborted"));
-		card = new AskCard(question, tui, theme, keybindings, finish);
-		signal.addEventListener("abort", abort, { once: true });
-		if (signal.aborted) abort();
-		return {
-			get focused() { return card.focused; },
-			set focused(value: boolean) { card.focused = value; },
-			render: (width: number) => settled ? [] : card.render(width),
-			handleInput: (data: string) => { if (!settled) card.handleInput(data); },
-			invalidate: () => card.invalidate(),
-			dispose: () => { card.dispose(); finish(outcome(question, "unavailable", null, "ui_disposed")); },
-		};
-	});
+export async function presentTui(question: ReturnType<typeof normalizeQuestion>, ctx: ExtensionContext, signal: AbortSignal, focusInput = process.stdin) {
+	let cleanup = () => {};
+	try {
+		return await ctx.ui.custom((tui, theme, keybindings, done) => {
+			let settled = false;
+			let card: AskCard;
+			let stopFocusObserver = () => {};
+			const finish = (result: ReturnType<typeof outcome>) => {
+				if (settled) return;
+				disposeView();
+				done(signal.aborted ? outcome(question, "aborted") : result);
+			};
+			const abort = () => finish(outcome(question, "aborted"));
+			const disposeView = () => {
+				settled = true;
+				stopFocusObserver();
+				signal.removeEventListener("abort", abort);
+				card?.dispose();
+			};
+			cleanup = disposeView;
+			card = new AskCard(question, tui, theme, keybindings, finish);
+			if (tui.mode === "fullscreen") stopFocusObserver = observeTerminalFocus(focusInput, () => card.invalidateInputOrigin());
+			signal.addEventListener("abort", abort, { once: true });
+			if (signal.aborted) abort();
+			return {
+				wantsKeyRelease: true,
+				get focused() { return card.focused; },
+				set focused(value: boolean) { card.focused = value; },
+				render: (width: number) => settled ? [] : card.render(width),
+				handleInput: (data: string) => { if (!settled) card.handleInput(data); },
+				handleMouse: (event: TuiMouseEvent) => settled ? undefined : card.handleMouse(event),
+				invalidate: () => card.invalidate(),
+				dispose: () => { card.dispose(); finish(outcome(question, "unavailable", null, "ui_disposed")); },
+			};
+		});
+	} finally {
+		// Also cover host setup throws, rejected custom UI, or a lost result.
+		// Those paths may never call the component's disposer or our done().
+		cleanup();
+	}
 }
 
 export default function hogAskExtension(pi: ExtensionAPI) {

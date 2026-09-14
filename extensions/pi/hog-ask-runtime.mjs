@@ -1,4 +1,5 @@
-import { answerText, createController, outcome, questionText } from './hog-ask-core.mjs';
+import { createController, outcome, questionText } from './hog-ask-core.mjs';
+import { answerLabel, optionDescription, optionLabel, sendLabel } from './hog-ask-presentation.mjs';
 
 // Race even non-cooperative adapters; consume late rejections, and never continue
 // into another dialog after cancellation. Native RPC select/input also get signal.
@@ -16,16 +17,25 @@ export async function askRpc(question, ui, signal) {
   const controller = createController(question);
   while (!signal.aborted) {
     const state = controller.state;
-    let title = `${questionText(question)}\n\n${answerText(state.answer)}`;
+    const displayAnswer = state.answer && (state.answer.kind === 'custom'
+      ? state.answer.text
+      : optionLabel(question, question.options.find((option) => option.id === state.answer.optionId)));
+    const summary = !state.answer ? 'No answer selected.'
+      : question.purpose === 'approval' && state.answer.kind === 'option' ? answerLabel(question, state.answer)
+      : `${answerLabel(question, state.answer)}: ${displayAnswer}${state.answer.note ? `\nNote: ${state.answer.note}` : ''}`;
+    let title = `${questionText(question)}\n\n${summary}`;
     if (state.step === 'custom' || state.step === 'note') {
-      // Pi 0.85.1 editor() cannot be cancelled. input() can; always review text.
-      title += `\n${state.step === 'custom' ? 'Write a different answer' : 'Optional note (blank clears it)'}`;
+      const feedback = question.purpose === 'approval' && state.step === 'custom';
+      title += `\n${feedback ? 'Describe the changes needed (required; up to 2000 characters).' : state.step === 'custom' ? 'Write a different answer' : 'Optional note (blank clears it)'}`;
       if (state.textDraft) title += `\nPrevious draft: ${state.textDraft}`;
       if (state.error) title += `\n${state.error}`;
-      const value = await abortable(ui.input(title, 'Your text; reviewed before sending', { signal }), signal);
+      const value = await abortable(ui.input(title, feedback ? 'Feedback; reviewed before sending' : 'Your text; reviewed before sending', { signal }), signal);
       if (signal.aborted) break;
       if (value === undefined) return outcome(question, 'dismissed');
-      controller.saveText(value);
+      const saved = controller.saveText(value);
+      // Invalid feedback remains a draft, but return to choose so it can be
+      // retried or explicitly cleared rather than being silently abandoned.
+      if (!saved && feedback) controller.back();
       continue;
     }
     // Never persist display labels or use a guessed array index. Prefix generated
@@ -33,18 +43,21 @@ export async function askRpc(question, ui, signal) {
     const choices = new Map();
     if (state.step === 'choose') {
       for (const option of question.options) {
-        choices.set(`Option [${option.id}]: ${option.label} — ${option.description}`, { action: 'choose', id: option.id });
+        // A pending feedback draft must be deliberately cleared before an approval.
+        if (question.purpose === 'approval' && state.customDraft && option.id === 'approve') continue;
+        choices.set(`Option [${option.id}]: ${optionLabel(question, option)} — ${optionDescription(question, option)}`, {
+          action: question.purpose === 'approval' && option.id === 'revise' ? 'feedback' : 'choose', id: option.id,
+        });
       }
-      choices.set('Action: Write a different answer', { action: 'custom' });
+      if (question.purpose === 'approval') {
+        if (state.customDraft) choices.set('Action: Clear feedback draft', { action: 'clear-feedback' });
+      } else choices.set('Action: Write a different answer', { action: 'custom' });
     } else {
       title += '\nReview before sending. Nothing is submitted yet.';
-      if (question.purpose === 'approval' && (state.answer.kind === 'custom' || state.answer.note)) {
-        title += '\nThis qualification needs discussion. No approval will be granted.';
-      }
       // Neutral first action. Repeated Enter cannot silently approve a scope.
       choices.set('Action: Back / change answer', { action: 'back' });
-      choices.set('Action: Add / edit note', { action: 'note' });
-      choices.set('Action: Send answer', { action: 'send' });
+      if (question.purpose === 'decision') choices.set('Action: Add / edit note', { action: 'note' });
+      choices.set(`Action: ${sendLabel(question, state.answer).replace(/^./, (letter) => letter.toUpperCase())}`, { action: 'send' });
     }
     choices.set('Action: Dismiss', { action: 'dismiss' });
     const value = await abortable(ui.select(title, [...choices.keys()], { signal }), signal);
@@ -55,9 +68,13 @@ export async function askRpc(question, ui, signal) {
     if (choice.action === 'dismiss') return outcome(question, 'dismissed');
     if (choice.action === 'send') return controller.submit();
     if (choice.action === 'choose') controller.choose(choice.id);
-    else if (choice.action === 'custom') controller.custom();
+    else if (choice.action === 'custom' || choice.action === 'feedback') controller.custom();
     else if (choice.action === 'back') controller.back();
-    else controller.editNote();
+    else if (choice.action === 'clear-feedback') {
+      // Keep this presentation-only: the controller's existing validation resets
+      // its draft, then Back returns to the normal explicit-choice state.
+      controller.custom(); controller.saveText(''); controller.back();
+    } else controller.editNote();
   }
   return outcome(question, 'aborted');
 }

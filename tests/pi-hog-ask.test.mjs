@@ -1,11 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { EventEmitter } from 'node:events';
+import { observeTerminalFocus } from '../extensions/pi/hog-ask-focus.mjs';
 import './helpers/pi-runtime.mjs';
 import { normalizeQuestion, createController, outcome } from '../extensions/pi/hog-ask-core.mjs';
 import { createInteractions, askRpc } from '../extensions/pi/hog-ask-runtime.mjs';
 const { default: extension, presentTui } = await import('../extensions/pi/hog-ask.ts');
 const { AskSchema } = await import('../extensions/pi/hog-ask-schema.ts');
 const { Check } = await import('typebox/value');
+const { matchesKey } = await import('@earendil-works/pi-tui');
 
 const decision = { id: 'audience', purpose: 'decision', title: 'Rollout', question: 'Who gets first access?', context: 'One pilot release.', options: [
   { id: 'internal', label: 'Internal', description: 'Smaller pilot.' }, { id: 'public', label: 'Public', description: 'Wider reach.' },
@@ -94,24 +97,39 @@ test('RPC generated actions never collide with model option labels', async () =>
   assert.equal(result.details.answer.optionId, 'internal');
 });
 
-test('RPC approval custom and qualification return discussion; invalid/blank responses never consent', async () => {
-  for (const responses of [
-    [action('Write a different answer'), '', 'Only after dry run', action('Send answer')],
-    [option('approve'), action('Add / edit note'), 'thanks', action('Send answer')],
-  ]) {
-    const ui = scripted(...responses);
-    const result = await askRpc(normalizeQuestion(approval), ui, new AbortController().signal);
-    assert.equal(result.details.status, 'needs_discussion'); assert.equal(result.details.approved, false);
-    assert.ok(ui.calls.every((call) => call.title.includes('r1') && call.title.includes('Excludes publishing')));
-    assert.match(ui.calls.at(-1).title, /No approval will be granted/);
-  }
-  const invalid = await askRpc(normalizeQuestion(approval), scripted('approve'), new AbortController().signal);
+test('RPC approval presents stable intents, sends feedback only through Request changes, and has no note action', async () => {
+  const q = normalizeQuestion(approval);
+  const ui = scripted(option('revise'), 'Only after dry run', action('Send feedback'));
+  const result = await askRpc(q, ui, new AbortController().signal);
+  assert.equal(result.details.status, 'needs_discussion'); assert.equal(result.details.approved, false);
+  assert.equal(result.details.answer.kind, 'custom');
+  assert.ok(ui.calls.every((call) => call.title.includes('r1') && call.title.includes('Excludes publishing')));
+  assert.match(ui.calls[0].arg.find((label) => label.startsWith('Option [approve]:')), /Approve as written/);
+  assert.match(ui.calls[0].arg.find((label) => label.startsWith('Option [revise]:')), /Request changes/);
+  assert.ok(!ui.calls.at(-1).arg.includes(action('Add / edit note')));
+  assert.ok(!ui.calls.at(-1).title.includes('No approval will be granted'));
+  const invalid = await askRpc(q, scripted('approve'), new AbortController().signal);
   assert.equal(invalid.details.reason, 'invalid_ui_response'); assert.equal(invalid.details.approved, false);
 });
 
-for (const stage of ['choose', 'review', 'custom', 'note']) {
+test('RPC approval requires explicit clearing of valid or invalid feedback drafts before approval', async () => {
+  const q = normalizeQuestion(approval);
+  for (const draft of ['Changes needed', 'x'.repeat(2001)]) {
+    const clear = (labels) => {
+      assert.ok(labels.includes(action('Clear feedback draft')));
+      assert.ok(!labels.some((label) => label.startsWith('Option [approve]:')));
+      return action('Clear feedback draft');
+    };
+    const ui = scripted(option('revise'), draft, ...(draft.length <= 2000 ? [action('Back / change answer')] : []), clear, option('approve'), action('Send approval'));
+    const result = await askRpc(q, ui, new AbortController().signal);
+    assert.equal(result.details.status, 'answered'); assert.equal(result.details.approved, true);
+    assert.doesNotMatch(ui.calls.at(-1).title, /Approve as written: Approve as written/);
+  }
+});
+
+for (const stage of ['choose', 'review', 'feedback']) {
   test(`RPC cancellation at ${stage} dismisses without any next dialog`, async () => {
-    const prefix = stage === 'choose' ? [] : stage === 'custom' ? [action('Write a different answer')] : stage === 'review' ? [option('approve')] : [option('approve'), action('Add / edit note')];
+    const prefix = stage === 'choose' ? [] : stage === 'feedback' ? [option('revise')] : [option('approve')];
     const ui = scripted(...prefix, undefined);
     const result = await askRpc(normalizeQuestion(approval), ui, new AbortController().signal);
     assert.equal(result.details.status, 'dismissed'); assert.equal(result.details.approved, false);
@@ -150,7 +168,7 @@ test('registered tool aborts a pending RPC input and every session-navigation bo
   for (const event of ['session_before_switch', 'session_before_fork', 'session_before_tree', 'session_tree', 'session_shutdown', 'session_start', 'signal']) {
     const { tool, hooks } = registered();
     const pending = defer(); let inputSignal;
-    const ui = { select: async () => action('Write a different answer'), input: (_title, _arg, options) => { inputSignal = options.signal; return pending.promise; } };
+    const ui = { select: async (_title, labels) => option('revise')(labels), input: (_title, _arg, options) => { inputSignal = options.signal; return pending.promise; } };
     const signal = new AbortController();
     const run = tool.execute('call', approval, signal.signal, undefined, ctx(ui));
     await tick(); assert.ok(inputSignal);
@@ -196,5 +214,82 @@ test('native custom lifecycle closes once on abort/disposal and ignores stale in
     assert.equal(result.details.status, how === 'dispose' ? 'unavailable' : 'aborted');
     component.dispose(); component.handleInput('\r'); component.focused = true;
     assert.equal(component.focused, false); assert.equal(closes, 1);
+  }
+});
+
+test('passive focus observer handles split reports before dispatch and removes only its own listener', () => {
+  const input = Object.assign(new EventEmitter(), { isTTY: true });
+  const seen = [];
+  input.on('data', () => seen.push('consumer'));
+  const stop = observeTerminalFocus(input, () => seen.push('focus'));
+  input.emit('data', Buffer.from('\x1b'));
+  input.emit('data', Buffer.from('['));
+  input.emit('data', Buffer.from('I\r'));
+  assert.deepEqual(seen, ['consumer', 'consumer', 'focus', 'consumer']);
+  seen.length = 0;
+  input.emit('data', 'ordinary text'); input.emit('data', '\x1b[O\r');
+  assert.deepEqual(seen, ['consumer', 'focus', 'consumer']);
+  stop(); stop();
+  assert.equal(input.listenerCount('data'), 1);
+  seen.length = 0; input.emit('data', '\x1b[I');
+  assert.deepEqual(seen, ['consumer']);
+  const nonTty = new EventEmitter();
+  observeTerminalFocus(nonTty, () => assert.fail('non-TTY observer'))();
+  assert.equal(nonTty.listenerCount('data'), 0);
+});
+
+test('actual custom wrapper forwards releases/mouse and disposes its focus observer on every exit', async () => {
+  for (const how of ['send', 'abort', 'dispose', 'preabort']) {
+    const input = Object.assign(new EventEmitter(), { isTTY: true });
+    const signal = new AbortController(); let component, closes = 0;
+    const binding = { 'tui.select.confirm': 'enter', 'tui.input.submit': 'enter', 'tui.select.cancel': 'escape' };
+    const theme = { fg: (_, text) => text, bg: (_, text) => text, bold: (text) => text };
+    // Model the host consuming focus but dispatching activation in the same chunk.
+    input.on('data', (data) => { if (data.includes('\r')) component.handleInput('\r'); });
+    const ui = { custom: (factory) => new Promise((resolve) => {
+      component = factory({ mode: 'fullscreen', terminal: { rows: 48 }, requestRender() {} }, theme,
+        { matches: (data, action) => binding[action] ? matchesKey(data, binding[action]) : false, getKeys: (action) => [binding[action] ?? 'unbound'] },
+        (result) => { closes++; resolve(result); });
+    }) };
+    if (how === 'preabort') signal.abort();
+    const pending = presentTui(normalizeQuestion(approval), ctx(ui, 'tui'), signal.signal, input);
+    assert.equal(component.wantsKeyRelease, true);
+    assert.equal(typeof component.handleMouse, 'function');
+    if (how !== 'preabort') {
+      assert.equal(input.listenerCount('data'), 2);
+      component.focused = true;
+      component.handleInput('\x1b[13;1u'); component.handleInput('\x1b[13;1:3u');
+      input.emit('data', '\x1b[O\x1b[I\r');
+      assert.equal(closes, 0, 'refocusing chunk must be disarmed before Enter dispatch');
+      if (how === 'abort') signal.abort();
+      else if (how === 'dispose') component.dispose();
+      else { component.handleInput('\x1b[13;1:3u'); component.handleInput('\x1b[13;1u'); }
+    }
+    const result = await pending;
+    assert.equal(result.details.approved, how === 'send');
+    assert.equal(closes, 1);
+    assert.equal(input.listenerCount('data'), 1);
+    component.dispose(); input.emit('data', '\x1b[I\r');
+    assert.equal(closes, 1);
+  }
+});
+
+test('host custom-UI failures or lost results dispose the created view and raw observer', async () => {
+  for (const how of ['throw', 'reject', 'lost']) {
+    const input = Object.assign(new EventEmitter(), { isTTY: true });
+    const signal = new AbortController(); let component, closes = 0;
+    const ui = { custom(factory) {
+      component = factory({ mode: 'fullscreen', terminal: { rows: 40 }, requestRender() {} },
+        { fg: (_, text) => text, bg: (_, text) => text, bold: text => text },
+        { matches: () => false, getKeys: () => [] }, () => closes++);
+      if (how === 'throw') throw new Error('host setup failed');
+      return how === 'reject' ? Promise.reject(new Error('host setup failed')) : Promise.resolve(undefined);
+    } };
+    if (how === 'lost') assert.equal(await presentTui(normalizeQuestion(approval), ctx(ui, 'tui'), signal.signal, input), undefined);
+    else await assert.rejects(async () => presentTui(normalizeQuestion(approval), ctx(ui, 'tui'), signal.signal, input), /host setup failed/);
+    assert.equal(input.listenerCount('data'), 0, `${how} leaked a raw observer`);
+    assert.deepEqual(component.render(80), []);
+    signal.abort(); input.emit('data', '\x1b[I'); component.handleInput('\r'); component.focused = true;
+    assert.equal(component.focused, false); assert.equal(closes, 0);
   }
 });

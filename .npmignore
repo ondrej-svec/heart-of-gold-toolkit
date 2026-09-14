@@ -2,6 +2,7 @@
 .dippy
 .serena/
 .claude/
+.pi/
 .env
 .env.*
 # Keep .claude-plugin/ dirs — the CLI needs marketplace.json and plugin.json manifests

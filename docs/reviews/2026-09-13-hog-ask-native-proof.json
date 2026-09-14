@@ -1,0 +1,190 @@
+{
+  "formatVersion": 1,
+  "sourceVersion": "0.2.4",
+  "environment": {
+    "node": "v25.6.1",
+    "pi": "0.85.1",
+    "tui": "0.85.1"
+  },
+  "checks": {
+    "workingTree": {
+      "interactionPolicy": 37,
+      "pi": 143,
+      "workstation": 254,
+      "visualization": 2
+    },
+    "cleanExport": {
+      "interactionPolicy": 37,
+      "pi": 143,
+      "workstation": 148,
+      "visualization": 2
+    },
+    "focusedNativeCoreRpc": 47,
+    "skipped": 0,
+    "failures": 0
+  },
+  "package": {
+    "files": 284,
+    "manifestSha256": "74b6c3e9f482576f504edf9b8aa7b47f823fed834382244917d39794ffa124ef",
+    "cleanVerificationTree": "d98c21cdde0ff3c01e99969bed39129ce20064a9"
+  },
+  "sourceSha256": {
+    "package.json": "f125b7396c4254e0dbe88e90d85ed3824a6f334815c0c6c0b444937947131684",
+    ".npmignore": "026617ad732eef136204947025a173c834b804f28cdbcf3e0771455dd769aceb",
+    "scripts/check-publish-safety.py": "6c2f6d716a46e043a141b8013dcf80e9d835540d8c868a1d5e90d143375a9d3e",
+    "extensions/pi/hog-ask-core.mjs": "e076b750030edd35a33cf7623d484896f1418bd5336c7d64f77ab19634426100",
+    "extensions/pi/hog-ask-schema.ts": "163beaf74ab92feb590db8e87e79716aa26f0e619feaf2bc29f5c1b716fd6823",
+    "extensions/pi/hog-ask-runtime.mjs": "dd1b8f27b7bbcd728e38a49e1eb2bb223f2c603ebe8bbd1712b3735324a0eb5e",
+    "extensions/pi/hog-ask-presentation.mjs": "b24bc174c4222ce664d1d1b5447caa68e8e897d811a56ca8ea60c2e5d6809c05",
+    "extensions/pi/hog-ask-focus.mjs": "1474954e78c2737d142bd2e04c8a61309bdba9450cade1eaf50002db8260858e",
+    "extensions/pi/hog-ask-ui.ts": "14c80ecfa8cda1ac122a5e4ca5658449d760839d86a2e4f9e0fe3b54acfc1014",
+    "extensions/pi/hog-ask.ts": "189747c45b41ebe2f460b595636f8af8c1e3cab319d0f880e21736b6033de233",
+    "scripts/pi-hog-ask-proof.py": "f2c708dfe86e56fe9eb6d7a714fcb24257982732486b3d55b8ef0b10d647008a",
+    "tests/fixtures/pi-hog-ask-proof.ts": "bc983e85d2bf0aa8d29966bc85614834c75ecf62d5a89dfb27fab70480a918ed",
+    "tests/pi-hog-ask-ui.test.mjs": "63b08cb8ab622eae09fad425d4f33b386b7e85a371e7524b0cabb4135cf5014a",
+    "tests/pi-hog-ask.test.mjs": "545477dbfbd9a9c0d6b76a259870d62509b4b0c5e085b25fa380bbc508dfabc8",
+    "tests/pi-rpc-smoke.test.mjs": "8f932c4b9558dd20dfbfee484c520d4b781ef7af2ac59a0c4f27483faa9b9dd1",
+    "tests/pi-package-contract.test.mjs": "1a0f58c4dfb7c689123a1d57b50907d244ecb77f662d9cc10d74701a2407a841"
+  },
+  "cases": [
+    {
+      "case": "regular-modern-decision-custom-notes",
+      "status": "passed"
+    },
+    {
+      "case": "regular-modern-approval-feedback-release-repeat",
+      "status": "passed"
+    },
+    {
+      "case": "regular-modern-bare-approval-fresh-press",
+      "status": "passed"
+    },
+    {
+      "case": "regular-modern-pause-and-escape",
+      "status": "passed"
+    },
+    {
+      "case": "regular-modern-explicit-feedback-clear-before-approval",
+      "status": "passed"
+    },
+    {
+      "case": "regular-modern-36x24-long-scope",
+      "status": "passed"
+    },
+    {
+      "case": "regular-modern-narrow-validation-and-cancel",
+      "status": "passed"
+    },
+    {
+      "case": "fullscreen-modern-decision-custom-notes",
+      "status": "passed"
+    },
+    {
+      "case": "fullscreen-modern-approval-feedback-release-repeat",
+      "status": "passed"
+    },
+    {
+      "case": "fullscreen-modern-bare-approval-fresh-press",
+      "status": "passed"
+    },
+    {
+      "case": "fullscreen-modern-pause-and-escape",
+      "status": "passed"
+    },
+    {
+      "case": "fullscreen-modern-explicit-feedback-clear-before-approval",
+      "status": "passed"
+    },
+    {
+      "case": "fullscreen-modern-36x24-long-scope",
+      "status": "passed"
+    },
+    {
+      "case": "fullscreen-modern-narrow-validation-and-cancel",
+      "status": "passed"
+    },
+    {
+      "case": "fullscreen-modern-sgr-mouse-option-send-guard",
+      "status": "passed"
+    },
+    {
+      "case": "fullscreen-modern-sgr-editor-caret-back-drag-padding",
+      "status": "passed"
+    },
+    {
+      "case": "fullscreen-modern-sgr-hover-resize-and-stale-gesture",
+      "status": "passed"
+    },
+    {
+      "case": "fullscreen-modern-raw-refocus-before-key-dispatch",
+      "status": "passed"
+    },
+    {
+      "case": "fullscreen-modern-raw-refocus-before-pointer-dispatch",
+      "status": "passed"
+    },
+    {
+      "case": "regular-legacy-decision-custom-notes",
+      "status": "passed"
+    },
+    {
+      "case": "regular-legacy-raw-cr-approval-fails-closed",
+      "status": "passed"
+    },
+    {
+      "case": "regular-legacy-approved-tab-enter-fallback",
+      "status": "passed"
+    },
+    {
+      "case": "regular-legacy-explicit-feedback-clear-before-approval",
+      "status": "passed"
+    },
+    {
+      "case": "regular-legacy-36x24-long-scope",
+      "status": "passed"
+    },
+    {
+      "case": "regular-legacy-narrow-validation-and-cancel",
+      "status": "passed"
+    },
+    {
+      "case": "fullscreen-legacy-decision-custom-notes",
+      "status": "passed"
+    },
+    {
+      "case": "fullscreen-legacy-raw-cr-approval-fails-closed",
+      "status": "passed"
+    },
+    {
+      "case": "fullscreen-legacy-approved-tab-enter-fallback",
+      "status": "passed"
+    },
+    {
+      "case": "fullscreen-legacy-explicit-feedback-clear-before-approval",
+      "status": "passed"
+    },
+    {
+      "case": "fullscreen-legacy-36x24-long-scope",
+      "status": "passed"
+    },
+    {
+      "case": "fullscreen-legacy-narrow-validation-and-cancel",
+      "status": "passed"
+    },
+    {
+      "case": "fullscreen-remapped-confirm-release-cancel",
+      "status": "passed"
+    }
+  ],
+  "transport": "real offline Pi CLI with emulated PTY keyboard/mouse packets",
+  "themes": [
+    "light (regular modern)",
+    "dark (other profiles)"
+  ],
+  "limits": "No physical terminal/OS IME or live-model usability claim",
+  "rollout": {
+    "publicationPerformed": false,
+    "activationPerformed": false,
+    "activeSource": "0.2.3-6a1713667c14"
+  }
+}
