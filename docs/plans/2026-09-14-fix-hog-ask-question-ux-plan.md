@@ -4,7 +4,7 @@ type: plan
 date: 2026-09-14
 status: in_progress
 confidence: high
-readiness: "Native accepted, RPC aligned, clean source/archive verified and independently reviewed; exact publication/activation authorization pending"
+readiness: "Exact publication and source-only local activation approved; normal npm browser authentication and execution pending"
 preview_status: approved
 ---
 
@@ -92,7 +92,7 @@ Approval still opens exact-scope review, with the named Send action first and Ba
 - [x] Align tool metadata and current documentation without changing accepted native bytes, portable interaction policy, dependencies or unrelated workstation work. Packaging inspection also caught the new reference proof script missing an npm exclusion; a red-first package regression now covers both development-only proof drivers and the safety checker blocks them.
 - [x] Independent focused review; clean committed export full checks and fresh native/RPC proof. Frozen source **92bf1845540d3a462ceae59815d64ea1af35c9f9**; final focused **75/75**; full clean **37/167/148/2** and native **40/40**, no failures/skips.
 - [x] Pack once from the verified clean source; verify all archive paths/modes/bytes and extracted registration. **284 files / 551,957 bytes**, archive RPC **12/12**, native **40/40**. SHA-256/SRI/source in the [exact release record](../reviews/2026-09-14-hog-ask-025-release.md). Initial bin-mode preflight failure and unrelated README drift retained rather than overwritten.
-- [ ] Confirm and execute publication of that exact archive through normal npm authentication, then verify registry bytes and install instructions.
+- [ ] Execute publication and verify registry bytes/install instructions. Exact approval **hog-025-publish-and-activate** returned **Approve this scope**; publication and separately named source-only activation are authorized. Noninteractive npm returned **EOTP**, and a registry recheck confirmed 0.2.5 absent; the normal npm browser challenge was opened without collecting an OTP or changing the approved archive.
 - [ ] Separately confirm final source-only local activation if needed; preserve filters/other settings/old releases and verify a fresh offline profile. Never overwrite the later theme setting or force session reloads.
 
 ## Historical native preview checkpoint (e8a41e3)

@@ -1,7 +1,7 @@
 ---
 title: "hog_ask 0.2.5 exact release verification"
 date: 2026-09-14
-status: verified_candidate_awaiting_authorization
+status: exact_scope_approved_awaiting_npm_authentication
 ---
 
 # Exact 0.2.5 release candidate
@@ -49,6 +49,6 @@ The reviewer ran no tests, workers, native trials, web requests, settings/auth c
 
 ## Authorization and availability
 
-At this checkpoint, **nothing has been published or activated**. The accepted local preview remains the existing pin. Exact-archive publication and the separately named source-only final local activation still need confirmation. Activation must preserve the current theme, complete package/resource filters, all other settings and older releases; it must never restore a stale settings backup or force session reloads. The rejected **0.2.4 archive remains unpublished**.
+At the candidate-proof checkpoint, nothing had been published or activated. Subsequently, **hog-025-publish-and-activate** returned **Approve this scope**, authorizing this exact archive's public npm publication with the latest tag and the separately named final source-only local activation. Noninteractive publication returned **EOTP**; a fresh registry read confirmed 0.2.5 absent. The normal npm browser approval page was opened for human authentication, without collecting an OTP or substituting/repacking bytes. Publication execution/registry verification and local activation remain pending that authentication. The accepted preview is still the local pin at this observation. Activation must preserve the current theme, complete package/resource filters, all other settings and older releases; it must never restore a stale settings backup or force session reloads. The rejected **0.2.4 archive remains unpublished**.
 
 [Machine-readable candidate checkpoint](2026-09-14-hog-ask-025-release-proof.json) preserves the pre-authorization state. Private `receipt.json` carries subsequent execution evidence. The older [native-source proof](2026-09-14-hog-ask-question-ux-proof.md) and [accepted preview activation](2026-09-14-hog-ask-025-preview-activation.md) are historical records, not identities or authorization for this new archive.
