@@ -55,7 +55,7 @@ The automatic guided enhancer and `/deep-thought-guided-debug` are retired; ther
 
 Source **0.2.4** includes the accepted **`hog_ask`** native redesign: stable inline input, keyboard/fullscreen mouse navigation, and distinct **Approve as written / Request changes / Not now** intents. Decisions retain optional notes; approval feedback never silently becomes consent. Review precedes Send. Approval confirmation uses Enter after the opening key's release, or the explicitly accepted Tab → Enter fallback without release provenance. Print/JSON returns `unavailable`; no answer executes an action automatically.
 
-Published and locally activated **0.2.3 remains unchanged**. Source 0.2.4 is not published or activated; source commits and `/reload` alone do not replace a pinned immutable release. See the [interaction architecture](docs/architecture/pi-guided-workflows.md), [native implementation proof](docs/reviews/2026-09-13-hog-ask-native-proof.md), and [historical 0.2.3 proof](docs/reviews/2026-09-13-hog-ask-proof.md).
+Publication and local activation are separate: source commits and `/reload` alone do not replace a pinned immutable release. See the [0.2.4 rollout record](docs/plans/2026-09-14-chore-hog-ask-024-rollout-plan.md), [interaction architecture](docs/architecture/pi-guided-workflows.md), [native implementation proof](docs/reviews/2026-09-13-hog-ask-native-proof.md), and [historical 0.2.3 proof](docs/reviews/2026-09-13-hog-ask-proof.md).
 
 The skills themselves enforce their own boundaries (read-only for brainstorm/plan, safe commands for work) via `allowed-tools` and prompt constraints — no manual mode switching needed.
 
