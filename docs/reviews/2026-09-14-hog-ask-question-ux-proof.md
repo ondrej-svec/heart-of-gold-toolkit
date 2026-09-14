@@ -7,54 +7,50 @@ status: preview_pending
 
 # Native question-style correction — source 0.2.5
 
-**Verified native preview, not an accepted or activated release.** The [correction plan](../plans/2026-09-14-fix-hog-ask-question-ux-plan.md) follows Ondrej's rejection of Enter → review → Enter Back, and his request to make the design and interaction resemble Pi's bundled question. The [capture gallery](../previews/hog-ask-question-native/index.html) shows real terminal cells from the installed reference and corrected component. Its controls are images, not a browser simulation.
+**Verified correction, awaiting in-session preview acceptance.** The [plan](../plans/2026-09-14-fix-hog-ask-question-ux-plan.md) follows two explicit rejections: ordinary Enter → review → Enter Back, then mandatory Tab → Enter for final approval. The earlier e8a41e3 preview was approved for local activation but paused before changing the pin. Its approval does not authorize different bytes. Publication of rejected 0.2.4 remains stopped.
 
-## Changed user journeys
+## Actual journeys
 
-| Journey | Actual input and outcome |
+| Journey | Input and outcome |
 |---|---|
-| Preset | Open question → **one Enter** → final `answered`, `internal`; no review/Back or compensating keys |
-| Custom | Down twice → type/paste → Enter → final custom answer |
-| Custom with note | Down twice → `Support + internal 🦊` → Tab → `Include support` → Enter → final custom text plus note |
-| Note, Back, change answer | Tab → `Support first` → Esc → Down → Enter → `public` plus retained note; current association visible before sending |
-| Mouse caret and Back | Native field click/edit → Tab to note → Esc → continue editing/drag/padding click → Enter → exact `MabZQcdef` |
-| Hover/resize | Hover does not take choice focus; resize invalidates a started mouse gesture; a later fresh click returns exact `Nabc` |
-| Approval | Enter opens exact-scope review; matching release followed by a fresh Enter confirms. Repeat/unrelated release/refocus does not confirm |
-| Legacy approval | Repeated raw CR stays unsubmitted; explicit Tab → Enter works. No invented physical-release receipt |
-| Feedback | Request changes → required text → review → deliberate Send → `needs_discussion`, never approval; valid/invalid/whitespace feedback cannot silently become bare approval |
-| Cancellation | Esc goes Back or cancels as labelled; Ctrl+C cancels even invalid custom/note text |
+| Ordinary preset | One Enter → `answered`, selected ID; no review |
+| Custom answer | Down twice or type/paste → Enter → full custom text |
+| Custom with note | `Support + internal 🦊` → Tab → `Include support` → Enter → both values |
+| Retained note | Tab → `Support first` → Esc → Down → Enter → `public` with the visibly associated note |
+| Approval | Enter → exact action/artifact/revision review → Enter → bare `approve`, `approved: true` |
+| Legacy approval | Exactly two raw Enters; no Tab or injected key release |
+| Feedback | Request changes → text → Enter reviews → Enter sends `needs_discussion`, never approval |
+| Escape | Back from review/editing; cancel from choices; Enter never means Back |
+| Focus change | Return review to prior entry, retaining feedback/caret; restart the visible two-Enter journey |
+| Mouse | Fresh clicks use the same outcomes; refocus, hover, drag, double click and stale/reflowed gestures do not authorize |
 
-Ordinary answers are intentionally staged through the existing controller internally; that does **not** expose its review state as another user screen. Core/schema, the RPC adapter, passive focus observer and outer host lifecycle implementation are unchanged. RPC still has the previous ordinary review flow until the native preview is accepted and the next phase aligns it.
+Reported activation repeats and all key releases are ignored. **Legacy raw CR cannot distinguish a held Enter from another press: two CR events can confirm.** No timer, Kitty-active flag or release guarantee is substituted for this limitation. Tab is not an approval unlock. Valid, invalid or whitespace feedback must still be explicitly cleared before approving as written. Ctrl+C dismisses even invalid drafts.
 
-The reference's compact rules/numbered rows/descriptions/custom row are reused as a design model, not copied wholesale. In particular, the installed example clears custom text on Esc; this correction deliberately retains native text/caret. It also retains optional notes, exact scope, configured bindings, bounded input, normalized results, owner cancellation and native mouse safety, which the minimal example is not a substitute for.
+Core/schema, RPC, focus observer and outer ownership/lifecycle code are unchanged. Ordinary answers use the controller's internal staging without displaying its review screen. RPC retains its previous ordinary review flow until native acceptance permits alignment.
 
-## Checks actually run
+## Fresh evidence
 
-- **31 focused native UI tests**, including the replacement for the old “neutral Back review” test. Tests assert one-action final outcomes, not eventual success after extra navigation.
-- **57 focused native/core/RPC/package tests** passed; those overlap the full Pi suite below and are not additional independent coverage.
-- Full **working-tree** prepublish checks: **37 interaction-policy / 149 Pi / 254 workstation**, plus publish safety/security/compatibility; visualization **2/2**. No failures or skips. The workstation count includes intentionally preserved drafts; it is **not** the clean tracked-release baseline of 148 or archive proof.
-- Final corrected native actual CLI/PTY driver: **40/40**, regular/fullscreen, modern/legacy emulation, stock light/dark, 80×40 and 36×24. Includes exact results, long-scope boundaries, invalid drafts, explicit feedback clearing, F6/F7 remaps, hover/caret/drag, resize and raw focus-before-dispatch guards.
-- Installed `question.ts` reference: **4/4** actual CLI cases, ordinary preset and custom submission in regular/light and fullscreen/dark. Reference SHA-256: `a1625d2c72a65d859154a7e66bef222d48ca9e3654a8bb910829ad350378a4c4`.
-- Python AST checks for both proof drivers; `git diff --check`; documentation/frontmatter/local-link and gallery checks.
+- Red first: updated UI tests against the old implementation produced **24 pass / 8 fail**. They exposed the rejected Tab/release prerequisite and specified focus restart, rather than preserving the wrong UX in passing assertions.
+- Final full working-tree checks: **37 interaction / 151 Pi / 254 workstation / 2 visualization**, zero failures or skips; publish safety/security/compatibility passed. The 254 workstation tests include preserved unrelated drafts, not a clean-release baseline.
+- Final UI suite has **33 tests**. Independent reviewer reran UI/core: **50/50**.
+- Actual offline Pi CLI/PTY: **40/40**, one complete fresh run (`hog-approval-enter-r1`), regular/fullscreen, modern/legacy, light/dark, 80×40 and 36×24. Includes two-Enter legacy and no-release modern approval, explicit feedback clearing, long scope, invalid drafts, F6/F7 remaps, pointer guards and same-chunk focus before keyboard/mouse dispatch.
+- Exact native editor outcomes remain `MabZQcdef` and `Nabc` in pointer/caret/Back/resize journeys.
+- Installed reference proof **4/4** is retained historical evidence from `hog-question-reference-r2`, not rerun here. The reference and its driver remain unchanged.
 
-Pi/TUI **0.85.1**, Node **25.6.1**, existing `pyte==0.8.2` proof dependencies. Only temporary offline Pi profiles and benign commands were used; no application model calls or actions were triggered. Each PTY profile's owned process is terminated/reaped by its `finally` path. Capture rendering used an owned isolated headless browser context, never a regular browser profile. The browser required forced termination after a bounded normal-stop wait; its exact owned identity was rechecked before that signal, and both browser/watcher process groups were then verified absent via ESRCH. Public PNGs contain only the native card between its visible rules; host paths, runtime identities and private logs were cropped out.
+Runtime: Pi/TUI **0.85.1**, Node **25.6.1**, `pyte==0.8.2`. Proof uses disposable offline profiles and benign fixture questions, with no model calls or execution of selected actions. PTY processes are terminated/reaped by their owning `finally` paths.
 
-The [machine-readable record](2026-09-14-hog-ask-question-ux-proof.json) binds source/capture hashes and final case results. Raw terminal/log evidence remains private under the retained `hog-question-ux-r4` and `hog-question-reference-r2` temporary artifact directories, not in the package or repository.
+## Visual provenance
 
-## Problems caught rather than concealed
+The [gallery](../previews/hog-ask-question-native/index.html) contains actual native-cell PNGs, not interactive browser controls. The six corrected-component crops from the fresh run have **byte-identical cropped cell HTML and styling** to their earlier rasterized inputs. Their existing PNGs are therefore retained, not presented as newly captured screenshots. The reference PNG is historical and unchanged. Cell-equivalence hashes, source/image hashes and all fresh native case outcomes are bound in the [machine-readable record](2026-09-14-hog-ask-question-ux-proof.json).
 
-Parent inspection found that relocating approval feedback inline left a hidden fourth focus position. A new failing regression exposed incorrect feedback hints/navigation. Esc/Up now return to the visible Request changes row, and Down at Not now stays at the final visible option. The final tests followed this fix.
+This correction required no new browser process. The prior approval PNG already displayed `enter send approval` after a release; the corrected component displays that same footer immediately on opening review. The new keyboard tests—not an unchanged image—prove removal of the unlock.
 
-The first reference helper assumed the CLI was only two directory levels below its package; the installed CLI is deeper. It now finds the expected named package through bounded actual-path ancestry and verifies the exact version, rather than silently choosing another reference.
+## Independent bounded review
 
-The final reference-like spacing made the last custom row scroll off the initial narrow viewport. An intermediate proof run failed because readiness incorrectly waited for that offscreen row. Readiness now waits for the initial focused choice; subsequent real arrow/mouse/validation cases still verify that the custom editor is reachable. The final **40/40** is a fresh complete run after that correction, not a merged total from partial runs.
+Pi reviewer **openai-codex/gpt-5.6-terra / medium**, session `0d6e1c18-ec4e-4e52-8fc4-1cec434aa596`, reviewed the frozen native UI/test/driver delta against e8a41e3 and relevant unchanged core/host/focus dependencies. **PASS, no important findings established.** Only the permitted UI/core test command was run: **50 passed, 0 failed**. The reviewed Git blob identities are recorded in JSON and rechecked by the parent. This covers the bounded correction, not final cross-harness release readiness or human usability.
 
-## Review and release boundaries
+## Handoff boundaries
 
-The implementation delegate completed and retained a successful result/exit record despite a parent pane-control error; the parent inspected the diff, found/fixed the navigation issue and reran checks. No fresh independent review of the final slice is claimed. The later full-correction gate still requires one.
+The separate launcher was rejected; delivery is a newly identified immutable local preview source for `/reload` **in this session**, not another terminal or browser recreation. Preparation, exact pin authorization, activation, loaded-source verification and human acceptance are separate steps. No npm publication, installed-release patch, dependency/theme/keybinding/trust changes, automatic reload or background-helper work belongs to this scope.
 
-An isolated user-run preview profile was prepared privately with the same source/fixture settings as the automated proof. Its launcher validates the recorded source hashes before opening the pinned Node/Pi CLI; shell syntax and the source-check-only path passed. It was not automatically launched and does not replace the user's global profile. The handoff supplies its local command so actual keyboard use can be judged before activation.
-
-Human acceptance remains **pending**. The earlier pre-reload “Looks good,” subsequent dismissal and explicit rejection of 0.2.4 do not approve this preview. Native-cell captures and emulated PTY packets are not universal physical-terminal/OS IME or live-model facilitation certification.
-
-No new archive was packed, no npm publication attempted, no installed release edited, and no settings or forced reload applied. Source 0.2.5 is distinct from the rejected active 0.2.4. The active settings, both old/new immutable trees (file bytes and modes), retained 0.2.4 archive and protected unrelated tracked files were checked unchanged. Restored login and user-reported reload are recorded separately from the failed usability gate. Publishing the rejected 0.2.4 archive is stopped; a future corrected candidate requires new exact artifact authorization.
+The machine record describes the source-proof checkpoint before activation; any later exact activation belongs in its candidate receipt. Native acceptance and RPC/guidance alignment remain pending. Earlier pre-reload acceptance, dismissal, historical approval and automated proof do not establish acceptance of this correction. Physical-terminal/OS IME/live-model usability and a full clean release archive remain unclaimed.

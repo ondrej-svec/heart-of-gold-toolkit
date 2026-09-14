@@ -4,7 +4,7 @@ type: plan
 date: 2026-09-14
 status: in_progress
 confidence: high
-readiness: "Native proof slice verified; awaiting Ondrej's preview acceptance before wider correction or rollout"
+readiness: "Two-Enter native approval correction verified and independently reviewed; exact preview activation and human acceptance pending"
 preview_status: pending
 ---
 
@@ -28,7 +28,7 @@ Ondrej accepted the recommendation to simplify ordinary questions, then requeste
 | Ordinary custom answer | Submit the entered answer | Return to choices, retaining text/caret | Tab opens a note for this answer before submission |
 | Editing an ordinary note | Submit the visible answer and note together | Return to answer editing/choices, retaining the note | Tab also returns to the answer without submitting |
 | Approval choice | Open exact-scope review | Cancel/back as appropriate | No generic approval note |
-| Approval review | Confirm after the existing opening-key release guard; accepted legacy Tab → Enter fallback remains explicit | Back | Request changes remains reviewed feedback, never bare approval |
+| Approval review | Confirm with the next Enter; no Tab unlock or key-release prerequisite | Back | Request changes remains reviewed feedback, never bare approval |
 
 **Enter never means Back.** Ctrl+Enter is not required for ordinary answers. The primary action always advances or submits. Optional notes are composed before submission, never through a default confirmation screen. The note editor must identify the answer it will accompany. Returning/changing a choice must not silently lose valid or invalid note text; its presence stays visible. Invalid input remains editable and prevents submission until corrected or explicitly cancelled.
 
@@ -55,7 +55,7 @@ A small pilot before wider exposure.
 
 The native editor appears inline under the custom row when used; a retained custom draft remains visible when focus returns to choices. The optional note is similarly inline and on demand, explicitly labelled with its current answer. Notes are not silently cleared when editing or moving through choices. Hints reflect the actual focused editor and configured bindings; show newline help only while editing. Short cards remain short. Long content scrolls within a bounded body while essential actions remain reachable.
 
-Approval shares this quieter visual language, but still shows the exact action/artifact/revision and separates Approve as written, Request changes and Not now. Its review has the primary Send action and Esc Back, with no default Back target. Do not remove release/repeat, feedback-clearing, cancellation or stale-pointer safeguards to make the screen simpler.
+Approval shares this quieter visual language, but still shows the exact action/artifact/revision and separates Approve as written, Request changes and Not now. Its review has the primary Send action and Esc Back, with no default Back target. Reported activation repeats and key releases do nothing. Keep feedback-clearing, cancellation and stale-pointer safeguards. On focus change, return approval review to its prior entry (retaining feedback/caret), so the visible Enter → review → Enter journey restarts; the refocusing click cannot send. Raw legacy Enter cannot distinguish a held key from a fresh press: two CR events can confirm. This is an explicit limitation of the requested simple flow, not physical-release protection.
 
 ## Ready work and gates
 
@@ -68,7 +68,18 @@ Approval shares this quieter visual language, but still shows the exact action/a
 - [ ] Run full native/RPC/interaction/package suites, independent focused review and all updated actual CLI/PTY cases. Record limitations and preserve unrelated workstation/private dirt; commit/push only correction-owned paths.
 - [ ] Prepare a newly identified immutable release candidate with a distinct version/source identity, verify its complete archive, and seek new exact publication/activation authorization. Never publish the rejected 0.2.4 archive or patch an installed release in place.
 
-## Verified native preview checkpoint
+## Final approval correction — authorized to implement
+
+After the native checkpoint, Ondrej explicitly rejected mandatory Tab → Enter on final approval. The exact e8a41e3 local-preview activation was paused before any pin change. His subsequent **“ok then lets do this and deliver it please”** authorizes implementing and proving **Enter → review → Enter confirms; Esc goes back**. The release/Tab requirement above is superseded, not accepted UX. No timer or Kitty-active flag is substituted for physical-release evidence. Native acceptance, exact new preview activation and publication remain separate gates.
+
+- [x] Replace the keyboard unlock with direct next-Enter confirmation; remove the four release/Tab state fields.
+- [x] Replace old fail-closed/Tab tests with exact two-input outcomes, reported-repeat/release non-activation, Esc/re-entry, refocus restart and retained feedback/caret.
+- [x] Run the corrected actual CLI/PTY driver in all four profiles and remapped bindings: **40/40** (`hog-approval-enter-r1`). Legacy approval needs exactly two raw Enters, no injected releases or Tab.
+- [x] Complete focused independent review and fresh source-bound checks/captures: bounded Terra/medium PASS, independent UI/core **50/50**; full working-tree **37 interaction / 151 Pi / 254 workstation / 2 visualization**. Six fresh cropped native-cell inputs are byte-identical to existing PNG inputs; reference proof remains historical. See the current proof record.
+- [ ] Prepare the corrected committed preview identity and obtain exact local pin authorization; do not execute the paused e8a41e3 activation script.
+- [ ] Ask Ondrej to `/reload` here and judge the actual native flow. No forced reload or separate preview launcher.
+
+## Historical native preview checkpoint (e8a41e3)
 
 Source version **0.2.5** distinguishes this unactivated proof slice from the rejected immutable 0.2.4. Native code, its tests and the actual CLI driver are corrected; RPC logic/core/schema remain unchanged. The [native capture gallery](../previews/hog-ask-question-native/index.html) compares the installed reference with the real corrected component; it is not an interactive browser mockup. [Proof and limitations](../reviews/2026-09-14-hog-ask-question-ux-proof.md) record **40/40** corrected native CLI/PTY cases, **4/4** installed-reference cases, and full working-tree checks **37 interaction / 149 Pi / 254 workstation / 2 visualization**, no failures or skips. The workstation count includes preserved unrelated drafts, not a clean-release baseline.
 
@@ -78,7 +89,7 @@ No source-only check or gallery view is automatically human acceptance. This che
 
 ## Rejection criteria and evidence
 
-Reject any ordinary Enter → review → Back loop, mandatory Ctrl+Enter for a normal answer, lost custom/note text on Back, a note that accompanies an undisclosed answer, hidden/overlapping narrow controls, or a visual flow unlike the named reference. Reject any keyboard repeat, focus/hover, stale mouse gesture or dismissed/qualified reply granting approval. Keep the legacy release-provenance limitation honest.
+Reject any ordinary Enter → review → Back loop, mandatory Ctrl+Enter for a normal answer, lost custom/note text on Back, a note that accompanies an undisclosed answer, hidden/overlapping narrow controls, or a visual flow unlike the named reference. Reject any reported activation repeat, focus/hover, stale mouse gesture or dismissed/qualified reply granting approval. Do not claim raw legacy repetition is distinguishable from a new press. Keep the legacy release-provenance limitation honest.
 
 The proof must assert the actual number of input actions to a final result, not merely an intermediate state or eventual success after compensating key sequences. User acceptance belongs after a confirmed reload/preview source identity, not before it. A native-cell capture is visual evidence; emulated PTY packets do not certify every physical terminal or OS IME.
 

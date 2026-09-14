@@ -1,11 +1,11 @@
 {
-  "formatVersion": 1,
-  "status": "native-preview-verified-awaiting-human-acceptance",
+  "formatVersion": 2,
+  "status": "native-approval-correction-verified-awaiting-exact-preview-activation-and-human-acceptance",
   "sourceVersion": "0.2.5",
-  "baseCommit": "927c9c9f47f2570dbe84bb3d282ecd5e539c4352",
+  "baseCommit": "e8a41e365cd836077770fcf68b2027f5ebbb3ccb",
   "sourceFiles": {
     "package.json": "401f725ef7d586ed2b0f4cdf84f06b185717019dddf0191ba948323d140f03e1",
-    "extensions/pi/hog-ask-ui.ts": "247432b3a2cbf4e9b6dd4d9fd88b2a5e716ae1c11a0f63ca188fb4efc3e6a813",
+    "extensions/pi/hog-ask-ui.ts": "f861f4140396c17bf4c36d7ef7647ae8d235e363175b4b38e14c87b5d4cc72c0",
     "extensions/pi/hog-ask-core.mjs": "e076b750030edd35a33cf7623d484896f1418bd5336c7d64f77ab19634426100",
     "extensions/pi/hog-ask-schema.ts": "163beaf74ab92feb590db8e87e79716aa26f0e619feaf2bc29f5c1b716fd6823",
     "extensions/pi/hog-ask-focus.mjs": "1474954e78c2737d142bd2e04c8a61309bdba9450cade1eaf50002db8260858e",
@@ -13,10 +13,10 @@
     "extensions/pi/hog-ask-presentation.mjs": "b24bc174c4222ce664d1d1b5447caa68e8e897d811a56ca8ea60c2e5d6809c05",
     "extensions/pi/hog-ask.ts": "189747c45b41ebe2f460b595636f8af8c1e3cab319d0f880e21736b6033de233",
     "extensions/pi/index.ts": "ffab3cec23d9aa2b860cbda6ebde190aaa3d79c39c66c3f6e23bc7725041d189",
-    "scripts/pi-hog-ask-proof.py": "03ac7a6345ff86a8c6e76e942e04fc8fd51c1ad5c4b5edef8c643e7f99117f0b",
+    "scripts/pi-hog-ask-proof.py": "cbcf8d32cbe6c9709335294c774f871799cf43751b6f4aa2060bc977d1a96ff6",
     "scripts/pi-question-reference-proof.py": "b7953c157ddb7bdf211fb130753c00ce557e60ef21cd1e198b7d1102788d3917",
     "tests/fixtures/pi-hog-ask-proof.ts": "bc983e85d2bf0aa8d29966bc85614834c75ecf62d5a89dfb27fab70480a918ed",
-    "tests/pi-hog-ask-ui.test.mjs": "29f15649dea9ab9c7f066b3793f3eff72163a4116c28b6405056fb3d724c1b4f",
+    "tests/pi-hog-ask-ui.test.mjs": "34028d95825f77fc1e3d56b69ec9ac666f326392a617a9b7033af3777552cf94",
     "tests/pi-package-contract.test.mjs": "8ab4042878cbaa78ed6482ee3e4b1f8e1429afc816babc8928207f05339c622e"
   },
   "captures": {
@@ -28,20 +28,58 @@
     "docs/previews/hog-ask-question-native/note.png": "7aeb478bc33b8a808fd1789afab7c310795e6e5d2d4998b08f8592f8faff4fe0",
     "docs/previews/hog-ask-question-native/reference.png": "00e3f2a51aa740fdca3ba032f93ab09c0ca3c049528f5b1f9d37067d7dd67517"
   },
+  "captureProvenance": {
+    "kind": "retained-pngs-with-fresh-byte-identical-cropped-native-cell-inputs",
+    "freshRun": "hog-approval-enter-r1",
+    "priorRasterizedRun": "hog-question-ux-r4",
+    "equivalence": [
+      {
+        "name": "regular-modern-decision-entry",
+        "identical": true,
+        "sha256": "5216209b2c4446be0bcec80a6952a394717fcb47dbd07187b19e7df5d565f28c"
+      },
+      {
+        "name": "fullscreen-modern-decision-custom",
+        "identical": true,
+        "sha256": "748a8328622bb4fcdb29dfdee24862ed4663970a5623cb46b2229983dd7721de"
+      },
+      {
+        "name": "fullscreen-modern-decision-note",
+        "identical": true,
+        "sha256": "64ae04d815c7f90c0cf01a304fb4c94032d61ed9a7ef4a411e49d74ee9c1f4aa"
+      },
+      {
+        "name": "fullscreen-modern-approval-review",
+        "identical": true,
+        "sha256": "0ac54826952c8a1f75b726aedf99f86b687a30b6e60d1921c38f2a1b77a146f2"
+      },
+      {
+        "name": "fullscreen-modern-feedback-review",
+        "identical": true,
+        "sha256": "bf441c1fe6f21f8987fff667565f8e7fa09a5fd0365d04e00997faaecabe137b"
+      },
+      {
+        "name": "fullscreen-modern-narrow-review-start",
+        "identical": true,
+        "sha256": "7c586ea53d80065d5e731448c3d6c75587046233663d571266c8dd3e80ab548b"
+      }
+    ],
+    "reference": "historical unchanged"
+  },
   "runtime": {
     "pi": "0.85.1",
     "node": "v25.6.1",
     "pythonDependency": "pyte==0.8.2"
   },
   "checks": {
-    "focusedNative": 31,
-    "focusedNativeCoreRpcPackage": 57,
+    "focusedNative": 33,
+    "independentNativeCore": 50,
     "interaction": 37,
-    "pi": 149,
+    "pi": 151,
     "workstationWithUnrelatedDrafts": 254,
     "visualization": 2,
     "nativeCliPty": 40,
-    "installedReferenceCliPty": 4,
+    "historicalInstalledReferenceCliPty": 4,
     "failures": 0,
     "skipped": 0
   },
@@ -151,11 +189,11 @@
       "status": "passed"
     },
     {
-      "case": "regular-legacy-raw-cr-approval-fails-closed",
+      "case": "regular-legacy-two-raw-enters-approval",
       "status": "passed"
     },
     {
-      "case": "regular-legacy-approved-tab-enter-fallback",
+      "case": "regular-legacy-legacy-back-refocus-review",
       "status": "passed"
     },
     {
@@ -183,11 +221,11 @@
       "status": "passed"
     },
     {
-      "case": "fullscreen-legacy-raw-cr-approval-fails-closed",
+      "case": "fullscreen-legacy-two-raw-enters-approval",
       "status": "passed"
     },
     {
-      "case": "fullscreen-legacy-approved-tab-enter-fallback",
+      "case": "fullscreen-legacy-legacy-back-refocus-review",
       "status": "passed"
     },
     {
@@ -203,7 +241,7 @@
       "status": "passed"
     },
     {
-      "case": "fullscreen-remapped-confirm-release-cancel",
+      "case": "fullscreen-remapped-confirm-repeat-cancel",
       "status": "passed"
     }
   ],
@@ -228,25 +266,32 @@
         "case": "reference-fullscreen-dark-custom-submit",
         "status": "passed"
       }
-    ]
+    ],
+    "evidence": "retained historical; not rerun for approval correction"
+  },
+  "independentReview": {
+    "verdict": "bounded PASS; no important findings",
+    "model": "openai-codex/gpt-5.6-terra",
+    "thinking": "medium",
+    "session": "0d6e1c18-ec4e-4e52-8fc4-1cec434aa596",
+    "reviewedBlobs": {
+      "extensions/pi/hog-ask-ui.ts": "71bb44be0a1d564087bc67f627770f89e5e9679f",
+      "tests/pi-hog-ask-ui.test.mjs": "f4dd78f96085eec977b1861e65d83980add7a65a",
+      "scripts/pi-hog-ask-proof.py": "0ade38416be94ca4950e1f71c938fe71a7926b67"
+    },
+    "testsRun": "node --test tests/pi-hog-ask-ui.test.mjs tests/pi-hog-ask.test.mjs",
+    "passed": 50
   },
   "humanPreviewAccepted": false,
   "rpcAligned": false,
   "releaseReady": false,
   "activated": false,
   "npmPublished": false,
-  "preserved": {
-    "settings": true,
-    "activeImmutable024": true,
-    "rollbackImmutable023": true,
-    "rejectedArchive024": true,
-    "protectedTrackedDirt": true
-  },
   "limitations": [
+    "Two legacy CR events can confirm; held-key repetition is indistinguishable from a new press",
     "Native-cell captures and emulated PTY input, not universal physical-terminal/OS IME certification",
     "No live-model facilitation proof",
-    "No fresh independent review of the final proof slice",
-    "Working-tree checks, not a clean export or archive verification",
-    "Previous 0.2.4 publication approval does not authorize this correction"
+    "Working-tree checks, not a clean export or release archive verification",
+    "Previous e8a41e3 local-preview approval does not authorize these changed bytes"
   ]
 }

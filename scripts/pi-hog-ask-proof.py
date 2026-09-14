@@ -276,9 +276,8 @@ def run_profile(output: Path, mode: str, modern: bool, report):
                 t.capture(output, profile + "-approval-entry")
                 t.keys(KITTY_ENTER_REPEAT); t.wait("1. Approve as written")
                 t.keys(DOWN, ENTER, "Dry run first", "\x1b[13;5u"); t.wait("send feedback")
-                # Ctrl+Enter only reviews. Releasing Ctrl first means the key-up
-                # reports ordinary Enter; it still releases the opening key.
-                # Release arms, repeat does not submit, then fresh Enter sends.
+                # Ctrl+Enter only reviews. Releases and reported repeats never
+                # submit; another Enter sends, with no release prerequisite.
                 t.keys(KITTY_ENTER_RELEASE, KITTY_ENTER_REPEAT); assert t.result_count() == before
                 t.capture(output, profile + "-feedback-review")
                 t.keys(KITTY_ENTER_PRESS)
@@ -291,7 +290,7 @@ def run_profile(output: Path, mode: str, modern: bool, report):
             def bare_approval():
                 before = t.result_count(); t.open_demo("approval")
                 t.keys(KITTY_ENTER_PRESS); t.wait("send approval")
-                t.keys(KITTY_ENTER_RELEASE, KITTY_ENTER_REPEAT); assert t.result_count() == before
+                t.keys(KITTY_ENTER_REPEAT); assert t.result_count() == before
                 t.capture(output, profile + "-approval-review")
                 t.keys(KITTY_ENTER_PRESS)
                 result = t.await_result(before)
@@ -300,34 +299,38 @@ def run_profile(output: Path, mode: str, modern: bool, report):
             if modern:
                 proof_case(report, profile + "-bare-approval-fresh-press", t, output, bare_approval)
 
-            def legacy_raw_cr_closed():
+            def legacy_two_enters():
                 before = t.result_count(); t.open_demo("approval")
-                # Raw CR has no observed release/fresh-press provenance.
-                t.keys(ENTER, ENTER, ENTER); t.wait("send approval")
-                assert t.result_count() == before, "legacy raw CR unexpectedly submitted approval"
-                t.keys(ESC); t.pump(.3); t.keys(ESC); t.pump(.3)
-                assert t.await_result(before)["status"] == "dismissed"
+                # Exactly two raw Enters. This proves the transport journey,
+                # not physical key releases: held legacy Enter is ambiguous.
+                t.keys(ENTER); t.wait("enter send approval")
+                assert t.result_count() == before
+                assert "tab then" not in t.text()
+                t.capture(output, profile + "-approval-review")
+                t.keys(ENTER)
+                result = t.await_result(before)
+                assert result["approved"] and result["question"]["scope"]["revision"] == "demo-r1", result
             if not modern:
-                proof_case(report, profile + "-raw-cr-approval-fails-closed", t, output, legacy_raw_cr_closed)
+                proof_case(report, profile + "-two-raw-enters-approval", t, output, legacy_two_enters)
 
-                def legacy_tab_enter():
+                def legacy_back_and_refocus():
                     before = t.result_count(); t.open_demo("approval")
-                    t.keys(ENTER); t.wait("tab then enter send approval")
-                    t.capture(output, profile + "-approval-before-tab")
-                    t.keys("\t"); t.wait("enter send approval")
+                    t.keys(ENTER); t.wait("enter send approval")
+                    t.keys(ESC); t.wait("1. Approve as written")
+                    t.keys(ENTER); t.wait("enter send approval")
                     if mode == "fullscreen":
-                        t.keys("\x1b[O\x1b[I" + ENTER)
-                        assert t.result_count() == before, "refocus retained legacy arming"
-                        t.keys("\t")
-                    t.capture(output, profile + "-approval-after-tab")
+                        t.keys("\x1b[O\x1b[I")
+                        t.wait("1. Approve as written")
+                        t.keys(ENTER); t.wait("enter send approval")
+                    assert t.result_count() == before
                     t.keys(ENTER)
                     assert t.await_result(before)["approved"]
-                proof_case(report, profile + "-approved-tab-enter-fallback", t, output, legacy_tab_enter)
+                proof_case(report, profile + "-legacy-back-refocus-review", t, output, legacy_back_and_refocus)
 
             def pause_and_escape():
                 before = t.result_count(); t.open_demo("approval")
                 t.keys(DOWN, DOWN, KITTY_ENTER_PRESS); t.wait("send pause")
-                t.keys(KITTY_ENTER_RELEASE, KITTY_ENTER_PRESS)
+                t.keys(KITTY_ENTER_PRESS)
                 result = t.await_result(before); assert result["status"] == "answered" and result["answer"]["optionId"] == "pause" and not result["approved"], result
                 before = t.result_count(); t.open_demo("decision"); t.keys(ESC)
                 result = t.await_result(before); assert result["status"] == "dismissed", result
@@ -342,8 +345,7 @@ def run_profile(output: Path, mode: str, modern: bool, report):
                 t.capture(output, profile + "-pending-feedback-blocks-approval")
                 t.keys(ESC, "\x15", ESC, UP, ENTER)
                 t.wait("send approval")
-                if modern: t.keys(KITTY_ENTER_RELEASE, KITTY_ENTER_PRESS)
-                else: t.keys("\t", ENTER)
+                t.keys(KITTY_ENTER_PRESS if modern else ENTER)
                 result = t.await_result(before)
                 assert result["approved"] and result["answer"]["note"] == "", result
             proof_case(report, profile + "-explicit-feedback-clear-before-approval", t, output, pending_feedback)
@@ -460,6 +462,9 @@ def run_profile(output: Path, mode: str, modern: bool, report):
                     t.keys(f"\x1b[O\x1b[I\x1b[<0;{x};{y}M\x1b[<0;{x};{y}m")
                     assert t.result_count() == before, "refocusing click authorized"
                     t.pump(.6)
+                    t.wait("1. Approve as written")
+                    x, y = t.find("Approve as written")
+                    t.sgr_click(x, y); t.wait("send approval")
                     x, y = t.find("send approval")
                     t.sgr_click(x, y)
                     assert t.await_result(before)["approved"]
@@ -478,14 +483,14 @@ def run_remapped(output, report):
                 before = t.result_count(); t.open_demo("approval")
                 t.keys(ENTER); t.wait("1. Approve as written")
                 t.keys("\x1b[17~"); t.wait("send approval")
-                t.keys("\x1b[17;1:3~", "\x1b[17;1:2~")
+                t.keys("\x1b[17;1:2~")
                 assert t.result_count() == before
                 t.wait("f6 send approval")
                 t.capture(output, "fullscreen-remapped-confirm-review")
                 t.keys("\x1b[17~"); assert t.await_result(before)["approved"]
                 before = t.result_count(); t.open_demo("decision")
                 t.keys("\x1b[18~"); assert t.await_result(before)["status"] == "dismissed"
-            proof_case(report, "fullscreen-remapped-confirm-release-cancel", t, output, remapped)
+            proof_case(report, "fullscreen-remapped-confirm-repeat-cancel", t, output, remapped)
         finally:
             t.close()
 
@@ -495,8 +500,8 @@ def main():
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args(); args.output.mkdir(parents=True, exist_ok=True)
     report = []
-    # Legacy proves both raw-CR fail-closed behavior and the accepted Tab→Enter
-    # fallback. Never inject Kitty release events into those profiles.
+    # Legacy uses Enter → review → Enter, with no Tab unlock and no invented
+    # physical-release evidence. Never inject Kitty releases into those profiles.
     for mode, modern in [("regular", True), ("fullscreen", True), ("regular", False), ("fullscreen", False)]:
         try:
             run_profile(args.output, mode, modern, report)

@@ -78,7 +78,7 @@ function click(card, x, y, extra = {}) {
   card.handleMouse(mouse('release', x, y, extra));
   return card.handleMouse(mouse('click', x, y, extra));
 }
-function armAndSendApproval(h) { h.keys(kittyEnter.release, kittyEnter.press); }
+function sendApproval(h) { h.keys(kittyEnter.press); }
 
 // Ordinary question flow and reference-like structure.
 test('decision entry mirrors bundled question structure without a title stack or selected background', () => {
@@ -404,9 +404,9 @@ test('approval feedback has no generic note and returns needs_discussion', () =>
   const review = view(h.card);
   assert.match(review, /^> Request changes$/m);
   assert.match(review, /Run a dry run first/);
-  assert.match(review, /^TAB then GO send feedback · ESC back$/m);
+  assert.match(review, /^GO send feedback · ESC back$/m);
   assert.doesNotMatch(review, /Note .*optional|No approval granted|warning/i);
-  armAndSendApproval(h);
+  sendApproval(h);
   assert.equal(h.results[0].details.status, 'needs_discussion');
   assert.equal(h.results[0].details.approved, false);
 });
@@ -424,28 +424,45 @@ test('any pending approval feedback, including whitespace, must be explicitly cl
     assert.equal(h.card.editor.getExpandedText(), '');
     h.keys(token.cancel, token.up, kittyEnter.press);
     assert.equal(h.card.controller.state.answer.optionId, 'approve');
-    armAndSendApproval(h);
+    sendApproval(h);
     assert.equal(h.results[0].details.approved, true);
     assert.equal(h.results[0].details.answer.note, '');
   }
 });
 
-test('approval Enter is release-aware, rejects repeats and unrelated releases, and fails closed on raw CR', () => {
+test('approval uses exactly Enter, review, Enter without a release or Tab prerequisite', () => {
+  for (const enter of ['\r', kittyEnter.press, token.confirm]) {
+    const h = setup(approval); h.card.focused = true;
+    h.keys(enter);
+    assert.equal(h.results.length, 0);
+    assert.equal(h.card.controller.state.step, 'review');
+    assert.match(view(h.card), /^GO send approval · ESC back$/m);
+    assert.match(view(h.card), /docs\/计划\.md · r42/);
+    assert.doesNotMatch(view(h.card), /TAB|then/);
+    h.keys(enter);
+    assert.equal(h.inputCount, 2);
+    assert.equal(h.results.length, 1);
+    assert.equal(h.results[0].details.approved, true);
+    assert.deepEqual(h.results[0].details.question.scope, approval.scope);
+  }
+});
+
+test('reported activation repeats, releases and Tab never submit approval', () => {
   const h = setup(approval); h.card.focused = true;
-  h.keys(token.confirm);
-  assert.match(view(h.card), /^TAB then GO send approval · ESC back$/m);
-  h.keys(token.confirm, '\r', kittyEnter.repeat, kittySpaceRelease);
-  assert.equal(h.results.length, 0);
-  h.keys(kittyEnter.release);
-  assert.match(view(h.card), /^GO send approval · ESC back$/m);
   h.keys(kittyEnter.repeat);
-  assert.equal(h.results.length, 0);
+  const review = view(h.card);
+  assert.equal(h.card.controller.state.step, 'choose');
   h.keys(kittyEnter.press);
-  assert.equal(h.results.length, 1);
+  const confirmedView = view(h.card);
+  assert.notEqual(review, confirmedView);
+  h.keys(kittyEnter.repeat, kittySpaceRelease, kittyEnter.release, '\t', '\x1b[9;1:2u', kittyEnter.repeat);
+  assert.equal(h.results.length, 0);
+  assert.equal(view(h.card), confirmedView);
+  sendApproval(h);
   assert.equal(h.results[0].details.approved, true);
 });
 
-test('Ctrl+Enter opening release arms a fresh plain Enter even if Ctrl is released first', () => {
+test('Ctrl+Enter reviews feedback; reported repeats and releases cannot send it', () => {
   for (const release of ['\x1b[13;5:3u', kittyEnter.release]) {
     const h = setup(approval); h.card.focused = true;
     h.keys('Dry run first', '\x1b[13;5u', '\x1b[13;5:2u');
@@ -456,38 +473,55 @@ test('Ctrl+Enter opening release arms a fresh plain Enter even if Ctrl is releas
   }
 });
 
-test('accepted approval fallback requires Tab then Enter and resets on Back or refocus', () => {
+test('Escape returns approval to entry and re-entry still takes exactly two Enters', () => {
   const h = setup(approval); h.card.focused = true;
-  h.keys('\r', '\r', '\r', '\x1b[9;1:2u', '\r');
+  h.keys('\r', token.cancel);
+  assert.equal(h.card.controller.state.step, 'choose');
   assert.equal(h.results.length, 0);
-  h.keys('\t', token.cancel, '\r', '\r');
-  assert.equal(h.results.length, 0, 'Back resets the fallback');
-  h.keys('\t'); h.card.invalidateInputOrigin(); h.keys('\r');
-  assert.equal(h.results.length, 0, 'refocus resets the fallback');
-  h.keys('\t');
-  assert.match(view(h.card), /^GO send approval · ESC back$/m);
   h.keys('\r');
-  assert.equal(h.results.length, 1);
+  assert.equal(h.card.controller.state.step, 'review');
+  assert.equal(h.results.length, 0);
+  h.keys('\r');
   assert.equal(h.results[0].details.approved, true);
 });
 
-test('component focus loss disarms approval and unfocused input cannot submit', () => {
+test('focus loss returns approval to entry; unfocused input cannot submit and two fresh Enters restart review', () => {
   const h = setup(approval); h.card.focused = true;
   h.keys(kittyEnter.press, kittyEnter.release);
   h.card.focused = false;
+  assert.equal(h.card.controller.state.step, 'choose');
   h.keys(kittyEnter.press, kittyEnter.release);
   assert.equal(h.results.length, 0);
   h.card.focused = true;
   h.keys(kittyEnter.press);
   assert.equal(h.results.length, 0);
-  armAndSendApproval(h);
+  sendApproval(h);
   assert.equal(h.results[0].details.approved, true);
+});
+
+test('refocus restarts feedback review without losing the draft or native caret', () => {
+  const h = setup(approval); h.card.focused = true;
+  h.keys('Dry run first', '\x1b[D');
+  const caret = h.card.editor.getCursor();
+  h.keys('\r');
+  h.card.invalidateInputOrigin();
+  assert.equal(h.card.controller.state.step, 'custom');
+  assert.equal(h.card.editor.getExpandedText(), 'Dry run first');
+  assert.deepEqual(h.card.editor.getCursor(), caret);
+  h.keys('\r');
+  assert.equal(h.results.length, 0);
+  assert.equal(h.card.controller.state.step, 'review');
+  h.keys('\r');
+  assert.equal(h.results[0].details.status, 'needs_discussion');
+  assert.equal(h.results[0].details.approved, false);
 });
 
 test('terminal refocus discards activating pointer gestures before a fresh approval click', () => {
   const h = setup(approval); h.card.focused = true;
   h.keys(kittyEnter.press, kittyEnter.release);
   h.card.invalidateInputOrigin();
+  assert.equal(h.card.controller.state.step, 'choose');
+  h.keys(kittyEnter.press);
   const rendered = lines(h.card), y = rowOf(h.card, 'send approval');
   const x = rendered[y].indexOf('GO') + 1;
   h.card.handleMouse(mouse('move', x, y));
@@ -535,13 +569,13 @@ test('approval option-to-review pointer continuation, resize, double click, and 
   assert.equal(sent.focus, false);
 });
 
-test('remapped CSI-tilde approval confirmation requires release and rejects repeat as fresh press', () => {
+test('remapped CSI-tilde approval confirmation needs no release and rejects reported repeats', () => {
   const customBindings = {
     ...bindings,
     matches(data, action) { return action === 'tui.select.confirm' ? matchesKey(data, 'f6') : bindings.matches(data, action); },
   };
   const h = setup(approval, 48, customBindings); h.card.focused = true;
-  h.keys('\x1b[17~', '\x1b[17;1:3~', '\x1b[17;1:2~');
+  h.keys('\x1b[17~', '\x1b[17;1:2~');
   assert.equal(h.results.length, 0);
   h.keys('\x1b[17~');
   assert.equal(h.results[0].details.approved, true);

@@ -6,7 +6,6 @@ import {
 	isKeyRepeat,
 	Key,
 	matchesKey,
-	parseKey,
 	truncateToWidth,
 	visibleWidth,
 	wrapTextWithAnsi,
@@ -22,7 +21,6 @@ import { answerLabel, optionDescription, optionLabel, sendLabel } from "./hog-as
 type Question = ReturnType<typeof normalizeQuestion>;
 type Result = ReturnType<typeof outcome>;
 type EditorKind = "custom" | "note";
-type ReviewActivation = "confirm" | "submit" | "ctrlEnter" | undefined;
 type ActionId = "back" | "send" | "dismiss" | "clear" | "note";
 type Target =
 	| { kind: "option"; index: number }
@@ -38,9 +36,6 @@ type FooterSegment = { text: string; target?: Target };
 // while release/repeat classification accepts their extended event forms.
 function bindingInput(data: string): string {
 	return data.replace(/^(\x1b\[\d+);1:[123]~$/, "$1~");
-}
-function physicalKey(data: string): string | undefined {
-	return parseKey(bindingInput(data))?.replace(/^(?:(?:ctrl|shift|alt|super|meta|hyper)\+)+/, "");
 }
 function targetKey(target: Target | undefined): string {
 	if (!target) return "";
@@ -112,11 +107,7 @@ export class AskCard {
 	private layoutRevision = 0;
 	private pointer?: PointerGesture;
 	private pointerTransitionGuard?: { x: number; y: number };
-	private approvalReleasePending: ReviewActivation;
-	private approvalOpeningKey?: string;
 	private ignorePointerPress = false;
-	private approvalEnterArmed = false;
-	private legacyApprovalTabArmed = false;
 
 	private question: Question;
 	private tui: TUI;
@@ -165,7 +156,9 @@ export class AskCard {
 	/** Focus changes invalidate provenance; the activating click is not Send. */
 	invalidateInputOrigin() {
 		if (this.disposed) return;
-		this.resetApprovalGuard();
+		// Restart the visible review journey after focus changes, rather than
+		// hiding a keyboard unlock behind Tab or an unobservable key release.
+		this.backFromApprovalReview();
 		this.pointer = undefined;
 		this.ignorePointerPress = true;
 		this.refresh(false);
@@ -221,19 +214,6 @@ export class AskCard {
 		if (this.disposed) return;
 		this.dispose();
 		this.done(result);
-	}
-
-	private resetApprovalGuard() {
-		this.approvalReleasePending = undefined;
-		this.approvalOpeningKey = undefined;
-		this.approvalEnterArmed = false;
-		this.legacyApprovalTabArmed = false;
-	}
-	private beginApprovalReview(opening: ReviewActivation, data?: string) {
-		this.approvalEnterArmed = false;
-		this.approvalReleasePending = opening;
-		this.approvalOpeningKey = data ? physicalKey(data) : undefined;
-		this.legacyApprovalTabArmed = false;
 	}
 
 	private focusEntry(index: number) {
@@ -383,7 +363,7 @@ export class AskCard {
 		this.finish(this.controller.submit());
 	}
 
-	private reviewCustom(opening: ReviewActivation, data?: string) {
+	private reviewCustom() {
 		if (!this.approval) return;
 		if (this.controller.state.step !== "custom") this.controller.custom();
 		if (!this.controller.saveText(this.editor.getExpandedText())) {
@@ -394,12 +374,11 @@ export class AskCard {
 		}
 		this.error = "";
 		this.returnFocus = this.question.options.length;
-		this.beginApprovalReview(opening, data);
 		this.scroll = 0;
 		this.refresh();
 	}
 
-	private chooseApprovalOption(index: number, openingData?: string) {
+	private chooseApprovalOption(index: number) {
 		const option = this.question.options[index];
 		if (!option || !this.approval) return;
 		if (option.id === "revise") {
@@ -414,13 +393,12 @@ export class AskCard {
 		this.controller.choose(option.id);
 		this.error = "";
 		this.returnFocus = index;
-		this.beginApprovalReview(openingData ? "confirm" : undefined, openingData);
 		this.scroll = 0;
 		this.refresh();
 	}
 
-	private chooseOption(index: number, openingData?: string) {
-		if (this.approval) this.chooseApprovalOption(index, openingData);
+	private chooseOption(index: number) {
+		if (this.approval) this.chooseApprovalOption(index);
 		else this.submitOption(index);
 	}
 
@@ -436,7 +414,6 @@ export class AskCard {
 	private backFromApprovalReview() {
 		if (!this.approvalReview) return;
 		this.controller.back();
-		this.resetApprovalGuard();
 		this.chooseIndex = this.returnFocus;
 		if (this.chooseIndex === this.question.options.length) this.controller.custom();
 		this.error = "";
@@ -458,14 +435,14 @@ export class AskCard {
 		return data.includes("\x1b[200~") || /^[^\x00-\x1f\x7f-\x9f]+$/u.test(data) || decodeKittyPrintable(data) !== undefined;
 	}
 
-	private activatePrimary(data?: string) {
+	private activatePrimary() {
 		if (this.editingNote) {
 			this.submitNote();
 			return;
 		}
 		if (this.entry) {
 			if (this.editingCustom) {
-				if (this.approval) this.reviewCustom(data ? (this.matches(data, "tui.select.confirm") ? "confirm" : this.matches(data, "tui.input.submit") ? "submit" : matchesKey(data, Key.ctrl("enter")) ? "ctrlEnter" : undefined) : undefined, data);
+				if (this.approval) this.reviewCustom();
 				else this.submitCustomOrdinary();
 				return;
 			}
@@ -473,7 +450,7 @@ export class AskCard {
 				this.focusEntry(this.chooseIndex);
 				return;
 			}
-			this.chooseOption(this.chooseIndex, data);
+			this.chooseOption(this.chooseIndex);
 			return;
 		}
 		if (this.approvalReview) this.submitApproval();
@@ -484,22 +461,10 @@ export class AskCard {
 		if (data === "\x1b[I" || data === "\x1b[O") { this.invalidateInputOrigin(); return; }
 		if (!this._focused) return;
 
-		const released = isKeyRelease(data);
+		if (isKeyRelease(data)) return;
+		// Filter repeats when the transport reports them. Legacy CR does not
+		// distinguish a held key from another press; no physical-release claim.
 		const repeated = isKeyRepeat(data);
-		if (released) {
-			const openingReleased = this.approvalOpeningKey ? physicalKey(data) === this.approvalOpeningKey
-				: this.approvalReleasePending === "confirm" ? this.matches(data, "tui.select.confirm")
-				: this.approvalReleasePending === "submit" ? this.matches(data, "tui.input.submit")
-				: this.approvalReleasePending === "ctrlEnter" && matchesKey(data, Key.ctrl("enter"));
-			if (this.approvalReview && openingReleased) {
-				this.approvalReleasePending = undefined;
-				this.approvalOpeningKey = undefined;
-				this.approvalEnterArmed = true;
-				this.legacyApprovalTabArmed = false;
-				this.refresh(false);
-			}
-			return;
-		}
 		if (repeated && (this.matches(data, "tui.select.confirm") || this.matches(data, "tui.input.submit") || matchesKey(data, Key.ctrl("enter")) || this.matches(data, "tui.input.tab") || matchesKey(data, Key.tab) || matchesKey(data, Key.shift("tab")))) return;
 		if (!repeated) this.pointerTransitionGuard = undefined;
 
@@ -529,9 +494,6 @@ export class AskCard {
 				this.returnFromNote();
 			} else if (!this.approval && this.entry) {
 				this.openNoteForCurrent();
-			} else if (this.approvalReview && tab) {
-				this.legacyApprovalTabArmed = true;
-				this.refresh(false);
 			} else if (this.approval && this.entry && !this.editingCustom) {
 				const count = this.question.options.length;
 				this.focusEntry((this.chooseIndex + (shiftTab ? -1 : 1) + count) % count);
@@ -564,7 +526,7 @@ export class AskCard {
 					return;
 				}
 				if (this.matches(data, "tui.input.submit") || matchesKey(data, Key.ctrl("enter"))) {
-					this.activatePrimary(data);
+					this.activatePrimary();
 					return;
 				}
 				this.editor.handleInput(data);
@@ -583,7 +545,7 @@ export class AskCard {
 				return;
 			}
 			if (this.matches(data, "tui.select.confirm")) {
-				this.activatePrimary(data);
+				this.activatePrimary();
 				return;
 			}
 			if (this.isTyping(data)) {
@@ -610,18 +572,7 @@ export class AskCard {
 			this.refresh(false);
 			return;
 		}
-		if (this.matches(data, "tui.select.confirm")) {
-			if (this.approvalEnterArmed || this.legacyApprovalTabArmed) {
-				this.submitApproval();
-			} else {
-				// A press without a proven relevant release cannot authorize. Its
-				// eventual release may arm the next fresh press.
-				this.approvalReleasePending = "confirm";
-				this.approvalOpeningKey = physicalKey(data);
-				this.legacyApprovalTabArmed = false;
-				this.refresh(false);
-			}
-		}
+		if (this.matches(data, "tui.select.confirm")) this.submitApproval();
 	}
 
 	private wrap(text: string, width: number): string[] {
@@ -777,9 +728,8 @@ export class AskCard {
 			return segments;
 		}
 		const answer = this.controller.state.answer!;
-		const armed = this.approvalEnterArmed || this.legacyApprovalTabArmed;
 		return [
-			action(`${armed ? "" : this.keys("tui.input.tab") + " then "}${this.keys("tui.select.confirm")} ${sendLabel(this.question, answer)}`, "send"),
+			action(`${this.keys("tui.select.confirm")} ${sendLabel(this.question, answer)}`, "send"),
 			action(`${this.keys("tui.select.cancel")} back`, "back"),
 		];
 	}
