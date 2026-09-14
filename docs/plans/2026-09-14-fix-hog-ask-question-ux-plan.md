@@ -4,8 +4,8 @@ type: plan
 date: 2026-09-14
 status: in_progress
 confidence: high
-readiness: "Exact corrected preview globally pinned and offline verified; user reload here and native acceptance pending"
-preview_status: pending
+readiness: "Current-session native preview accepted; wider RPC/guidance implementation and release remain separate unfinished scope"
+preview_status: approved
 ---
 
 # A question, not a confirmation maze
@@ -63,7 +63,7 @@ Approval shares this quieter visual language, but still shows the exact action/a
 - [x] Record the changed ordinary-question contract, reference, visual structure and stopped rollout. Preserve the historical implementation/proof records rather than pretending their acceptance covered this correction.
 - [x] Implement the **native proof slice only** in `hog-ask-ui.ts`, with focused regressions for direct preset/custom submission, notes before submission, draft preservation, keyboard/pointer parity and unchanged approval guards. Replace tests that enshrine Enter → Back; do not merely change their expected text.
 - [x] Run the actual offline Pi CLI against this component in regular/fullscreen and narrow/light/dark cases. Present native-cell captures of preset, custom, note and approval flows, plus an explicit key-by-key result record. No new browser-only simulation or live settings change.
-- [ ] Obtain Ondrej's acceptance of that native preview. Until then, do not broaden RPC/policy changes, prepare publication or modify the active immutable release. If the flow still surprises the user, revise this contract and proof slice first.
+- [x] Obtain Ondrej's acceptance of the native preview here: approval test `hog-025-native-approval-test`, followed by explicit **“yes it was good”** to the two-Enter/no-Tab question; ordinary check `hog-025-native-question-check` returned **“Looks right”** for the compact layout/direct submission. These answers accept the tested native flow, not publication or further implementation.
 - [ ] After preview acceptance, align the RPC ordinary-question path and guidance with the accepted semantics, preserving exact IDs, optional notes, cancellation and conservative approval results. Keep the core/schema outcome contract unless a separately justified change is necessary.
 - [ ] Run full native/RPC/interaction/package suites, independent focused review and all updated actual CLI/PTY cases. Record limitations and preserve unrelated workstation/private dirt; commit/push only correction-owned paths.
 - [ ] Prepare a newly identified immutable release candidate with a distinct version/source identity, verify its complete archive, and seek new exact publication/activation authorization. Never publish the rejected 0.2.4 archive or patch an installed release in place.
@@ -78,7 +78,7 @@ After the native checkpoint, Ondrej explicitly rejected mandatory Tab → Enter 
 - [x] Complete focused independent review and fresh source-bound checks/captures: bounded Terra/medium PASS, independent UI/core **50/50**; full working-tree **37 interaction / 151 Pi / 254 workstation / 2 visualization**. Six fresh cropped native-cell inputs are byte-identical to existing PNG inputs; reference proof remains historical. See the current proof record.
 - [x] Prepare the corrected committed preview identity and obtain exact local pin authorization: Ondrej answered **“yes”** to `0.2.4-6e9eab3ce023` → `0.2.5-preview-fc565ca7a034`. The paused e8a41e3 activation script was not executed.
 - [x] Create/seal the 284 committed files, atomically replace only the global toolkit source, and verify a fresh offline global-profile process. One `hog_ask`, exact new toolkit paths, unchanged `/answer`, standard editor cancellation, zero model calls/errors; verifier exited and was confirmed absent. Activation preserved other settings/resource filters and all three prior releases. A later theme-only settings change was observed, left untouched, and the current global profile passed a separate fresh recheck. [Exact activation record](../reviews/2026-09-14-hog-ask-025-preview-activation.md).
-- [ ] Ondrej: `/reload` here and judge the actual native flow. No forced reload or separate preview launcher. This source pin is not post-reload human acceptance.
+- [x] Following the activation and `/reload` handoff, test both actual native interactions here and obtain human acceptance. Approval used Enter → review → Enter with no Tab according to Ondrej; the ordinary question's compact layout/direct submission received “Looks right.” No forced reload or separate launcher. This is current-session behavioral acceptance, not a separate module-path or physical-key telemetry attestation.
 
 ## Historical native preview checkpoint (e8a41e3)
 

@@ -2,12 +2,12 @@
 title: "hog_ask 0.2.5 corrected local preview activation"
 type: review
 date: 2026-09-14
-status: awaiting_user_reload_and_acceptance
+status: native_preview_accepted
 ---
 
-# Corrected preview pinned — reload here next
+# Corrected preview pinned and accepted here
 
-This is a **local native preview**, not publication or final design acceptance. The [correction plan](../plans/2026-09-14-fix-hog-ask-question-ux-plan.md) remains in progress. Ordinary answers submit directly; approval uses **Enter → review → Enter confirms**, without a Tab unlock. Esc goes back. Reported activation repeats are ignored; raw legacy Enter cannot distinguish a held key from another press.
+This is an **accepted local native preview**, not publication or cross-harness release acceptance. The [correction plan](../plans/2026-09-14-fix-hog-ask-question-ux-plan.md) remains in progress. Ordinary answers submit directly; approval uses **Enter → review → Enter confirms**, without a Tab unlock. Esc goes back. Reported activation repeats are ignored; raw legacy Enter cannot distinguish a held key from another press.
 
 ## Exact authorization and identity
 
@@ -42,10 +42,17 @@ The end-of-session full-settings equality check **failed** after successful acti
 
 One bounded fresh global-profile recheck against the observed current settings passed the same registration, path, `/answer`, editor-cancellation, no-model/no-error and process-exit checks. It left settings unchanged. The failed equality check and subsequent observation/recheck are recorded separately in the private receipt; passing the recheck does not erase the earlier difference.
 
+## Current-session native acceptance
+
+Following the activation and `/reload` handoff, Ondrej requested a live test here. `hog-025-native-approval-test` returned a submitted bare approval, explicitly scoped to the harmless test and no implementation, file/settings change or release. Asked whether it worked with **Enter → Enter and no Tab**, Ondrej replied **“yes it was good.”**
+
+The ordinary decision `hog-025-native-question-check` then returned **“Looks right”** for “Does this compact question look and feel right?”, with direct one-Enter submission explained. Its selected option described acceptance of both the compact layout and direct submission.
+
+These are human acceptance of the tested native flows, separate from activation permission and offline proof. The Enter count is user-reported, not physical-key telemetry. No separate in-session module-path attestation or explicit manual-reload receipt is claimed, and no session was forcibly reloaded. The source-proof JSON remains its earlier pre-activation checkpoint; this later record and the candidate receipt carry human acceptance.
+
 ## Remaining gates
 
-- Ondrej runs `/reload` **in this session**; no session was forcibly reloaded. Future/reloaded sessions use the new global source, while already-running sessions keep their loaded code until reload.
-- Confirm post-reload native keyboard/visual behavior. Neither source pin approval nor offline verification is design acceptance.
-- After native acceptance, align ordinary RPC/guidance behavior and complete the later clean-release checks and exact release authorization. Publication of rejected 0.2.4 remains stopped.
+- Ordinary RPC/guidance alignment and later clean-release checks remain unfinished. The native test answers do not authorize additional implementation or publication.
+- Any release needs its own complete artifact verification and exact authorization. Publication of rejected 0.2.4 remains stopped.
 
 No runtime/dependency, theme, keybinding, trust, authentication or background-helper changes were made. No background trial or deployment permission is implied. Rollback, if later requested, must be a separately authorized source-only replacement, never restoration of a stale full settings backup.
