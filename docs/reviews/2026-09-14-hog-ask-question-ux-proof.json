@@ -1,0 +1,252 @@
+{
+  "formatVersion": 1,
+  "status": "native-preview-verified-awaiting-human-acceptance",
+  "sourceVersion": "0.2.5",
+  "baseCommit": "927c9c9f47f2570dbe84bb3d282ecd5e539c4352",
+  "sourceFiles": {
+    "package.json": "401f725ef7d586ed2b0f4cdf84f06b185717019dddf0191ba948323d140f03e1",
+    "extensions/pi/hog-ask-ui.ts": "247432b3a2cbf4e9b6dd4d9fd88b2a5e716ae1c11a0f63ca188fb4efc3e6a813",
+    "extensions/pi/hog-ask-core.mjs": "e076b750030edd35a33cf7623d484896f1418bd5336c7d64f77ab19634426100",
+    "extensions/pi/hog-ask-schema.ts": "163beaf74ab92feb590db8e87e79716aa26f0e619feaf2bc29f5c1b716fd6823",
+    "extensions/pi/hog-ask-focus.mjs": "1474954e78c2737d142bd2e04c8a61309bdba9450cade1eaf50002db8260858e",
+    "extensions/pi/hog-ask-runtime.mjs": "dd1b8f27b7bbcd728e38a49e1eb2bb223f2c603ebe8bbd1712b3735324a0eb5e",
+    "extensions/pi/hog-ask-presentation.mjs": "b24bc174c4222ce664d1d1b5447caa68e8e897d811a56ca8ea60c2e5d6809c05",
+    "extensions/pi/hog-ask.ts": "189747c45b41ebe2f460b595636f8af8c1e3cab319d0f880e21736b6033de233",
+    "extensions/pi/index.ts": "ffab3cec23d9aa2b860cbda6ebde190aaa3d79c39c66c3f6e23bc7725041d189",
+    "scripts/pi-hog-ask-proof.py": "03ac7a6345ff86a8c6e76e942e04fc8fd51c1ad5c4b5edef8c643e7f99117f0b",
+    "scripts/pi-question-reference-proof.py": "b7953c157ddb7bdf211fb130753c00ce557e60ef21cd1e198b7d1102788d3917",
+    "tests/fixtures/pi-hog-ask-proof.ts": "bc983e85d2bf0aa8d29966bc85614834c75ecf62d5a89dfb27fab70480a918ed",
+    "tests/pi-hog-ask-ui.test.mjs": "29f15649dea9ab9c7f066b3793f3eff72163a4116c28b6405056fb3d724c1b4f",
+    "tests/pi-package-contract.test.mjs": "8ab4042878cbaa78ed6482ee3e4b1f8e1429afc816babc8928207f05339c622e"
+  },
+  "captures": {
+    "docs/previews/hog-ask-question-native/approval.png": "fda20ed43f7b00e284e78d24d629ad6082610331d82b870abe50d85613d3c39e",
+    "docs/previews/hog-ask-question-native/custom.png": "7f769ef2eaaa9359023ac913f86f9806ecd8ab4947de7c6854f9ff6c5f106fff",
+    "docs/previews/hog-ask-question-native/decision.png": "2e666328b654626a5bd5e287c2b68b0932b555548b010c745ce652dee77b1591",
+    "docs/previews/hog-ask-question-native/feedback.png": "ea2c01212574d43a2836a5f3980e41b79dde9d739f448b3a079178d89f2642db",
+    "docs/previews/hog-ask-question-native/narrow.png": "1cb3caba588da1fa4ac4d7b93d5723cbddb73fa4b44cc51e655b3b2353146320",
+    "docs/previews/hog-ask-question-native/note.png": "7aeb478bc33b8a808fd1789afab7c310795e6e5d2d4998b08f8592f8faff4fe0",
+    "docs/previews/hog-ask-question-native/reference.png": "00e3f2a51aa740fdca3ba032f93ab09c0ca3c049528f5b1f9d37067d7dd67517"
+  },
+  "runtime": {
+    "pi": "0.85.1",
+    "node": "v25.6.1",
+    "pythonDependency": "pyte==0.8.2"
+  },
+  "checks": {
+    "focusedNative": 31,
+    "focusedNativeCoreRpcPackage": 57,
+    "interaction": 37,
+    "pi": 149,
+    "workstationWithUnrelatedDrafts": 254,
+    "visualization": 2,
+    "nativeCliPty": 40,
+    "installedReferenceCliPty": 4,
+    "failures": 0,
+    "skipped": 0
+  },
+  "nativeCases": [
+    {
+      "case": "regular-modern-one-enter-preset",
+      "status": "passed"
+    },
+    {
+      "case": "regular-modern-decision-custom-notes",
+      "status": "passed"
+    },
+    {
+      "case": "regular-modern-note-back-and-one-enter-changed-answer",
+      "status": "passed"
+    },
+    {
+      "case": "regular-modern-approval-feedback-release-repeat",
+      "status": "passed"
+    },
+    {
+      "case": "regular-modern-bare-approval-fresh-press",
+      "status": "passed"
+    },
+    {
+      "case": "regular-modern-pause-and-escape",
+      "status": "passed"
+    },
+    {
+      "case": "regular-modern-explicit-feedback-clear-before-approval",
+      "status": "passed"
+    },
+    {
+      "case": "regular-modern-36x24-long-scope",
+      "status": "passed"
+    },
+    {
+      "case": "regular-modern-narrow-validation-and-cancel",
+      "status": "passed"
+    },
+    {
+      "case": "fullscreen-modern-one-enter-preset",
+      "status": "passed"
+    },
+    {
+      "case": "fullscreen-modern-decision-custom-notes",
+      "status": "passed"
+    },
+    {
+      "case": "fullscreen-modern-note-back-and-one-enter-changed-answer",
+      "status": "passed"
+    },
+    {
+      "case": "fullscreen-modern-approval-feedback-release-repeat",
+      "status": "passed"
+    },
+    {
+      "case": "fullscreen-modern-bare-approval-fresh-press",
+      "status": "passed"
+    },
+    {
+      "case": "fullscreen-modern-pause-and-escape",
+      "status": "passed"
+    },
+    {
+      "case": "fullscreen-modern-explicit-feedback-clear-before-approval",
+      "status": "passed"
+    },
+    {
+      "case": "fullscreen-modern-36x24-long-scope",
+      "status": "passed"
+    },
+    {
+      "case": "fullscreen-modern-narrow-validation-and-cancel",
+      "status": "passed"
+    },
+    {
+      "case": "fullscreen-modern-sgr-mouse-option-send-guard",
+      "status": "passed"
+    },
+    {
+      "case": "fullscreen-modern-sgr-editor-caret-back-drag-padding",
+      "status": "passed"
+    },
+    {
+      "case": "fullscreen-modern-sgr-hover-resize-and-stale-gesture",
+      "status": "passed"
+    },
+    {
+      "case": "fullscreen-modern-raw-refocus-before-key-dispatch",
+      "status": "passed"
+    },
+    {
+      "case": "fullscreen-modern-raw-refocus-before-pointer-dispatch",
+      "status": "passed"
+    },
+    {
+      "case": "regular-legacy-one-enter-preset",
+      "status": "passed"
+    },
+    {
+      "case": "regular-legacy-decision-custom-notes",
+      "status": "passed"
+    },
+    {
+      "case": "regular-legacy-note-back-and-one-enter-changed-answer",
+      "status": "passed"
+    },
+    {
+      "case": "regular-legacy-raw-cr-approval-fails-closed",
+      "status": "passed"
+    },
+    {
+      "case": "regular-legacy-approved-tab-enter-fallback",
+      "status": "passed"
+    },
+    {
+      "case": "regular-legacy-explicit-feedback-clear-before-approval",
+      "status": "passed"
+    },
+    {
+      "case": "regular-legacy-36x24-long-scope",
+      "status": "passed"
+    },
+    {
+      "case": "regular-legacy-narrow-validation-and-cancel",
+      "status": "passed"
+    },
+    {
+      "case": "fullscreen-legacy-one-enter-preset",
+      "status": "passed"
+    },
+    {
+      "case": "fullscreen-legacy-decision-custom-notes",
+      "status": "passed"
+    },
+    {
+      "case": "fullscreen-legacy-note-back-and-one-enter-changed-answer",
+      "status": "passed"
+    },
+    {
+      "case": "fullscreen-legacy-raw-cr-approval-fails-closed",
+      "status": "passed"
+    },
+    {
+      "case": "fullscreen-legacy-approved-tab-enter-fallback",
+      "status": "passed"
+    },
+    {
+      "case": "fullscreen-legacy-explicit-feedback-clear-before-approval",
+      "status": "passed"
+    },
+    {
+      "case": "fullscreen-legacy-36x24-long-scope",
+      "status": "passed"
+    },
+    {
+      "case": "fullscreen-legacy-narrow-validation-and-cancel",
+      "status": "passed"
+    },
+    {
+      "case": "fullscreen-remapped-confirm-release-cancel",
+      "status": "passed"
+    }
+  ],
+  "reference": {
+    "file": "examples/extensions/question.ts",
+    "piVersion": "0.85.1",
+    "sha256": "a1625d2c72a65d859154a7e66bef222d48ca9e3654a8bb910829ad350378a4c4",
+    "cases": [
+      {
+        "case": "reference-regular-light-one-enter-preset",
+        "status": "passed"
+      },
+      {
+        "case": "reference-regular-light-custom-submit",
+        "status": "passed"
+      },
+      {
+        "case": "reference-fullscreen-dark-one-enter-preset",
+        "status": "passed"
+      },
+      {
+        "case": "reference-fullscreen-dark-custom-submit",
+        "status": "passed"
+      }
+    ]
+  },
+  "humanPreviewAccepted": false,
+  "rpcAligned": false,
+  "releaseReady": false,
+  "activated": false,
+  "npmPublished": false,
+  "preserved": {
+    "settings": true,
+    "activeImmutable024": true,
+    "rollbackImmutable023": true,
+    "rejectedArchive024": true,
+    "protectedTrackedDirt": true
+  },
+  "limitations": [
+    "Native-cell captures and emulated PTY input, not universal physical-terminal/OS IME certification",
+    "No live-model facilitation proof",
+    "No fresh independent review of the final proof slice",
+    "Working-tree checks, not a clean export or archive verification",
+    "Previous 0.2.4 publication approval does not authorize this correction"
+  ]
+}

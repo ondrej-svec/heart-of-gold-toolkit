@@ -36,7 +36,7 @@ KITTY_ENTER_RELEASE = "\x1b[13;1:3u"
 
 
 class Terminal:
-    def __init__(self, directory: Path, mode: str, result_file: Path, modern: bool, keybindings=None, theme="dark"):
+    def __init__(self, directory: Path, mode: str, result_file: Path, modern: bool, keybindings=None, theme="dark", extra_extensions=()):
         self.directory, self.mode, self.modern, self.theme = directory, mode, modern, theme
         self.result_file = result_file
         self.screen = pyte.Screen(80, 40)
@@ -49,7 +49,7 @@ class Terminal:
         agent.mkdir()
         (agent / "settings.json").write_text(json.dumps({
             "packages": [{"source": str(ROOT), "extensions": []}],
-            "extensions": [str(ROOT / "tests/fixtures/pi-hog-ask-proof.ts")],
+            "extensions": [str(ROOT / "tests/fixtures/pi-hog-ask-proof.ts"), *map(str, extra_extensions)],
             "quietStartup": True, "tuiMode": mode, "theme": theme,
         }))
         if keybindings: (agent / "keybindings.json").write_text(json.dumps(keybindings))
@@ -127,7 +127,7 @@ class Terminal:
                 # mistake the fixed separator below it for editable padding.
                 if y < self.screen.lines and self.screen.display[y].lstrip().startswith("›"):
                     return x, y
-            x, y = self.find("escape dismiss")
+            x, y = self.find("esc cancel")
             self.keys(f"\x1b[<65;{x};{y}M")
         raise AssertionError("custom editor content did not become visible after scrolling")
 
@@ -157,8 +157,9 @@ class Terminal:
         self.keys(f"\x1b[200~{command}\x1b[201~")
         self.wait(command)
         self.keys(ENTER)
-        # Long scope initially scrolls to the focused option, hiding the title.
-        self.wait("Approve as written" if kind == "long" else "· Choose one" if kind == "decision" else "· Approval")
+        # Wait for the focused first choice, not a title or final custom row:
+        # long scope hides the header, and a narrow decision can scroll its last row.
+        self.wait("> 1. Internal only" if kind == "decision" else "1. Approve as written")
 
     def find(self, needle: str):
         for y, line in reversed(list(enumerate(self.screen.display))):
@@ -237,27 +238,44 @@ def run_profile(output: Path, mode: str, modern: bool, report):
             profile = f"{mode}-{'modern' if modern else 'legacy'}"
             if modern: assert t.kitty_replies > 0, "Pi did not negotiate the emulated Kitty transport"
 
-            def decision():
+            def preset():
                 before = t.result_count(); t.open_demo("decision")
                 t.capture(output, profile + "-decision-entry")
+                t.keys(ENTER)  # Exactly one action, no review or compensating keys.
+                result = t.await_result(before)
+                assert result["answer"]["optionId"] == "internal" and result["status"] == "answered", result
+            proof_case(report, profile + "-one-enter-preset", t, output, preset)
+
+            def decision():
+                before = t.result_count(); t.open_demo("decision")
                 t.keys(DOWN, DOWN, "\x1b[200~Support + internal 🦊\x1b[201~")
                 t.capture(output, profile + "-decision-custom")
-                t.keys(ENTER); t.wait("Rollout audience (demo) · Review")
-                t.keys(DOWN, "Include support", ENTER); t.wait("Include support")
-                t.capture(output, profile + "-decision-review")
-                # Ctrl+Enter is the decision's explicit Send route, independent
-                # of the retained optional-note focus.
-                t.keys("\x1b[13;5u") if modern else t.keys("\t", "\t", ENTER)
+                t.keys("\t"); t.wait("Note for: Support + internal 🦊")
+                t.keys("Include support")
+                t.capture(output, profile + "-decision-note")
+                assert t.result_count() == before
+                t.keys(ENTER)
                 result = t.await_result(before)
                 assert result["status"] == "answered", result
                 assert result["answer"]["text"] == "Support + internal 🦊" and result["answer"]["note"] == "Include support", result
             proof_case(report, profile + "-decision-custom-notes", t, output, decision)
 
+            def retained_note():
+                before = t.result_count(); t.open_demo("decision")
+                t.keys("\t", "Support first", ESC, DOWN)
+                t.wait("Note draft · ready · for: Public")
+                t.capture(output, profile + "-retained-note-before-send")
+                assert t.result_count() == before
+                t.keys(ENTER)
+                result = t.await_result(before)
+                assert result["answer"]["optionId"] == "public" and result["answer"]["note"] == "Support first", result
+            proof_case(report, profile + "-note-back-and-one-enter-changed-answer", t, output, retained_note)
+
             def feedback():
                 before = t.result_count(); t.open_demo("approval")
                 t.capture(output, profile + "-approval-entry")
-                t.keys(KITTY_ENTER_REPEAT); t.wait("· Approval")
-                t.keys(DOWN, ENTER, "Dry run first", "\x1b[13;5u"); t.wait("· Review")
+                t.keys(KITTY_ENTER_REPEAT); t.wait("1. Approve as written")
+                t.keys(DOWN, ENTER, "Dry run first", "\x1b[13;5u"); t.wait("send feedback")
                 # Ctrl+Enter only reviews. Releasing Ctrl first means the key-up
                 # reports ordinary Enter; it still releases the opening key.
                 # Release arms, repeat does not submit, then fresh Enter sends.
@@ -272,7 +290,7 @@ def run_profile(output: Path, mode: str, modern: bool, report):
 
             def bare_approval():
                 before = t.result_count(); t.open_demo("approval")
-                t.keys(KITTY_ENTER_PRESS); t.wait("Record a demo approval · Review")
+                t.keys(KITTY_ENTER_PRESS); t.wait("send approval")
                 t.keys(KITTY_ENTER_RELEASE, KITTY_ENTER_REPEAT); assert t.result_count() == before
                 t.capture(output, profile + "-approval-review")
                 t.keys(KITTY_ENTER_PRESS)
@@ -285,7 +303,7 @@ def run_profile(output: Path, mode: str, modern: bool, report):
             def legacy_raw_cr_closed():
                 before = t.result_count(); t.open_demo("approval")
                 # Raw CR has no observed release/fresh-press provenance.
-                t.keys(ENTER, ENTER, ENTER); t.wait("Record a demo approval · Review")
+                t.keys(ENTER, ENTER, ENTER); t.wait("send approval")
                 assert t.result_count() == before, "legacy raw CR unexpectedly submitted approval"
                 t.keys(ESC); t.pump(.3); t.keys(ESC); t.pump(.3)
                 assert t.await_result(before)["status"] == "dismissed"
@@ -308,7 +326,7 @@ def run_profile(output: Path, mode: str, modern: bool, report):
 
             def pause_and_escape():
                 before = t.result_count(); t.open_demo("approval")
-                t.keys(DOWN, DOWN, KITTY_ENTER_PRESS); t.wait("Record a demo approval · Review")
+                t.keys(DOWN, DOWN, KITTY_ENTER_PRESS); t.wait("send pause")
                 t.keys(KITTY_ENTER_RELEASE, KITTY_ENTER_PRESS)
                 result = t.await_result(before); assert result["status"] == "answered" and result["answer"]["optionId"] == "pause" and not result["approved"], result
                 before = t.result_count(); t.open_demo("decision"); t.keys(ESC)
@@ -318,12 +336,12 @@ def run_profile(output: Path, mode: str, modern: bool, report):
 
             def pending_feedback():
                 before = t.result_count(); t.open_demo("approval")
-                t.keys("Do not publish", ESC, UP, UP, ENTER)
+                t.keys("Do not publish", ESC, UP, ENTER)
                 t.wait("Clear your feedback first.")
                 assert t.result_count() == before
                 t.capture(output, profile + "-pending-feedback-blocks-approval")
-                t.keys(ESC, "\x15", ESC, UP, UP, ENTER)
-                t.wait("· Review")
+                t.keys(ESC, "\x15", ESC, UP, ENTER)
+                t.wait("send approval")
                 if modern: t.keys(KITTY_ENTER_RELEASE, KITTY_ENTER_PRESS)
                 else: t.keys("\t", ENTER)
                 result = t.await_result(before)
@@ -335,15 +353,15 @@ def run_profile(output: Path, mode: str, modern: bool, report):
                 seen = t.text()
                 for _ in range(10): t.keys(UP); seen += t.text()
                 assert "START_SCOPE" in seen and "END_SCOPE" in seen, "entry scope boundaries were not reachable"
-                assert "escape dismiss" in t.text(), "fixed entry footer was lost"
+                assert "esc cancel" in t.text(), "fixed entry footer was lost"
                 t.capture(output, profile + "-narrow-entry-scope")
-                t.keys(ENTER); t.wait("escape back")
+                t.keys(ENTER); t.wait("esc back")
                 if modern: t.keys(KITTY_ENTER_RELEASE)
                 t.capture(output, profile + "-narrow-review-end")
                 seen = t.text()
                 for _ in range(10): t.keys(UP); seen += t.text()
                 assert "START_SCOPE" in seen and "END_SCOPE" in seen, "review scope boundaries were not reachable"
-                assert "escape back" in t.text(), "fixed review footer was lost"
+                assert "esc back" in t.text(), "fixed review footer was lost"
                 t.capture(output, profile + "-narrow-review-start")
                 t.keys(ESC); t.pump(.2); t.keys(ESC)
                 assert t.await_result(before)["status"] == "dismissed"
@@ -356,41 +374,46 @@ def run_profile(output: Path, mode: str, modern: bool, report):
                 t.keys("\x03")
                 assert t.await_result(before)["status"] == "dismissed"
                 before = t.result_count(); t.open_demo("decision")
-                t.keys(ENTER, "\t", "\x1b[200~" + "n" * 1001 + "\x1b[201~", ENTER)
-                t.wait("note must be"); t.keys("\x03")
+                t.keys("\t", "\x1b[200~" + "n" * 1001 + "\x1b[201~", ENTER)
+                t.wait("note must be")
+                t.keys(ESC, DOWN); t.wait("Note draft · needs editing")
+                t.keys(ENTER); t.wait("note must be")
+                assert t.result_count() == before
+                t.keys("\x03")
                 assert t.await_result(before)["status"] == "dismissed"
             proof_case(report, profile + "-narrow-validation-and-cancel", t, output, validation)
 
             if mode == "fullscreen" and modern:
                 def mouse():
                     t.resize(80, 40); before = t.result_count(); t.open_demo("decision"); t.wait("Public")
-                    # Whole-row option click must enter review, and a continuing
-                    # click at the relocated footer must not send.
-                    x, y = t.find("Public"); t.sgr_click(x, y); t.wait("Review")
-                    # The release/click continuation at the original absolute
-                    # screen cell cannot activate a newly relocated footer.
+                    x, y = t.find("Public")
+                    t.sgr_click(x, y, drag=True); assert t.result_count() == before
+                    # A fresh whole-row click submits an ordinary answer directly.
+                    t.sgr_click(x, y)
+                    assert t.await_result(before)["answer"]["optionId"] == "public"
+                    before = t.result_count(); t.open_demo("approval")
+                    x, y = t.find("Approve as written"); t.sgr_click(x, y); t.wait("send approval")
+                    # Continuing/reflowed clicks still cannot confirm approval.
                     t.sgr_click(x, y); assert t.result_count() == before
-                    sx, sy = t.find("Ctrl+Enter")
-                    # An actual SGR press-drag-release on Send also cannot submit.
+                    sx, sy = t.find("send approval")
                     t.sgr_click(sx, sy, drag=True); assert t.result_count() == before
-                    # A fresh explicit SGR click sends a decision.
-                    t.sgr_click(sx + 2, sy); assert t.await_result(before)["status"] == "answered"
+                    t.sgr_click(sx + 2, sy); assert t.await_result(before)["approved"]
                 proof_case(report, profile + "-sgr-mouse-option-send-guard", t, output, mouse)
 
                 def pointer_editor():
                     before = t.result_count(); t.open_demo("decision")
                     t.keys(DOWN, DOWN, "abcdef", ESC)
                     x, y = t.find("Your answer")
-                    t.sgr_click(x + 4, y + 1); t.keys("Z", ENTER); t.wait("· Review")
-                    t.capture(output, profile + "-mouse-caret-review")
+                    t.sgr_click(x + 4, y + 1); t.keys("Z", "\t"); t.wait("Note for:")
+                    t.capture(output, profile + "-mouse-caret-note")
                     t.keys(ESC, "Q", ESC)
                     # Drag remains terminal selection, not answer activation or editing.
                     x, y = t.find("Your answer")
                     t.sgr_click(x + 2, y + 1, drag=True)
                     assert t.result_count() == before
-                    t.wait("· Choose one")
+                    t.wait("Type something…")
                     # Marker/padding click is the same native field. Type at start.
-                    t.sgr_click(x, y + 1); t.keys("M", ENTER, "\x1b[13;5u")
+                    t.sgr_click(x, y + 1); t.keys("M", ENTER)
                     result = t.await_result(before)
                     assert result["answer"]["text"] == "MabZQcdef", result
                 proof_case(report, profile + "-sgr-editor-caret-back-drag-padding", t, output, pointer_editor)
@@ -398,20 +421,21 @@ def run_profile(output: Path, mode: str, modern: bool, report):
                 def resize_gesture():
                     before = t.result_count(); t.open_demo("decision")
                     t.resize(36, 24)
-                    t.keys(DOWN, DOWN, "abc", ESC)
+                    t.keys(DOWN, DOWN, "abc", ESC, UP)
                     x, y = t.reveal_custom()
                     t.keys(f"\x1b[<35;{x};{y + 1}M", ENTER)
-                    t.wait("· Review")
-                    assert "Answer\nPublic" in t.text(), "hover stole keyboard focus"
-                    t.keys(ESC); x, y = t.reveal_custom()
-                    t.sgr_click(x, y + 1); t.keys("N", ENTER)
-                    sx, sy = t.find("Ctrl+Enter")
+                    assert t.await_result(before)["answer"]["optionId"] == "public", "hover stole keyboard focus"
+                    before = t.result_count(); t.open_demo("decision")
+                    t.keys(DOWN, DOWN, "abc", ESC)
+                    x, y = t.reveal_custom()
+                    t.sgr_click(x, y + 1); t.keys("N", "\t"); t.wait("Note for:")
+                    sx, sy = t.find("enter send")
                     t.keys(f"\x1b[<0;{sx};{sy}M")
                     t.resize(80, 40)
                     t.keys(f"\x1b[<0;{sx};{sy}m")
                     assert t.result_count() == before, "resize completed an old press as Send"
                     t.capture(output, profile + "-resize-interrupted-gesture")
-                    sx, sy = t.find("Ctrl+Enter"); t.sgr_click(sx, sy)
+                    sx, sy = t.find("enter send"); t.sgr_click(sx, sy)
                     result = t.await_result(before)
                     assert result["answer"]["text"] == "Nabc", result
                 proof_case(report, profile + "-sgr-hover-resize-and-stale-gesture", t, output, resize_gesture)
@@ -452,8 +476,8 @@ def run_remapped(output, report):
             t.wait_ready()
             def remapped():
                 before = t.result_count(); t.open_demo("approval")
-                t.keys(ENTER); t.wait("· Approval")
-                t.keys("\x1b[17~"); t.wait("· Review")
+                t.keys(ENTER); t.wait("1. Approve as written")
+                t.keys("\x1b[17~"); t.wait("send approval")
                 t.keys("\x1b[17;1:3~", "\x1b[17;1:2~")
                 assert t.result_count() == before
                 t.wait("f6 send approval")

@@ -4,17 +4,19 @@ type: plan
 date: 2026-09-14
 status: in_progress
 confidence: high
-readiness: "Local activation verified; exact publication approved, awaiting npm login; user reload pending"
-preview_status: approved
+readiness: "Stopped after post-reload native UX rejection; corrected native preview required"
+preview_status: pending
 ---
 
 # Finish the hog_ask rollout
 
-Ship the completed [native implementation](2026-09-13-feat-hog-ask-native-design-plan.md) without including unrelated workstation drafts or confusing source preparation with installed activation.
+**Stopped, not completed (2026-09-14).** Normal npm login was restored (`whoami` succeeded as `ondrejsvec`). Ondrej reported `/reload`, then rejected the ordinary Enter → review → Enter Back interaction. An earlier “Looks good” was before reload and was explicitly invalidated; dismissal of the later card was not acceptance. **No npm publication command was run. Do not publish this rejected archive.** Immutable local 0.2.4 remains selected; no rollback or settings change was made during the correction. The [question-style correction](2026-09-14-fix-hog-ask-question-ux-plan.md) is a new source/native-preview phase, not authorization to reuse the old publication approval for different bytes.
+
+Original rollout scope follows for provenance. Ship the completed [native implementation](2026-09-13-feat-hog-ask-native-design-plan.md) without including unrelated workstation drafts or confusing source preparation with installed activation.
 
 ## Scope and authorization
 
-After the status handoff, Ondrej said **"ok lets finnish this then"** and clarified **"the hog ask"**, selecting the hog_ask rollout rather than the background-helper work. Prepare and verify the release now. The assistant explicitly retained separate approval steps for exact publication and live activation; obtain those approvals after the artifact and target are known. No further implementation/design approval is needed for the already accepted native design.
+After the status handoff, Ondrej said **"ok lets finnish this then"** and clarified **"the hog ask"**, selecting the hog_ask rollout rather than the background-helper work. Prepare and verify the release now. The assistant explicitly retained separate approval steps for exact publication and live activation; obtain those approvals after the artifact and target are known. At rollout start, no further implementation/design approval was needed for that accepted design; the later native-UX rejection above supersedes this readiness assessment.
 
 Do not touch the background-helper project, workstation `/answer`, unrelated working-tree files, themes, keybindings, trust, credentials, or existing immutable releases. No model calls or automatic reload of other sessions. Follow normal npm authentication/browser approval if required; never bypass it.
 
@@ -35,9 +37,9 @@ The accepted design and [32-case native proof](../reviews/2026-09-13-hog-ask-nat
 - [x] Make packaged release wording time-independent; commit only rollout-owned documentation. Preserve historical implementation proof and private state. Preparation commit: `6e9eab3ce0231cccabffebd83bde2553443bcf12`.
 - [x] Export the committed source; run full prepublish and visualization checks, then fresh actual CLI/PTY proof with no model calls. Verify implementation hashes against the retained native proof.
 - [x] Pack the clean source, verify every archived file, retain hashes/logs and test the extracted candidate's actual registration/RPC behavior in an isolated profile. Do not install or change the live profile yet.
-- [ ] Publish the exact approved archive/version/tag and verify unauthenticated registry bytes/integrity. Approval is recorded below; normal npm login remains required. Record actual authentication attempts without exposing credentials.
+- [ ] Publication stopped after native-UX rejection. Keep the original exact approval as historical evidence, not a reason to publish rejected bytes. A corrected candidate needs its own verification and exact approval.
 - [x] Obtain approval for the exact immutable local release and source-only settings update; stage without overwriting an existing release, seal, activate and verify fresh-process loaded paths/registration plus a benign interaction. Recheck settings and old-release identity before writing.
-- [ ] Ask Ondrej to reload this session after activation, then confirm the new source and actual native interaction. Do not force other sessions to reload.
+- [ ] Native acceptance not achieved. Ondrej reported reload, but rejected the interaction. Fresh-process source verification remains valid; it is not human usability acceptance. Do not force other sessions to reload.
 - [ ] Record publication, activation, verification and rollback separately; commit/push intended documentation and report preserved unrelated dirt. Mark complete only after required gates actually close.
 
 ## Verified artifact checkpoint
@@ -58,11 +60,13 @@ Ondrej submitted bare approval to **`hog-ask-024-activate`**, covering this exac
 
 Local activation then completed: all **284** regular files match the approved archive, the new directory/files are read-only, and the old immutable 0.2.3 tree is unchanged. Only the existing toolkit source string changed in settings; its filters and all other settings were preserved. A private settings backup and receipt were retained. A fresh process using the actual global profile confirmed the new extension/skill paths, exactly one `hog_ask`, the unchanged `/answer`, no retired debug command or load errors, and a real standard plan-editor open/cancel. The verifier's owned PID was absent afterward. The sealed release separately passed **6/6** offline RPC/registration cases, including approval feedback and cancellation. No model calls occurred.
 
-Ondrej then submitted bare approval to **`hog-ask-024-publish`**, covering public npm publication of the exact retained archive as `@heart-of-gold/toolkit@0.2.4` with tag `latest` and registry-byte verification, through normal npm authentication. It excludes repacking, another version, dependency/settings changes and session reload. Publication is authorized but **not yet performed**: the normal npm-login gate remains open after E401. Local activation was independently authorized and verified rather than being held behind this unrelated authentication gate.
+Ondrej then submitted bare approval to **`hog-ask-024-publish`**, covering public npm publication of the exact retained archive as `@heart-of-gold/toolkit@0.2.4` with tag `latest` and registry-byte verification, through normal npm authentication. It excludes repacking, another version, dependency/settings changes and session reload. Publication was approved but **not performed**. Normal npm login subsequently succeeded, but native-UX rejection then stopped publication. Local activation was independently authorized and verified rather than being held behind this unrelated authentication gate.
 
-Existing sessions have not been forcibly reloaded. User `/reload` and a benign interaction in the refreshed session remain outstanding; fresh-process verification does not substitute for that acknowledgment.
+No session was forcibly reloaded. Ondrej subsequently reported `/reload`; the resulting native interaction was rejected. Fresh-process verification does not substitute for human acceptance.
 
-## Acceptance and rollback
+## Original acceptance criteria and rollback
+
+The following were completion criteria, **not a publication or acceptance receipt**, and were not all achieved:
 
 All applicable tests pass. Archive manifest matches the clean committed source; registry archive matches the approved local bytes. Runtime extension bytes match the native proof. Exactly one `hog_ask` and all intended launchers load; existing `/answer` remains available. No old automatic extraction returns. Settings differ only in the intended toolkit source; old-release contents remain unchanged.
 

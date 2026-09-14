@@ -16,20 +16,23 @@ import {
 	type TuiMouseEventResult,
 } from "@earendil-works/pi-tui";
 import type { Theme, KeybindingsManager } from "@earendil-works/pi-coding-agent";
-import { createController, normalizeQuestion, outcome } from "./hog-ask-core.mjs";
+import { boundedText, createController, LIMITS, normalizeQuestion, outcome } from "./hog-ask-core.mjs";
 import { answerLabel, optionDescription, optionLabel, sendLabel } from "./hog-ask-presentation.mjs";
 
 type Question = ReturnType<typeof normalizeQuestion>;
 type Result = ReturnType<typeof outcome>;
 type EditorKind = "custom" | "note";
 type ReviewActivation = "confirm" | "submit" | "ctrlEnter" | undefined;
+type ActionId = "back" | "send" | "dismiss" | "clear" | "note";
 type Target =
 	| { kind: "option"; index: number }
+	| { kind: "custom" }
 	| { kind: "editor"; editor: EditorKind; y: number; height: number }
-	| { kind: "action"; id: "back" | "send" | "dismiss" | "clear" | "review-note" };
+	| { kind: "action"; id: ActionId };
 type Region = { start: number; end: number; target: Target };
 type RenderRow = { text: string; target?: Target; regions?: Region[] };
 type PointerGesture = { target: string; revision: number; x: number; y: number; dragged: boolean };
+type FooterSegment = { text: string; target?: Target };
 
 // Pi 0.85.1 recognizes legacy function-key press spellings for bindings,
 // while release/repeat classification accepts their extended event forms.
@@ -39,16 +42,18 @@ function bindingInput(data: string): string {
 function physicalKey(data: string): string | undefined {
 	return parseKey(bindingInput(data))?.replace(/^(?:(?:ctrl|shift|alt|super|meta|hyper)\+)+/, "");
 }
-
 function targetKey(target: Target | undefined): string {
 	if (!target) return "";
 	if (target.kind === "option") return `option:${target.index}`;
+	if (target.kind === "custom") return "custom";
 	if (target.kind === "editor") return `editor:${target.editor}:${target.y}`;
 	return `action:${target.id}`;
 }
-
 function stripUnfocusedCursor(line: string): string {
 	return line.replace(/\x1b\[7m([\s\S]*?)\x1b\[0m/g, "$1");
+}
+function errorText(error: unknown): string {
+	return error instanceof Error ? error.message : String(error);
 }
 
 /** A native Editor whose public border hooks make it read as one inline field. */
@@ -85,7 +90,7 @@ class InlineEditor extends Editor {
 	}
 }
 
-/** Native, inline decision/approval card. Focus is never an answer. */
+/** Native, compact decision/approval card. Focus is never an answer. */
 export class AskCard {
 	readonly controller: ReturnType<typeof createController>;
 	readonly editor: InlineEditor;
@@ -93,7 +98,6 @@ export class AskCard {
 	readonly wantsKeyRelease = true;
 
 	private chooseIndex = 0;
-	private reviewIndex = 0;
 	private scroll = 0;
 	private pageSize = 10;
 	private followFocus = true;
@@ -101,6 +105,7 @@ export class AskCard {
 	private _focused = false;
 	private error = "";
 	private returnFocus = 0;
+	private noteReturnsToCustom = false;
 	private hover = "";
 	private renderedRows: RenderRow[] = [];
 	private layoutSignature = "";
@@ -185,13 +190,17 @@ export class AskCard {
 	}
 
 	private get approval() { return this.question.purpose === "approval"; }
-	private get entry() { return this.controller.state.step === "choose" || this.controller.state.step === "custom"; }
-	private get feedbackPending() { return this.approval && this.editor.getExpandedText().trim().length > 0; }
-	private get reviewTargets() { return this.approval ? 2 : 3; }
+	private get step() { return this.controller.state.step; }
+	private get entry() { return this.step === "choose" || this.step === "custom"; }
+	private get editingCustom() { return this.step === "custom"; }
+	private get editingNote() { return !this.approval && this.step === "note"; }
+	private get approvalReview() { return this.approval && this.step === "review"; }
+	private get feedbackPending() { return this.approval && this.editor.getExpandedText().length > 0; }
+	private get notePending() { return !this.approval && this.noteEditor.getExpandedText().length > 0; }
 
 	private syncFocus() {
-		this.editor.focused = this._focused && this.entry && this.chooseIndex === this.question.options.length;
-		this.noteEditor.focused = this._focused && !this.approval && !this.entry && this.reviewIndex === 1;
+		this.editor.focused = this._focused && this.editingCustom;
+		this.noteEditor.focused = this._focused && this.editingNote;
 	}
 
 	private refresh(followFocus = true) {
@@ -202,14 +211,12 @@ export class AskCard {
 	}
 
 	private matches(data: string, action: Parameters<KeybindingsManager["matches"]>[1]) {
-		// Event type is always classified from original bytes before matching.
 		return this.keybindings.matches(bindingInput(data), action);
 	}
-
 	private keys(action: Parameters<KeybindingsManager["getKeys"]>[0]) {
-		return this.keybindings.getKeys(action)[0] || "unbound";
+		const key = this.keybindings.getKeys(action)[0] || "unbound";
+		return key === "up" ? "↑" : key === "down" ? "↓" : key === "escape" ? "esc" : key;
 	}
-
 	private finish(result: Result) {
 		if (this.disposed) return;
 		this.dispose();
@@ -222,7 +229,6 @@ export class AskCard {
 		this.approvalEnterArmed = false;
 		this.legacyApprovalTabArmed = false;
 	}
-
 	private beginApprovalReview(opening: ReviewActivation, data?: string) {
 		this.approvalEnterArmed = false;
 		this.approvalReleasePending = opening;
@@ -233,8 +239,8 @@ export class AskCard {
 	private focusEntry(index: number) {
 		const next = Math.max(0, Math.min(this.question.options.length, index));
 		if (next === this.question.options.length) {
-			if (this.controller.state.step !== "custom") this.controller.custom();
-		} else if (this.controller.state.step === "custom") {
+			if (this.step !== "custom") this.controller.custom();
+		} else if (this.step === "custom") {
 			this.controller.back();
 		}
 		this.chooseIndex = next;
@@ -242,24 +248,71 @@ export class AskCard {
 		this.refresh();
 	}
 
-	private focusReview(index: number) {
-		const next = Math.max(0, Math.min(this.reviewTargets - 1, index));
-		if (!this.approval && next === 1) {
-			if (this.controller.state.step !== "note") {
-				this.controller.editNote();
-				const note = this.controller.state.textDraft;
-				if (this.noteEditor.getExpandedText() !== note) this.noteEditor.setText(note);
-			}
-		} else if (this.controller.state.step === "note") {
-			if (!this.saveNote()) return;
-		}
-		this.reviewIndex = next;
+	private leaveCustom() {
+		if (!this.editingCustom) return;
+		this.controller.back();
+		this.chooseIndex = this.approval ? this.question.options.findIndex((option) => option.id === "revise") : this.question.options.length;
 		this.error = "";
 		this.refresh();
 	}
 
-	private saveNote() {
-		if (this.controller.state.step !== "note") return true;
+	private currentAnswerName(): string {
+		if (this.chooseIndex < this.question.options.length) {
+			const option = this.question.options[this.chooseIndex]!;
+			return optionLabel(this.question, option);
+		}
+		return this.editor.getExpandedText().trim() || "custom answer";
+	}
+
+	private answerName(): string {
+		const answer = this.controller.state.answer;
+		if (!answer) return this.currentAnswerName();
+		return answer.kind === "custom" ? answer.text : answer.label;
+	}
+
+	private setNoteCaption() {
+		this.noteEditor.caption = `Note for: ${this.answerName()} · optional`;
+	}
+
+	private noteValidationError(): string {
+		try {
+			boundedText(this.noteEditor.getExpandedText(), "note", LIMITS.note, true);
+			return "";
+		} catch (error) {
+			return errorText(error);
+		}
+	}
+
+	private enterNote(returnToCustom: boolean) {
+		if (this.controller.state.step !== "review" || !this.controller.state.answer) return;
+		this.returnFocus = returnToCustom ? this.question.options.length : this.chooseIndex;
+		this.noteReturnsToCustom = returnToCustom;
+		this.setNoteCaption();
+		this.controller.editNote();
+		this.controller.draft(this.noteEditor.getExpandedText());
+		this.error = "";
+		this.scroll = 0;
+		this.refresh();
+	}
+
+	private returnFromNote() {
+		if (!this.editingNote) return;
+		// Leaving note entry is deliberately non-validating: even an invalid draft
+		// remains in the native Editor and is called out beside the next answer.
+		this.controller.back();
+		this.controller.back();
+		this.chooseIndex = this.returnFocus;
+		if (this.noteReturnsToCustom) this.controller.custom();
+		this.error = "";
+		this.scroll = 0;
+		this.refresh();
+	}
+
+	private savePendingNote(): boolean {
+		if (!this.notePending) return true;
+		if (this.controller.state.step !== "review") return false;
+		this.setNoteCaption();
+		this.controller.editNote();
 		if (!this.controller.saveText(this.noteEditor.getExpandedText())) {
 			this.error = this.controller.state.error;
 			this.refresh();
@@ -268,7 +321,70 @@ export class AskCard {
 		return true;
 	}
 
-	private reviewCustom(opening: ReviewActivation, data: string) {
+	private submitStagedOrdinary() {
+		if (this.approval || this.controller.state.step !== "review") return;
+		if (!this.savePendingNote()) return;
+		this.error = "";
+		this.finish(this.controller.submit());
+	}
+
+	private submitOption(index: number) {
+		const option = this.question.options[index];
+		if (!option || this.approval) return;
+		this.controller.choose(option.id);
+		this.returnFocus = index;
+		this.noteReturnsToCustom = false;
+		this.setNoteCaption();
+		this.submitStagedOrdinary();
+	}
+
+	private openNoteForCurrent() {
+		if (this.approval || !this.entry) return;
+		if (this.editingCustom) {
+			if (!this.controller.saveText(this.editor.getExpandedText())) {
+				this.error = this.controller.state.error;
+				this.refresh();
+				return;
+			}
+			this.enterNote(true);
+			return;
+		}
+		const option = this.question.options[this.chooseIndex];
+		if (!option) {
+			this.focusEntry(this.question.options.length);
+			return;
+		}
+		this.controller.choose(option.id);
+		this.returnFocus = this.chooseIndex;
+		this.enterNote(false);
+	}
+
+	private submitCustomOrdinary() {
+		if (this.approval || !this.editingCustom) return;
+		if (!this.controller.saveText(this.editor.getExpandedText())) {
+			this.error = this.controller.state.error;
+			this.refresh();
+			return;
+		}
+		this.returnFocus = this.question.options.length;
+		this.noteReturnsToCustom = true;
+		this.setNoteCaption();
+		this.submitStagedOrdinary();
+	}
+
+	private submitNote() {
+		if (!this.editingNote) return;
+		if (!this.controller.saveText(this.noteEditor.getExpandedText())) {
+			this.error = this.controller.state.error;
+			this.refresh();
+			return;
+		}
+		this.error = "";
+		this.finish(this.controller.submit());
+	}
+
+	private reviewCustom(opening: ReviewActivation, data?: string) {
+		if (!this.approval) return;
 		if (this.controller.state.step !== "custom") this.controller.custom();
 		if (!this.controller.saveText(this.editor.getExpandedText())) {
 			this.error = this.controller.state.error;
@@ -278,43 +394,34 @@ export class AskCard {
 		}
 		this.error = "";
 		this.returnFocus = this.question.options.length;
-		this.reviewIndex = 0;
-		// Saving a custom answer creates a new committed answer with no note.
-		// The rendered note must match what Send would actually submit.
-		if (!this.approval && this.noteEditor.getExpandedText() !== this.controller.state.answer!.note) {
-			this.noteEditor.setText(this.controller.state.answer!.note);
+		this.beginApprovalReview(opening, data);
+		this.scroll = 0;
+		this.refresh();
+	}
+
+	private chooseApprovalOption(index: number, openingData?: string) {
+		const option = this.question.options[index];
+		if (!option || !this.approval) return;
+		if (option.id === "revise") {
+			this.focusEntry(this.question.options.length);
+			return;
 		}
-		if (this.approval) this.beginApprovalReview(opening, data);
+		if (option.id === "approve" && this.feedbackPending) {
+			this.error = "Clear your feedback before approving as written.";
+			this.focusEntry(this.question.options.length);
+			return;
+		}
+		this.controller.choose(option.id);
+		this.error = "";
+		this.returnFocus = index;
+		this.beginApprovalReview(openingData ? "confirm" : undefined, openingData);
 		this.scroll = 0;
 		this.refresh();
 	}
 
 	private chooseOption(index: number, openingData?: string) {
-		const option = this.question.options[index];
-		if (!option) return;
-		if (this.approval && option.id === "revise") {
-			this.focusEntry(this.question.options.length);
-			return;
-		}
-		if (this.approval && option.id === "approve" && this.feedbackPending) {
-			this.error = "Clear your feedback before approving as written.";
-			this.focusEntry(this.question.options.length);
-			return;
-		}
-		const previous = this.controller.state.answer;
-		this.controller.choose(option.id);
-		if (!this.approval) {
-			const note = this.controller.state.answer?.note ?? "";
-			if (previous?.kind !== "option" || previous.optionId !== option.id || this.noteEditor.getExpandedText() !== note) {
-				this.noteEditor.setText(note);
-			}
-		}
-		this.error = "";
-		this.returnFocus = index;
-		this.reviewIndex = 0;
-		if (this.approval) this.beginApprovalReview(openingData ? "confirm" : undefined, openingData);
-		this.scroll = 0;
-		this.refresh();
+		if (this.approval) this.chooseApprovalOption(index, openingData);
+		else this.submitOption(index);
 	}
 
 	private clearFeedback() {
@@ -326,29 +433,20 @@ export class AskCard {
 		this.refresh();
 	}
 
-	private backToEntry() {
-		if (this.controller.state.step === "note") {
-			if (!this.saveNote()) return;
-		}
-		if (this.controller.state.step === "review") this.controller.back();
+	private backFromApprovalReview() {
+		if (!this.approvalReview) return;
+		this.controller.back();
 		this.resetApprovalGuard();
 		this.chooseIndex = this.returnFocus;
-		if (this.chooseIndex === this.question.options.length && this.controller.state.step !== "custom") this.controller.custom();
-		this.reviewIndex = 0;
+		if (this.chooseIndex === this.question.options.length) this.controller.custom();
 		this.error = "";
 		this.scroll = 0;
 		this.refresh();
 	}
 
-	private submit() {
-		if (this.controller.state.step !== "review" || this.error) return;
+	private submitApproval() {
+		if (!this.approvalReview || this.error) return;
 		this.finish(this.controller.submit());
-	}
-
-	private activateReviewFocus() {
-		if (this.reviewIndex === 0) this.backToEntry();
-		else if (this.reviewIndex === 1) this.focusReview(1);
-		else this.submit();
 	}
 
 	private typeToEditor(data: string) {
@@ -356,9 +454,29 @@ export class AskCard {
 		this.editor.handleInput(data);
 		this.refresh();
 	}
-
 	private isTyping(data: string) {
 		return data.includes("\x1b[200~") || /^[^\x00-\x1f\x7f-\x9f]+$/u.test(data) || decodeKittyPrintable(data) !== undefined;
+	}
+
+	private activatePrimary(data?: string) {
+		if (this.editingNote) {
+			this.submitNote();
+			return;
+		}
+		if (this.entry) {
+			if (this.editingCustom) {
+				if (this.approval) this.reviewCustom(data ? (this.matches(data, "tui.select.confirm") ? "confirm" : this.matches(data, "tui.input.submit") ? "submit" : matchesKey(data, Key.ctrl("enter")) ? "ctrlEnter" : undefined) : undefined, data);
+				else this.submitCustomOrdinary();
+				return;
+			}
+			if (this.chooseIndex === this.question.options.length) {
+				this.focusEntry(this.chooseIndex);
+				return;
+			}
+			this.chooseOption(this.chooseIndex, data);
+			return;
+		}
+		if (this.approvalReview) this.submitApproval();
 	}
 
 	handleInput(data: string) {
@@ -369,13 +487,11 @@ export class AskCard {
 		const released = isKeyRelease(data);
 		const repeated = isKeyRepeat(data);
 		if (released) {
-			// Modifiers can be released first: Ctrl+Enter may produce an ordinary
-			// Enter release. Match the opening key itself, not the modifier state.
 			const openingReleased = this.approvalOpeningKey ? physicalKey(data) === this.approvalOpeningKey
 				: this.approvalReleasePending === "confirm" ? this.matches(data, "tui.select.confirm")
 				: this.approvalReleasePending === "submit" ? this.matches(data, "tui.input.submit")
 				: this.approvalReleasePending === "ctrlEnter" && matchesKey(data, Key.ctrl("enter"));
-			if (this.approval && !this.entry && openingReleased) {
+			if (this.approvalReview && openingReleased) {
 				this.approvalReleasePending = undefined;
 				this.approvalOpeningKey = undefined;
 				this.approvalEnterArmed = true;
@@ -384,8 +500,6 @@ export class AskCard {
 			}
 			return;
 		}
-		// Repeated activation must not cross a stage boundary. Native editing and
-		// navigation repeats are still useful (held arrows/backspace/characters).
 		if (repeated && (this.matches(data, "tui.select.confirm") || this.matches(data, "tui.input.submit") || matchesKey(data, Key.ctrl("enter")) || this.matches(data, "tui.input.tab") || matchesKey(data, Key.tab) || matchesKey(data, Key.shift("tab")))) return;
 		if (!repeated) this.pointerTransitionGuard = undefined;
 
@@ -395,21 +509,15 @@ export class AskCard {
 			return;
 		}
 
-		// The host clear-editor action (Ctrl+C by default) dismisses this dialog,
-		// including an invalid draft. Escape/app.interrupt still means Back.
+		// Ctrl+C cancels even when a custom answer or note currently fails validation.
 		if (this.matches(data, "app.clear")) {
 			this.finish(outcome(this.question, "dismissed"));
 			return;
 		}
 		if (this.matches(data, "tui.select.cancel") || this.matches(data, "app.interrupt")) {
-			if (this.entry && this.chooseIndex === this.question.options.length) {
-				if (this.controller.state.step === "custom") this.controller.back();
-				this.chooseIndex = this.question.options.length - 1;
-				this.error = "";
-				this.refresh();
-			} else if (!this.entry && !this.approval && this.reviewIndex === 1) {
-				if (this.saveNote()) this.focusReview(0);
-			} else if (!this.entry) this.backToEntry();
+			if (this.editingNote) this.returnFromNote();
+			else if (this.editingCustom) this.leaveCustom();
+			else if (this.approvalReview) this.backFromApprovalReview();
 			else this.finish(outcome(this.question, "dismissed"));
 			return;
 		}
@@ -417,29 +525,32 @@ export class AskCard {
 		const tab = this.matches(data, "tui.input.tab") || matchesKey(data, Key.tab);
 		const shiftTab = matchesKey(data, Key.shift("tab"));
 		if (tab || shiftTab) {
-			if (this.entry) {
-				const count = this.question.options.length + 1;
-				this.focusEntry((this.chooseIndex + (shiftTab ? -1 : 1) + count) % count);
-			} else if (!this.approval) {
-				this.focusReview((this.reviewIndex + (shiftTab ? -1 : 1) + this.reviewTargets) % this.reviewTargets);
-			} else {
+			if (this.editingNote) {
+				this.returnFromNote();
+			} else if (!this.approval && this.entry) {
+				this.openNoteForCurrent();
+			} else if (this.approvalReview && tab) {
 				this.legacyApprovalTabArmed = true;
 				this.refresh(false);
+			} else if (this.approval && this.entry && !this.editingCustom) {
+				const count = this.question.options.length;
+				this.focusEntry((this.chooseIndex + (shiftTab ? -1 : 1) + count) % count);
 			}
 			return;
 		}
 
 		if (this.entry) {
-			const inEditor = this.chooseIndex === this.question.options.length;
-			if (this.approval && this.feedbackPending && !inEditor && this.matches(data, "tui.editor.deleteToLineStart")) {
+			if (this.approval && this.feedbackPending && !this.editingCustom && this.matches(data, "tui.editor.deleteToLineStart")) {
 				this.clearFeedback();
 				return;
 			}
-			if (inEditor) {
+			if (this.editingCustom) {
 				if (this.matches(data, "tui.select.up")) {
 					const cursor = this.editor.getCursor();
-					if (cursor.line === 0 && cursor.col === 0) this.focusEntry(this.question.options.length - 1);
-					else { this.editor.handleInput(data); this.refresh(); }
+					if (cursor.line === 0 && cursor.col === 0) {
+						this.leaveCustom();
+						if (!this.approval) this.focusEntry(this.question.options.length - 1);
+					} else { this.editor.handleInput(data); this.refresh(); }
 					return;
 				}
 				if (this.matches(data, "tui.select.down")) {
@@ -453,7 +564,7 @@ export class AskCard {
 					return;
 				}
 				if (this.matches(data, "tui.input.submit") || matchesKey(data, Key.ctrl("enter"))) {
-					this.reviewCustom(this.matches(data, "tui.select.confirm") ? "confirm" : this.matches(data, "tui.input.submit") ? "submit" : "ctrlEnter", data);
+					this.activatePrimary(data);
 					return;
 				}
 				this.editor.handleInput(data);
@@ -463,7 +574,8 @@ export class AskCard {
 
 			if (this.matches(data, "tui.select.up") || this.matches(data, "tui.select.down")) {
 				const delta = this.matches(data, "tui.select.up") ? -1 : 1;
-				const next = Math.max(0, Math.min(this.question.options.length, this.chooseIndex + delta));
+				const last = this.question.options.length - (this.approval ? 1 : 0);
+				const next = Math.max(0, Math.min(last, this.chooseIndex + delta));
 				if (next === this.chooseIndex) {
 					this.scroll = Math.max(0, this.scroll + delta * this.pageSize);
 					this.refresh(false);
@@ -471,7 +583,7 @@ export class AskCard {
 				return;
 			}
 			if (this.matches(data, "tui.select.confirm")) {
-				this.chooseOption(this.chooseIndex, data);
+				this.activatePrimary(data);
 				return;
 			}
 			if (this.isTyping(data)) {
@@ -481,38 +593,26 @@ export class AskCard {
 			return;
 		}
 
-		if (!this.approval && this.reviewIndex === 1) {
+		if (this.editingNote) {
 			if (this.matches(data, "tui.input.newLine")) this.noteEditor.insertTextAtCursor("\n");
 			else if (this.matches(data, "tui.input.submit") || matchesKey(data, Key.ctrl("enter"))) {
-				if (this.saveNote()) this.focusReview(0);
+				this.submitNote();
 				return;
 			} else this.noteEditor.handleInput(data);
 			this.refresh();
 			return;
 		}
 
-		if (!this.approval && matchesKey(data, Key.ctrl("enter"))) {
-			this.submit();
-			return;
-		}
+		if (!this.approvalReview) return;
 		if (this.matches(data, "tui.select.up") || this.matches(data, "tui.select.down")) {
-			const delta = this.matches(data, "tui.select.up") ? -1 : 1;
-			const next = Math.max(0, Math.min(this.reviewTargets - 1, this.reviewIndex + delta));
-			// Fullscreen owns PageUp/Down for transcript scrolling. Approval arrows
-			// scroll directly; decision arrows scroll at the review-focus edges.
-			if (this.approval || next === this.reviewIndex) {
-				this.scroll = Math.max(0, this.scroll + delta * this.pageSize);
-				this.refresh(false);
-			} else this.focusReview(next);
+			const delta = this.matches(data, "tui.select.up") ? -this.pageSize : this.pageSize;
+			this.scroll = Math.max(0, this.scroll + delta);
+			this.refresh(false);
 			return;
 		}
 		if (this.matches(data, "tui.select.confirm")) {
-			if (!this.approval) {
-				this.activateReviewFocus();
-				return;
-			}
 			if (this.approvalEnterArmed || this.legacyApprovalTabArmed) {
-				this.submit();
+				this.submitApproval();
 			} else {
 				// A press without a proven relevant release cannot authorize. Its
 				// eventual release may arm the next fresh press.
@@ -535,27 +635,29 @@ export class AskCard {
 		}
 	}
 
-	private styleTargetRows(rows: RenderRow[], start: number, width: number, focused: boolean, hovered: boolean) {
-		for (let i = start; i < rows.length; i++) {
-			if (focused) {
-				const padding = " ".repeat(Math.max(0, width - visibleWidth(rows[i]!.text)));
-				rows[i]!.text = this.theme.bg("selectedBg", rows[i]!.text + padding);
-			} else if (hovered) {
-				rows[i]!.text = this.theme.fg("muted", rows[i]!.text);
-			}
+	private addPrefixed(rows: RenderRow[], prefix: string, text: string, width: number, color: Parameters<Theme["fg"]>[0], target?: Target, bold = false) {
+		const prefixWidth = visibleWidth(prefix);
+		if (prefixWidth >= width) {
+			this.addWrapped(rows, prefix + text, width, color, target, bold);
+			return;
+		}
+		const wrapped = this.wrap(text, width - prefixWidth);
+		for (let index = 0; index < wrapped.length; index++) {
+			const plain = `${index === 0 ? prefix : " ".repeat(prefixWidth)}${wrapped[index]}`;
+			rows.push({ text: truncateToWidth(this.theme.fg(color, bold ? this.theme.bold(plain) : plain), width, ""), target });
 		}
 	}
 
-	private renderHeader(rows: RenderRow[], width: number, review: boolean) {
-		this.addWrapped(rows, `${this.question.title} · ${review ? "Review" : this.approval ? "Approval" : "Choose one"}`, width, "muted");
-		this.addWrapped(rows, this.question.question, width, "text", undefined, true);
-		if (this.question.context) this.addWrapped(rows, this.question.context, width, "muted");
+	private renderHeader(rows: RenderRow[], width: number) {
+		rows.push({ text: this.theme.fg("accent", "─".repeat(width)) });
+		this.addPrefixed(rows, " ", this.question.question, width, "text", undefined, true);
+		if (this.question.context) this.addPrefixed(rows, " ", this.question.context, width, "muted");
 		if (this.question.scope) {
 			rows.push({ text: "" });
-			this.addWrapped(rows, "Scope", width, "muted");
-			this.addWrapped(rows, this.question.scope.action, width, "text");
+			this.addPrefixed(rows, " ", "Scope", width, "muted");
+			this.addPrefixed(rows, " ", this.question.scope.action, width, "text");
 			const meta = [this.question.scope.artifactPath, this.question.scope.revision].filter(Boolean).join(" · ");
-			if (meta) this.addWrapped(rows, meta, width, "muted");
+			if (meta) this.addPrefixed(rows, " ", meta, width, "muted");
 		}
 	}
 
@@ -564,101 +666,131 @@ export class AskCard {
 		for (let y = 0; y < rendered.length; y++) rows.push({ text: rendered[y]!, target: { kind: "editor", editor: kind, y, height: rendered.length } });
 	}
 
+	private renderCustomEditor(rows: RenderRow[], width: number): number {
+		const start = rows.length;
+		this.editor.hovered = this.hover.startsWith("editor:custom");
+		this.renderEditor(rows, this.editor, "custom", width);
+		if (!this.editingCustom) return start;
+		const cursor = rows.findIndex((row, index) => index >= start && row.text.includes(CURSOR_MARKER));
+		return cursor >= 0 ? cursor : start;
+	}
+
 	private renderEntry(width: number): { rows: RenderRow[]; focusLine: number } {
 		const rows: RenderRow[] = [];
-		this.renderHeader(rows, width, false);
+		this.renderHeader(rows, width);
 		rows.push({ text: "" });
 		let focusLine = 0;
 		for (let index = 0; index < this.question.options.length; index++) {
 			const option = this.question.options[index]!;
-			const focused = this.chooseIndex === index;
+			const focused = !this.editingCustom && this.chooseIndex === index;
 			const hovered = this.hover === `option:${index}`;
-			const start = rows.length;
-			if (focused) focusLine = start;
+			if (focused) focusLine = rows.length;
 			const recommendation = this.question.recommendation?.optionId === option.id ? " · recommended" : "";
-			this.addWrapped(rows, `${focused ? "›" : hovered ? "·" : " "} ${optionLabel(this.question, option)}${recommendation}`, width, focused ? "accent" : "text", { kind: "option", index }, true);
-			this.addWrapped(rows, `  ${this.approval && option.id === "approve" && this.feedbackPending ? "Clear your feedback first." : optionDescription(this.question, option)}`, width, focused ? "text" : "muted", { kind: "option", index });
+			this.addPrefixed(rows, focused ? "> " : hovered ? "· " : "  ", `${index + 1}. ${optionLabel(this.question, option)}${recommendation}`, width, focused ? "accent" : "text", { kind: "option", index }, focused);
+			const description = this.approval && option.id === "approve" && this.feedbackPending ? "Clear your feedback first." : optionDescription(this.question, option);
+			this.addPrefixed(rows, "     ", description, width, "muted", { kind: "option", index });
 			if (this.question.recommendation?.optionId === option.id && this.question.recommendation.reason !== option.description) {
-				this.addWrapped(rows, `  Why: ${this.question.recommendation.reason}`, width, focused ? "text" : "muted", { kind: "option", index });
+				this.addPrefixed(rows, "     ", `Why: ${this.question.recommendation.reason}`, width, "muted", { kind: "option", index });
 			}
-			this.styleTargetRows(rows, start, width, focused, hovered);
+			if (this.approval && option.id === "revise" && (this.editingCustom || this.editor.getExpandedText().length > 0)) {
+				rows.push({ text: "" });
+				const editorFocus = this.renderCustomEditor(rows, width);
+				if (this.editingCustom) focusLine = editorFocus;
+			}
 		}
-		rows.push({ text: "" });
-		const editorStart = rows.length;
-		this.editor.hovered = this.hover.startsWith("editor:custom");
-		this.renderEditor(rows, this.editor, "custom", width);
-		if (this.chooseIndex === this.question.options.length) {
-			const cursor = rows.findIndex((row, index) => index >= editorStart && row.text.includes(CURSOR_MARKER));
-			focusLine = cursor >= 0 ? cursor : editorStart;
+
+		if (!this.approval) {
+			const focused = !this.editingCustom && this.chooseIndex === this.question.options.length;
+			const hovered = this.hover === "custom";
+			if (focused) focusLine = rows.length;
+			const marker = focused ? "> " : hovered ? "· " : "  ";
+			const suffix = this.editingCustom ? " ✎" : "";
+			this.addPrefixed(rows, marker, `${this.question.options.length + 1}. Type something…${suffix}`, width, focused || this.editingCustom ? "accent" : "text", { kind: "custom" }, focused);
+			if (this.editingCustom || this.editor.getExpandedText().length > 0) {
+				rows.push({ text: "" });
+				const editorFocus = this.renderCustomEditor(rows, width);
+				if (this.editingCustom) focusLine = editorFocus;
+			}
 		}
+
 		if (this.error) {
-			this.addWrapped(rows, this.error, width, "error");
+			this.addPrefixed(rows, " ", this.error, width, "error");
 			focusLine = rows.length - 1;
 		}
 		return { rows, focusLine };
 	}
 
-	private renderReview(width: number): { rows: RenderRow[]; focusLine: number } {
+	private renderNote(width: number): { rows: RenderRow[]; focusLine: number } {
 		const rows: RenderRow[] = [];
-		this.renderHeader(rows, width, true);
+		this.renderHeader(rows, width);
+		rows.push({ text: "" });
+		this.addPrefixed(rows, "> ", `Answer: ${this.answerName()}`, width, "accent", undefined, true);
+		rows.push({ text: "" });
+		this.noteEditor.hovered = this.hover.startsWith("editor:note");
+		const start = rows.length;
+		this.renderEditor(rows, this.noteEditor, "note", width);
+		let focusLine = rows.findIndex((row, index) => index >= start && row.text.includes(CURSOR_MARKER));
+		if (focusLine < 0) focusLine = start;
+		if (this.error) {
+			this.addPrefixed(rows, " ", this.error, width, "error");
+			focusLine = rows.length - 1;
+		}
+		return { rows, focusLine };
+	}
+
+	private renderApprovalReview(width: number): { rows: RenderRow[]; focusLine: number } {
+		const rows: RenderRow[] = [];
+		this.renderHeader(rows, width);
 		rows.push({ text: "" });
 		const answer = this.controller.state.answer!;
-		this.addWrapped(rows, answerLabel(this.question, answer), width, "muted");
-		if (answer.kind === "custom" || !this.approval) this.addWrapped(rows, answer.kind === "custom" ? answer.text : answer.label, width, "text", undefined, true);
-		let focusLine = rows.length - 1;
-		if (!this.approval) {
-			rows.push({ text: "" });
-			const start = rows.length;
-			this.noteEditor.hovered = this.hover.startsWith("editor:note");
-			this.renderEditor(rows, this.noteEditor, "note", width);
-			if (this.reviewIndex === 1) {
-				const cursor = rows.findIndex((row, index) => index >= start && row.text.includes(CURSOR_MARKER));
-				focusLine = cursor >= 0 ? cursor : start;
-			}
-		}
-		if (this.error) {
-			this.addWrapped(rows, this.error, width, "error");
-			focusLine = rows.length - 1;
-		}
-		return { rows, focusLine };
+		this.addPrefixed(rows, "> ", answerLabel(this.question, answer), width, "accent", undefined, true);
+		if (answer.kind === "custom") this.addPrefixed(rows, "  ", answer.text, width, "text");
+		if (this.error) this.addPrefixed(rows, " ", this.error, width, "error");
+		return { rows, focusLine: rows.length - 1 };
 	}
 
-	private footerActions(): Array<{ key: string; label: string; id: "back" | "send" | "dismiss" | "clear" | "review-note" }> {
+	private footerSegments(): FooterSegment[] {
+		const action = (text: string, id: ActionId): FooterSegment => ({ text, target: { kind: "action", id } });
+		if (this.editingNote) {
+			return [
+				action(`${this.keys("tui.input.submit")} send`, "send"),
+				{ text: `${this.keys("tui.input.newLine")} new line` },
+				action(`${this.keys("tui.input.tab")}/${this.keys("tui.select.cancel")} back`, "back"),
+			];
+		}
 		if (this.entry) {
-			const actions: Array<{ key: string; label: string; id: "dismiss" | "clear" }> = [{ key: this.keys("tui.select.cancel"), label: this.chooseIndex === this.question.options.length ? "back to options" : "dismiss", id: "dismiss" }];
-			if (this.feedbackPending) actions.push({ key: `${this.chooseIndex === this.question.options.length ? this.keys("tui.select.cancel") + " then " : ""}${this.keys("tui.editor.deleteToLineStart")}`, label: "clear feedback", id: "clear" });
-			return actions;
+			if (this.editingCustom) {
+				const segments: FooterSegment[] = [action(`${this.keys("tui.input.submit")} ${this.approval ? "review" : "send"}`, "send")];
+				if (!this.approval) segments.push(action(`${this.keys("tui.input.tab")} add note`, "note"));
+				segments.push({ text: `${this.keys("tui.input.newLine")} new line` }, action(`${this.keys("tui.select.cancel")} back`, "back"));
+				return segments;
+			}
+			const atCustom = !this.approval && this.chooseIndex === this.question.options.length;
+			const editsFeedback = this.approval && this.question.options[this.chooseIndex]?.id === "revise";
+			const segments: FooterSegment[] = [
+				{ text: `${this.keys("tui.select.up")}/${this.keys("tui.select.down")} choose` },
+				action(`${this.keys("tui.select.confirm")} ${atCustom || editsFeedback ? "edit" : this.approval ? "review" : "send"}`, "send"),
+			];
+			if (!this.approval && !atCustom) segments.push(action(`${this.keys("tui.input.tab")} add note`, "note"));
+			if (this.approval && this.feedbackPending) segments.push(action(`${this.keys("tui.editor.deleteToLineStart")} clear feedback`, "clear"));
+			segments.push(action(`${this.keys("tui.select.cancel")} cancel`, "dismiss"));
+			return segments;
 		}
-		if (this.approval) {
-			const answer = this.controller.state.answer!;
-			const armed = this.approvalEnterArmed || this.legacyApprovalTabArmed;
-			const key = `${armed ? "" : this.keys("tui.input.tab") + " then "}${this.keys("tui.select.confirm")}`;
-			return [{ key, label: sendLabel(this.question, answer), id: "send" }, { key: this.keys("tui.select.cancel"), label: "back", id: "back" }];
-		}
+		const answer = this.controller.state.answer!;
+		const armed = this.approvalEnterArmed || this.legacyApprovalTabArmed;
 		return [
-			{ key: this.keys(this.reviewIndex === 1 ? "tui.input.submit" : "tui.select.confirm"), label: this.reviewIndex === 0 ? "back" : this.reviewIndex === 1 ? "review note" : sendLabel(this.question, this.controller.state.answer!), id: this.reviewIndex === 2 ? "send" : this.reviewIndex === 1 ? "review-note" : "back" },
-			{ key: "Ctrl+Enter", label: sendLabel(this.question, this.controller.state.answer!), id: "send" },
-			{ key: this.keys("tui.select.cancel"), label: "back", id: "back" },
+			action(`${armed ? "" : this.keys("tui.input.tab") + " then "}${this.keys("tui.select.confirm")} ${sendLabel(this.question, answer)}`, "send"),
+			action(`${this.keys("tui.select.cancel")} back`, "back"),
 		];
 	}
 
 	private renderActionRows(width: number): RenderRow[] {
 		const rows: RenderRow[] = [];
-		const hints = this.entry
-			? [`${this.keys("tui.select.up")}/${this.keys("tui.select.down")}/${this.keys("tui.input.tab")} move`, `${this.keys(this.chooseIndex === this.question.options.length ? "tui.input.submit" : "tui.select.confirm")} review`, `${this.keys("tui.input.newLine")} new line`]
-			: this.approval
-				? []
-				: [`${this.keys("tui.select.up")}/${this.keys("tui.select.down")}/${this.keys("tui.input.tab")} move`];
-		let hintLine = "";
-		for (const hint of hints) {
-			const next = hintLine ? `${hintLine} · ${hint}` : hint;
-			if (hintLine && visibleWidth(next) > width) {
-				rows.push({ text: this.theme.fg("dim", truncateToWidth(hintLine, width, "")) });
-				hintLine = hint;
-			} else hintLine = next;
+		if (this.entry && this.notePending) {
+			const invalid = this.noteValidationError();
+			const status = `Note draft · ${invalid ? "needs editing" : "ready"} · for: ${this.currentAnswerName()}`;
+			rows.push({ text: this.theme.fg(invalid ? "warning" : "muted", truncateToWidth(status, width, "")) });
 		}
-		if (hintLine) rows.push({ text: this.theme.fg("dim", truncateToWidth(hintLine, width, "")) });
-
 		let plain = "";
 		let regions: Region[] = [];
 		const flush = () => {
@@ -667,15 +799,14 @@ export class AskCard {
 			plain = "";
 			regions = [];
 		};
-		for (const action of this.footerActions()) {
-			const chunk = `${action.key} ${action.label}`;
+		for (const segment of this.footerSegments()) {
 			const separator = plain ? " · " : "";
-			if (plain && visibleWidth(plain + separator + chunk) > width) flush();
-			const start = visibleWidth(plain);
-			plain += (plain ? " · " : "") + chunk;
-			const actualStart = start + (start ? 3 : 0);
-			const end = Math.min(width, actualStart + visibleWidth(chunk));
-			if (end > actualStart) regions.push({ start: actualStart, end, target: { kind: "action", id: action.id } });
+			if (plain && visibleWidth(plain + separator + segment.text) > width) flush();
+			const actualSeparator = plain ? " · " : "";
+			const start = visibleWidth(plain) + visibleWidth(actualSeparator);
+			plain += actualSeparator + segment.text;
+			const end = Math.min(width, start + visibleWidth(segment.text));
+			if (segment.target && end > start) regions.push({ start, end, target: segment.target });
 		}
 		flush();
 		return rows.slice(0, 4);
@@ -684,14 +815,14 @@ export class AskCard {
 	render(width: number): string[] {
 		if (width < 1 || this.disposed) return [];
 		this.syncFocus();
-		const content = this.entry ? this.renderEntry(width) : this.renderReview(width);
+		const content = this.editingNote ? this.renderNote(width) : this.approvalReview ? this.renderApprovalReview(width) : this.renderEntry(width);
 		const maxHeight = Math.max(6, this.tui.terminal.rows - 6);
 		const actionRows = this.renderActionRows(width);
-		let footerRows: RenderRow[] = [{ text: this.theme.fg("border", "─".repeat(width)) }, ...actionRows];
+		let footerRows: RenderRow[] = [...(content.rows.at(-1)?.text ? [{ text: "" }] : []), ...actionRows, { text: this.theme.fg("accent", "─".repeat(width)) }];
 		let bodyHeight = Math.max(1, maxHeight - footerRows.length);
-		let overflow = content.rows.length > bodyHeight;
+		const overflow = content.rows.length > bodyHeight;
 		if (overflow) {
-			footerRows = [{ text: this.theme.fg("border", "─".repeat(width)) }, { text: "" }, ...actionRows];
+			footerRows = [{ text: "" }, ...actionRows, { text: this.theme.fg("accent", "─".repeat(width)) }];
 			bodyHeight = Math.max(1, maxHeight - footerRows.length);
 		}
 		this.pageSize = bodyHeight;
@@ -704,10 +835,10 @@ export class AskCard {
 		const visible = content.rows.slice(this.scroll, this.scroll + bodyHeight);
 		if (overflow) {
 			const scrollKeys = this.tui.mode === "fullscreen" ? `${this.keys("tui.select.up")}/${this.keys("tui.select.down")} at edges` : `${this.keys("tui.select.pageUp")}/${this.keys("tui.select.pageDown")}`;
-			footerRows[1] = { text: this.theme.fg("dim", truncateToWidth(`↑${this.scroll} ↓${Math.max(0, content.rows.length - this.scroll - bodyHeight)} · ${scrollKeys} scroll`, width, "")) };
+			footerRows[0] = { text: this.theme.fg("dim", truncateToWidth(`↑${this.scroll} ↓${Math.max(0, content.rows.length - this.scroll - bodyHeight)} · ${scrollKeys} scroll`, width, "")) };
 		}
 		this.renderedRows = [...visible, ...footerRows];
-		const signature = `${width}|${this.entry ? "entry" : "review"}|${this.scroll}|${this.renderedRows.map((row) => targetKey(row.target) || row.regions?.map((region) => `${region.start}-${region.end}:${targetKey(region.target)}`).join(",") || "").join("|")}`;
+		const signature = `${width}|${this.step}|${this.scroll}|${this.renderedRows.map((row) => targetKey(row.target) || row.regions?.map((region) => `${region.start}-${region.end}:${targetKey(region.target)}`).join(",") || "").join("|")}`;
 		if (signature !== this.layoutSignature) {
 			this.layoutSignature = signature;
 			this.layoutRevision++;
@@ -721,13 +852,17 @@ export class AskCard {
 		for (const region of row.regions ?? []) if (event.x >= region.start && event.x < region.end) return region.target;
 		return row.target;
 	}
-
 	private mouseEditor(target: Target & { kind: "editor" }) {
 		return target.editor === "custom" ? this.editor : this.noteEditor;
 	}
-
 	private forwardEditorMouse(editor: InlineEditor, target: Target & { kind: "editor" }, event: TuiMouseEvent) {
 		return editor.handleMouse({ ...event, y: target.y, height: target.height });
+	}
+
+	private activateBack() {
+		if (this.editingNote) this.returnFromNote();
+		else if (this.editingCustom) this.leaveCustom();
+		else if (this.approvalReview) this.backFromApprovalReview();
 	}
 
 	private activateMouseTarget(target: Target, event: TuiMouseEvent) {
@@ -737,18 +872,19 @@ export class AskCard {
 			this.pointerTransitionGuard = { x: event.screenX, y: event.screenY };
 			return;
 		}
-		if (target.kind === "editor") {
-			if (target.editor === "custom") this.focusEntry(this.question.options.length);
-			else this.focusReview(1);
+		if (target.kind === "custom") {
+			this.focusEntry(this.question.options.length);
 			return;
 		}
-		if (target.id === "review-note") { if (this.saveNote()) this.focusReview(0); }
-		else if (target.id === "back") this.backToEntry();
-		else if (target.id === "dismiss") {
-			if (this.entry && this.chooseIndex === this.question.options.length) this.focusEntry(this.question.options.length - 1);
-			else this.finish(outcome(this.question, "dismissed"));
-		} else if (target.id === "clear") this.clearFeedback();
-		else if (target.id === "send") this.submit();
+		if (target.kind === "editor") {
+			if (target.editor === "custom") this.focusEntry(this.question.options.length);
+			return;
+		}
+		if (target.id === "note") this.openNoteForCurrent();
+		else if (target.id === "back") this.activateBack();
+		else if (target.id === "dismiss") this.finish(outcome(this.question, "dismissed"));
+		else if (target.id === "clear") this.clearFeedback();
+		else if (target.id === "send") this.activatePrimary();
 	}
 
 	handleMouse(event: TuiMouseEvent): TuiMouseEventResult | undefined {
@@ -788,8 +924,6 @@ export class AskCard {
 				// selection. Its synthesized click below performs caret placement.
 				return this.forwardEditorMouse(this.mouseEditor(target), target, event);
 			}
-			// Pi setFocus toggles focused false/true even for the same owner.
-			// Do not manufacture a blur during a gesture already owned by this card.
 			return { handled: true, capture: true, focus: !this._focused };
 		}
 		if (event.type === "drag") {

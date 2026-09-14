@@ -7,6 +7,8 @@ status: verified
 
 # Native design implementation — source 0.2.4
 
+**Historical implementation evidence, not final usability acceptance.** After the later local activation and user-reported reload, Ondrej rejected the ordinary Enter-to-Back interaction. Publication was stopped. The [question-style correction](../plans/2026-09-14-fix-hog-ask-question-ux-plan.md) supersedes that part of this design; the recorded test results below still describe the original implementation.
+
 Scope: the [accepted design and Enter amendment](../plans/2026-09-13-design-hog-ask-visual-preview-plan.md#design-acceptance--2026-09-13), implemented under [the native plan](../plans/2026-09-13-feat-hog-ask-native-design-plan.md). Ondrej authorized implementation with “ok lets work on it then” and subsequently selected **Tab → Enter on older terminals** in the answered `hog-ask-legacy-confirmation` decision (`legacy-tab-enter`). Continuing to completion does not expand the plan's explicit publication/activation exclusions.
 
 **At the implementation handoff, source 0.2.4 was not published or activated.** The active immutable source then remained `0.2.3-6a1713667c14`. That implementation did not change installed releases, user settings, themes, keybindings, credentials, or unrelated workstation work. The subsequent [0.2.4 rollout record](../plans/2026-09-14-chore-hog-ask-024-rollout-plan.md) tracks separately authorized activation and publication. Core/schema semantics remain byte-identical to HEAD before this implementation.
