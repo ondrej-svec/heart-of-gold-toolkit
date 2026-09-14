@@ -4,7 +4,7 @@ type: plan
 date: 2026-09-14
 status: in_progress
 confidence: high
-readiness: "Native preview accepted; user authorized RPC/guidance completion and release preparation; exact artifact publication/activation gates remain"
+readiness: "Native accepted, RPC aligned, clean source/archive verified and independently reviewed; exact publication/activation authorization pending"
 preview_status: approved
 ---
 
@@ -65,7 +65,7 @@ Approval shares this quieter visual language, but still shows the exact action/a
 - [x] Run the actual offline Pi CLI against this component in regular/fullscreen and narrow/light/dark cases. Present native-cell captures of preset, custom, note and approval flows, plus an explicit key-by-key result record. No new browser-only simulation or live settings change.
 - [x] Obtain Ondrej's acceptance of the native preview here: approval test `hog-025-native-approval-test`, followed by explicit **“yes it was good”** to the two-Enter/no-Tab question; ordinary check `hog-025-native-question-check` returned **“Looks right”** for the compact layout/direct submission. These answers accept the tested native flow, not publication or further implementation.
 - [x] Align the RPC ordinary-question path and guidance after native acceptance: direct preset/custom answers, opt-in answer-labelled notes before sending, and approval Send first. Exact IDs, cancellation/owner guards, conservative approval and core/schema are preserved.
-- [ ] Run full native/RPC/interaction/package suites, independent focused review and all updated actual CLI/PTY cases. Record limitations and preserve unrelated workstation/private dirt; commit/push only correction-owned paths.
+- [x] Run full native/RPC/interaction/package suites, independent focused review and all updated actual CLI/PTY cases. Clean export: **37/167/148/2**, native **40/40**; extracted archive RPC **12/12**, native **40/40**. Bounded independent static PASS; limitations and concurrent unrelated changes recorded in the [release evidence](../reviews/2026-09-14-hog-ask-025-release.md).
 - [ ] Prepare a newly identified immutable release candidate with a distinct version/source identity, verify its complete archive, and seek new exact publication/activation authorization. Never publish the rejected 0.2.4 archive or patch an installed release in place.
 
 ## Final approval correction — authorized to implement
@@ -90,8 +90,8 @@ Approval still opens exact-scope review, with the named Send action first and Ba
 
 - [x] Align RPC direct answers, opt-in pre-submit notes and approval primary action; add red-first unit and actual offline RPC regressions. Red: **17 pass / 9 fail** against the old RPC flow; initial green focused native/core/RPC/package: **74/74**.
 - [x] Align tool metadata and current documentation without changing accepted native bytes, portable interaction policy, dependencies or unrelated workstation work. Packaging inspection also caught the new reference proof script missing an npm exclusion; a red-first package regression now covers both development-only proof drivers and the safety checker blocks them.
-- [ ] Independent focused review; clean committed export full checks and fresh native/RPC proof.
-- [ ] Pack once from the verified clean source; verify all archive paths/modes/bytes and extracted registration. Retain exact SHA-256/SRI/source identity.
+- [x] Independent focused review; clean committed export full checks and fresh native/RPC proof. Frozen source **92bf1845540d3a462ceae59815d64ea1af35c9f9**; final focused **75/75**; full clean **37/167/148/2** and native **40/40**, no failures/skips.
+- [x] Pack once from the verified clean source; verify all archive paths/modes/bytes and extracted registration. **284 files / 551,957 bytes**, archive RPC **12/12**, native **40/40**. SHA-256/SRI/source in the [exact release record](../reviews/2026-09-14-hog-ask-025-release.md). Initial bin-mode preflight failure and unrelated README drift retained rather than overwritten.
 - [ ] Confirm and execute publication of that exact archive through normal npm authentication, then verify registry bytes and install instructions.
 - [ ] Separately confirm final source-only local activation if needed; preserve filters/other settings/old releases and verify a fresh offline profile. Never overwrite the later theme setting or force session reloads.
 

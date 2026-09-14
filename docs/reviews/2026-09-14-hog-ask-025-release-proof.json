@@ -1,0 +1,116 @@
+{
+  "formatVersion": 1,
+  "status": "verified-candidate-before-authorization",
+  "sourceCommit": "92bf1845540d3a462ceae59815d64ea1af35c9f9",
+  "sourceTree": "5053ad3b02ed24e0eb9da18b71cf746fa7390087",
+  "package": "@heart-of-gold/toolkit",
+  "version": "0.2.5",
+  "archive": {
+    "path": "heart-of-gold-toolkit-0.2.5.tgz",
+    "bytes": 551957,
+    "fileCount": 284,
+    "sha256": "91ec56c4e43da61c43cc6a1eee8589c687b6ceff49da3b8e33e52c57c6a59c56",
+    "shasum": "45e46d7bdb524f00a99f11f62e91e556b83be01d",
+    "integrity": "sha512-COCxtCZJlj5pNmkScMWGD8fbwoFF+JPRdiCdq/LPCxMgJHGx/HF89WkGeu2kzerKoHPYS8H4h0DZOnzf80BFtQ=="
+  },
+  "manifestSha256": "6887c2ed6b57837879b9806525d667efa385e41a05d351f10d943a81baeacf12",
+  "cleanTrackedFiles": 418,
+  "checks": {
+    "interaction": 37,
+    "pi": 167,
+    "workstation": 148,
+    "visualization": 2,
+    "nativeCliPty": 40,
+    "failed": 0,
+    "skipped": 0
+  },
+  "archiveRuntimeChecks": {
+    "rpcRegistration": 12,
+    "nativeCliPty": 40,
+    "failed": 0,
+    "skipped": 0
+  },
+  "review": {
+    "status": "pass",
+    "reviewerSession": "01a090e2-4ce8-77bc-aa39-85e0947ce1bf",
+    "base": "b9cc226042b2da2d09a83aee5f093fdfa4d200fe",
+    "tip": "92bf1845540d3a462ceae59815d64ea1af35c9f9",
+    "scope": "Bounded static RPC, metadata, packaging and tests delta with relevant unchanged core/ownership; no actionable findings",
+    "reviewedBlobs": {
+      ".npmignore": "da0470985cf09c9c4675cf47ca1d0221439d0e60",
+      "README.md": "54821ecd11ca6c39545c6520960e000e2316eceb",
+      "docs/architecture/pi-cross-harness-contract.md": "e46857a602360c7222ce3f4436409292aa6ec518",
+      "docs/architecture/pi-guided-workflows.md": "159fed009362e7bd5bb8c5645d22e792e0326556",
+      "docs/plans/2026-09-14-fix-hog-ask-question-ux-plan.md": "a85eae58187de31f1ca0fe2577615f9c81fb5494",
+      "extensions/pi/hog-ask-runtime.mjs": "178a5db6408549c5f8c44e6427e729876b79b5c6",
+      "extensions/pi/hog-ask.ts": "c3deb9586df99e48e6bc19d5aeed0fd4abefe05d",
+      "scripts/check-publish-safety.py": "008d6d8bce6f7c4ace7e71f414cf76f79b7ae6f0",
+      "tests/pi-hog-ask.test.mjs": "ca3fd681a42d987864ef1c35b880593e0694a5d4",
+      "tests/pi-package-contract.test.mjs": "517a880e62a7903e1369a6d332ef324a28100093",
+      "tests/pi-rpc-smoke.test.mjs": "3d9d2885ee62a588c2744bf2a864e8489fdd1f9b"
+    },
+    "reviewerExecutedTests": false,
+    "existingSession": true,
+    "publicationAuthorization": false,
+    "limitations": "Not physical-key, every RPC client, archive/clean-export execution or deployment certification. No workers/runtime/profile/settings/auth edits or publication."
+  },
+  "packModePreflight": {
+    "failedBeforeArtifactCreation": true,
+    "observation": {
+      "stage": "dry-run-mode-preflight-before-artifact-or-archive-creation",
+      "artifactExists": false,
+      "mismatches": [
+        {
+          "path": "share-server/src/index.ts",
+          "gitMode": 420,
+          "filesystemMode": 420,
+          "packMode": 493,
+          "previousArchiveMode": 493
+        },
+        {
+          "path": "src/index.ts",
+          "gitMode": 420,
+          "filesystemMode": 420,
+          "packMode": 420,
+          "previousArchiveMode": 420
+        }
+      ]
+    },
+    "resolution": "All 284 source Git modes equal prior 0.2.4 source; dry-run and actual archive preserve all prior independently verified npm archive modes. No inferred root-bin chmod rule."
+  },
+  "unrelatedWorkingTreeObservation": {
+    "initialEqualityAuditFailed": true,
+    "actor": "unidentified",
+    "files": [
+      {
+        "file": ".github/workflows/workstation.yml",
+        "before": "316faa82973b96f40c229684cb8955bef9a945c0ce9499dd826aa109852e8290",
+        "observed": "316faa82973b96f40c229684cb8955bef9a945c0ce9499dd826aa109852e8290"
+      },
+      {
+        "file": "workstation/README.md",
+        "before": "4f5f786eafc751c969fe9fdc259880da15b25a0b2ac044638be6e3cacad8baf9",
+        "observed": "30bb77bff75d1b93492e7dfb1d37aeaf00cc286ffd32a533e8cd74d892e35c13"
+      },
+      {
+        "file": "workstation/package.json",
+        "before": "21bfa45388ac6c74e33e9984ccecc104e7d3f4330b13a8bde00d787ec766cb63",
+        "observed": "21bfa45388ac6c74e33e9984ccecc104e7d3f4330b13a8bde00d787ec766cb63"
+      }
+    ],
+    "action": "No restore or overwrite; changes remain outside frozen committed release source",
+    "frozenTaskOwnedFilesUnchanged": true
+  },
+  "acceptedNativeSource": "fc565ca7a034bf1947ab76347dccaf40c089ed38",
+  "nativeImplementationUnchanged": true,
+  "npmPublished": false,
+  "activated": false,
+  "publicationApproved": false,
+  "activationApproved": false,
+  "limitations": [
+    "Offline/native-cell proof is not every physical terminal, OS IME or live-model workflow.",
+    "Static independent review did not rerun tests or authenticate archive bytes.",
+    "Dependencies and resource lists are unchanged; this is not transitive dependency locking.",
+    "Historical native-source and preview-activation records remain separate."
+  ]
+}
