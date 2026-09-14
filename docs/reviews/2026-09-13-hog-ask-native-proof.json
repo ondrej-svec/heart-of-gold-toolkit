@@ -1,6 +1,7 @@
 {
   "formatVersion": 1,
   "sourceVersion": "0.2.4",
+  "implementationCommit": "369ab9edbae2c682143643e71db3bdc7196db638",
   "environment": {
     "node": "v25.6.1",
     "pi": "0.85.1",

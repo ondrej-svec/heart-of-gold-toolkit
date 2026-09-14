@@ -11,6 +11,8 @@ Scope: the [accepted design and Enter amendment](../plans/2026-09-13-design-hog-
 
 **Source 0.2.4 is not published or activated.** The active immutable source remains `0.2.3-6a1713667c14`. No installed release, user settings, themes, keybindings, credentials, or unrelated workstation work was changed. Core/schema semantics remain byte-identical to HEAD before this implementation.
 
+Implementation **`369ab9edbae2c682143643e71db3bdc7196db638`** is committed and pushed on `feat/workstation-guide`. All 284 curated distributable hashes match that committed source. Only unrelated workstation/private working state remains dirty.
+
 ## Implemented slice
 
 - Persistent answer/note Editors retain drafts and caret. Arrows, Tab/Shift-Tab, typing/paste and whole-row pointer focus share one entry surface. Focus is not a selected answer; hover does not steal typing focus.

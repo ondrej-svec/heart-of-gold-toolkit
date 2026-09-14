@@ -2,9 +2,9 @@
 title: "feat: implement the accepted hog_ask design in Pi"
 type: plan
 date: 2026-09-13
-status: in_progress
+status: complete
 confidence: medium
-readiness: "Implementation and native proof verified; source commit/push pending; publication/activation excluded"
+readiness: "Implementation verified, committed and pushed; publication/activation excluded"
 preview_status: approved
 ---
 
@@ -67,7 +67,7 @@ Fullscreen mouse events include local/screen coordinates and optional click coun
 - [x] Inspect real rendered captures against accepted R3 (not just string tests); verify pointer routing through the actual custom-component wrapper and editor dock.
 - [x] Run independent correctness/safety review; fix findings and rerun affected proof.
 - [x] Run relevant Pi/interaction/package checks; update runtime documentation, compatibility limits and proof evidence. Prepare source version if required by changed distributable behavior, but do not publish/install.
-- [ ] Commit/push only verified implementation scope and verify unrelated dirty work is preserved. Mark complete only when required implementation/proof tasks are done.
+- [x] Commit/push only verified implementation scope and verify unrelated dirty work is preserved. Mark complete only when required implementation/proof tasks are done.
 
 Publication, activation and any final live usability review are separate later gates. This plan does not authorize them; do not add them as selectable task alternatives or ask for per-task approval inside the ready implementation scope.
 
@@ -76,6 +76,12 @@ Publication, activation and any final live usability review are separate later g
 Source version **0.2.4** is prepared. [Native proof](../reviews/2026-09-13-hog-ask-native-proof.md): **32 actual CLI/PTY scenarios**, **47 focused native/core/RPC tests**, full working-tree prepublish/visualization checks, and a clean verification export with **37 interaction-policy / 143 Pi / 148 tracked workstation / 2 visualization tests**, no skips. All **284** curated package-file hashes were verified against the intended source (excluding unrelated workstation drafts). Independent review findings were fixed; two narrow follow-ups found no important residual issue in their scopes.
 
 Captured native cells were inspected in light/dark and narrow layouts. Physical-terminal/OS IME and live-model usability are explicitly not certified by emulated PTY input; those remain rollout checks, not grounds to relabel browser proof as native proof. Installed immutable 0.2.3 and user settings remain unchanged. Private `.pi` state is now excluded and blocked by package safety checks after working-tree pack inspection exposed it; nothing was published.
+
+## Completion
+
+Implementation commit **`369ab9edbae2c682143643e71db3bdc7196db638`** was pushed to `feat/workstation-guide`. All 284 verified distributable hashes were checked again against the committed files. Implementation-owned paths are clean. Intentionally preserved unrelated changes remain in `.github/workflows/workstation.yml`, `workstation/**` and private `.pi/**`; none entered the implementation commit.
+
+The source implementation is complete. Publication, immutable-release preparation/activation and live-session reload were not performed and remain separately authorized rollout work.
 
 ## Acceptance / rejection criteria
 
