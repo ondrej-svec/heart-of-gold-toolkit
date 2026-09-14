@@ -1,7 +1,7 @@
 ---
 title: "hog_ask 0.2.5 exact release verification"
 date: 2026-09-14
-status: exact_scope_approved_awaiting_npm_authentication
+status: locally_active_verified_publication_paused
 ---
 
 # Exact 0.2.5 release candidate
@@ -49,6 +49,14 @@ The reviewer ran no tests, workers, native trials, web requests, settings/auth c
 
 ## Authorization and availability
 
-At the candidate-proof checkpoint, nothing had been published or activated. Subsequently, **hog-025-publish-and-activate** returned **Approve this scope**, authorizing this exact archive's public npm publication with the latest tag and the separately named final source-only local activation. Noninteractive publication returned **EOTP**; a fresh registry read confirmed 0.2.5 absent. The normal npm browser approval page was opened for human authentication, without collecting an OTP or substituting/repacking bytes. Publication execution/registry verification and local activation remain pending that authentication. The accepted preview is still the local pin at this observation. Activation must preserve the current theme, complete package/resource filters, all other settings and older releases; it must never restore a stale settings backup or force session reloads. The rejected **0.2.4 archive remains unpublished**.
+At the candidate-proof checkpoint, nothing had been published or activated. Subsequently, **hog-025-publish-and-activate** returned **Approve this scope**, authorizing this exact archive's public npm publication with the latest tag and the separately named final source-only local activation. Noninteractive publication returned **EOTP**; a fresh registry read confirmed 0.2.5 absent. The normal npm browser approval page was opened for human authentication, without collecting an OTP or substituting/repacking bytes. The browser attempt subsequently timed out (npm exit `-15`); supervisor **50195**, runner **50197**, and npm **50198** were confirmed absent with ESRCH. Ondrej then paused publication and clarified that local use should not depend on it. No publisher or authentication retry remains running; a future publish needs a new user request and fresh collision/authentication checks. No successful npm publication is recorded. The rejected **0.2.4 archive remains stopped and untouched**.
+
+### Local activation completed independently
+
+The existing exact approval separately authorized local activation. npm publication was therefore removed as an unnecessary local-script prerequisite, without weakening source/archive checks or changing the artifact. The check-only preflight passed; the **284** verified committed files were copied to `~/.local/lib/heart-of-gold/releases/0.2.5-92bf1845540d` and sealed read-only. Only the existing `0.2.5-preview-fc565ca7a034` toolkit source in current global settings was replaced, using a same-directory atomic rename with compare-before-write checks. No stale settings backup was restored.
+
+Fresh actual global-profile verification passed at **2026-09-14T21:15:43.490Z**: exact new launcher/skill paths, one `hog_ask`, unchanged workstation `/answer`, standard plan editor opened/cancelled, zero model calls, no extension/JSON/stderr errors, and owned verifier confirmed absent. The verifier left settings unchanged. A final audit at **21:16:41.436Z** reverified the complete sealed file set, both archives, all **four prior release trees**, and current settings differing only by the approved toolkit source. Theme and package/resource filters were preserved.
+
+**Local 0.2.5 is available without npm publication.** New sessions use the final local release; existing sessions can use `/reload` when convenient. No reload was forced or attested for this conversation, and no additional acceptance ritual is required for the unchanged accepted native implementation.
 
 [Machine-readable candidate checkpoint](2026-09-14-hog-ask-025-release-proof.json) preserves the pre-authorization state. Private `receipt.json` carries subsequent execution evidence. The older [native-source proof](2026-09-14-hog-ask-question-ux-proof.md) and [accepted preview activation](2026-09-14-hog-ask-025-preview-activation.md) are historical records, not identities or authorization for this new archive.

@@ -4,7 +4,7 @@ type: plan
 date: 2026-09-14
 status: in_progress
 confidence: high
-readiness: "Exact publication and source-only local activation approved; normal npm browser authentication and execution pending"
+readiness: "Local 0.2.5 active and fresh-profile verified; npm publication independently paused by user"
 preview_status: approved
 ---
 
@@ -66,7 +66,7 @@ Approval shares this quieter visual language, but still shows the exact action/a
 - [x] Obtain Ondrej's acceptance of the native preview here: approval test `hog-025-native-approval-test`, followed by explicit **“yes it was good”** to the two-Enter/no-Tab question; ordinary check `hog-025-native-question-check` returned **“Looks right”** for the compact layout/direct submission. These answers accept the tested native flow, not publication or further implementation.
 - [x] Align the RPC ordinary-question path and guidance after native acceptance: direct preset/custom answers, opt-in answer-labelled notes before sending, and approval Send first. Exact IDs, cancellation/owner guards, conservative approval and core/schema are preserved.
 - [x] Run full native/RPC/interaction/package suites, independent focused review and all updated actual CLI/PTY cases. Clean export: **37/167/148/2**, native **40/40**; extracted archive RPC **12/12**, native **40/40**. Bounded independent static PASS; limitations and concurrent unrelated changes recorded in the [release evidence](../reviews/2026-09-14-hog-ask-025-release.md).
-- [ ] Prepare a newly identified immutable release candidate with a distinct version/source identity, verify its complete archive, and seek new exact publication/activation authorization. Never publish the rejected 0.2.4 archive or patch an installed release in place.
+- [x] Prepare the newly identified immutable 0.2.5 candidate from **92bf1845540d**, verify its complete archive, and obtain exact publication/separate local-activation approval. The rejected 0.2.4 archive remains untouched; no installed release was patched.
 
 ## Final approval correction — authorized to implement
 
@@ -84,6 +84,8 @@ After the native checkpoint, Ondrej explicitly rejected mandatory Tab → Enter 
 
 Ondrej subsequently asked **“ok can we publish it and make it available for us?”** This authorizes finishing the remaining RPC/guidance work, verification and clean release preparation. The assistant retained confirmation of the newly identified exact artifact before npm publication. Do not reuse 0.2.4 or preview approvals for different bytes. The accepted native UI stays unchanged; global activation remains a separately named source-only scope with no forced reload.
 
+Ondrej later said **“i cant publish now, but that for local use should not matter right?”** Publication is paused; do not restart npm authentication/publishing automatically. The previous exact approval separately authorized local activation, which does **not** depend on registry publication. Activate the same verified 284-file artifact without repacking or weakening source/archive checks. The browser publisher timed out; its supervisor, runner and npm PIDs were confirmed absent before proceeding.
+
 RPC uses only Pi 0.85.1's abortable standard select/input transport; clients own layout, keys and physical input provenance. Ordinary preset selection submits immediately; a valid custom input submits immediately. To compose a note, explicitly choose **Answer with a note** before selecting/writing the answer, then enter the note in an answer-labelled input; submitting that input sends both (blank means no note). This opt-in route replaces ordinary review; it is not another mandatory screen. Invalid input stays a visible draft and cannot send. Cancellation of any RPC dialog dismisses the interaction, preserving existing transport cancellation semantics rather than pretending RPC supports native Editor Back/caret operations.
 
 Approval still opens exact-scope review, with the named Send action first and Back/change explicit, never a primary Enter-to-Back default. Preserve feedback-clearing, strict label-to-ID mapping, invalid-response failure, cancellation/owner/stale-completion behavior and conservative core/schema outcomes. No RPC key-repeat guarantee is claimed.
@@ -92,8 +94,8 @@ Approval still opens exact-scope review, with the named Send action first and Ba
 - [x] Align tool metadata and current documentation without changing accepted native bytes, portable interaction policy, dependencies or unrelated workstation work. Packaging inspection also caught the new reference proof script missing an npm exclusion; a red-first package regression now covers both development-only proof drivers and the safety checker blocks them.
 - [x] Independent focused review; clean committed export full checks and fresh native/RPC proof. Frozen source **92bf1845540d3a462ceae59815d64ea1af35c9f9**; final focused **75/75**; full clean **37/167/148/2** and native **40/40**, no failures/skips.
 - [x] Pack once from the verified clean source; verify all archive paths/modes/bytes and extracted registration. **284 files / 551,957 bytes**, archive RPC **12/12**, native **40/40**. SHA-256/SRI/source in the [exact release record](../reviews/2026-09-14-hog-ask-025-release.md). Initial bin-mode preflight failure and unrelated README drift retained rather than overwritten.
-- [ ] Execute publication and verify registry bytes/install instructions. Exact approval **hog-025-publish-and-activate** returned **Approve this scope**; publication and separately named source-only activation are authorized. Noninteractive npm returned **EOTP**, and a registry recheck confirmed 0.2.5 absent; the normal npm browser challenge was opened without collecting an OTP or changing the approved archive.
-- [ ] Separately confirm final source-only local activation if needed; preserve filters/other settings/old releases and verify a fresh offline profile. Never overwrite the later theme setting or force session reloads.
+- [ ] **Paused by user:** npm publication and registry-byte/install-instruction verification. Exact approval **hog-025-publish-and-activate** is historical authorization, not permission to resume after the pause. Noninteractive npm returned **EOTP**, a registry recheck then confirmed 0.2.5 absent, and the browser attempt timed out. Publisher/supervisor absence is verified; no automatic retry. Resume only on a new user request, with collision/authentication checks and the unchanged archive identity.
+- [x] Execute the separately approved local activation independently of npm: seal **284** files at `0.2.5-92bf1845540d`, atomically replace only the toolkit source, and verify the actual global profile offline. Exact new paths, one `hog_ask`, unchanged `/answer`, standard editor cancellation, zero model calls/errors, and owned verifier absence passed. Current settings differ only by the approved source; theme/resource filters and **four prior releases** are preserved. No forced reload or new human-acceptance ritual. See the [local release record](../reviews/2026-09-14-hog-ask-025-release.md).
 
 ## Historical native preview checkpoint (e8a41e3)
 
